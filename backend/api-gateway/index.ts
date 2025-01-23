@@ -50,6 +50,7 @@ const targets = {
   user: process.env.USER_API_BASE_URL,
 };
 
+// Configure a proxy middleware for each route.
 app.use(
   "/auth",
   createProxyMiddleware({
