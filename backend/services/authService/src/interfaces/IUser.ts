@@ -5,7 +5,6 @@ interface IUser extends Document {
   fullName: string;
   email: string;
   phoneNumber: string;
-  username: string;
   password: string;
   role: "receptionist" | "housekeeper" | "admin";
   isApproved: boolean;

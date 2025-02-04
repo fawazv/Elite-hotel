@@ -15,7 +15,6 @@ const userSchema = new Schema<IUser>({
       message: (props) => `${props.value} is not a valid phone number!`,
     },
   },
-  username: { type: String, unique: true, required: true },
   password: { type: String, required: true },
   role: { type: String, required: true },
   isApproved: {
