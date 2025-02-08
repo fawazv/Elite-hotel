@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@types/jsonwebtoken": "^9.0.8",
     "amqplib": "^0.10.5",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
