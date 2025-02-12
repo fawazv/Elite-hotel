@@ -1,34 +1,10 @@
 import { Response } from "express";
 
-type ResponseFormat = {
-  success: boolean;
-  message: string;
-  data?: any;
-};
-
-export const createResponse = (
-  success: boolean,
-  message: string,
-  data?: any,
-  role?: string
-): ResponseFormat => {
-  return {
-    success,
-    message,
-    ...(data && { data }),
-  };
-};
-
-export const sendResponse = (
+export const successResponse = <T>(
   res: Response,
   statusCode: number,
-  success: boolean,
   message: string,
-  data: any = {}
+  data?: T
 ) => {
-  return res.status(statusCode).json({
-    success,
-    message,
-    ...data,
-  });
+  res.status(statusCode).json({ success: true, message, ...data });
 };
