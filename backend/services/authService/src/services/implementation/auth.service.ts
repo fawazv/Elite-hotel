@@ -4,7 +4,6 @@ import IUserRepository from "../../repository/interface/IUser.repository";
 import CustomError from "../../utils/CustomError";
 import { sentOTPEmail } from "../../utils/email.util";
 import { generateOtp } from "../../utils/otp.util";
-import { createResponse } from "../../utils/response.handler";
 import { IAuthService } from "../interface/IAuth.service";
 
 export class AuthService implements IAuthService {
@@ -25,6 +24,5 @@ export class AuthService implements IAuthService {
     const otp = generateOtp();
     await sentOTPEmail(email, otp);
     await this.otpRepository.create({ email, otp });
-    return createResponse(true, "Sent to otp verification");
   }
 }
