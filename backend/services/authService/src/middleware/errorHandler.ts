@@ -1,26 +1,24 @@
 import { Request, Response, NextFunction } from "express";
-import CustomError from "../utils/CustomError";
-import { HttpStatus } from "../enums/http.status";
 
-/**
- * Express error handler middleware.
- * Catches and formats all errors thrown in the application.
- *
- * @param err - The error object
- * @param req - The HTTP request object
- * @param res - The HTTP response object
- * @param next - The Express next function
- */
+interface CustomError extends Error {
+  statusCode?: number;
+}
+
 const errorHandler = (
-  err: any,
+  err: CustomError,
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  const statusCode = err.statusCode || HttpStatus.INTERNAL_SERVER_ERROR;
-  const message = err.message || "Internal Server Error";
+  console.log(
+    "Error in mentor middleware",
+    err,
+    "error.message )))) ",
+    err.message
+  );
 
-  console.error(`[Error] ${statusCode}: ${message}`);
+  const statusCode = err.statusCode || 500;
+  const message = err.message || "Internal server error";
 
   res.status(statusCode).json({
     success: false,

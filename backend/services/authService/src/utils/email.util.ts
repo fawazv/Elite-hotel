@@ -25,14 +25,12 @@ export const sendEmail = async (
       pass: process.env.NODEMAILER_PASSKEY,
     },
   });
-
   const mailOption = {
     from: process.env.NODEMAILER_EMAIL,
     to: email,
     subject: subject,
     [isHtml ? "html" : "text"]: body,
   };
-
   try {
     const sentMail = await transporter.sendMail(mailOption);
     console.log(sentMail, "sentEmail");

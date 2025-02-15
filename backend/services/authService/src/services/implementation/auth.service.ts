@@ -16,13 +16,17 @@ export class AuthService implements IAuthService {
   }
 
   async signUp(email: string) {
-    const existingUser = await this.userRepository.findByEmail(email);
+    try {
+      const existingUser = await this.userRepository.findByEmail(email);
 
-    if (existingUser && existingUser.isApproved) {
-      throw new CustomError("User alsready exits", HttpStatus.ALREADYEXISTS);
+      if (existingUser && existingUser.isApproved) {
+        throw new CustomError("User alsready exits", HttpStatus.ALREADYEXISTS);
+      }
+      const otp = generateOtp();
+      await sentOTPEmail(email, otp);
+      await this.otpRepository.create({ email, otp });
+    } catch (error) {
+      throw error;
     }
-    const otp = generateOtp();
-    await sentOTPEmail(email, otp);
-    await this.otpRepository.create({ email, otp });
   }
 }
