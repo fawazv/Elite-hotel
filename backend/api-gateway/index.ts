@@ -47,13 +47,21 @@ app.use(
 
 const targets = {
   auth: process.env.AUTH_API_BASE_URL,
+  user: process.env.USER_API_BASE_URL,
 };
 
 // Configure a proxy middleware for each route.
 app.use(
   "/auth",
   createProxyMiddleware({
-    target: "http://localhost:3001",
+    target: targets.auth,
+    changeOrigin: true,
+  })
+);
+app.use(
+  "/user",
+  createProxyMiddleware({
+    target: targets.user,
     changeOrigin: true,
   })
 );
