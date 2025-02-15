@@ -34,9 +34,9 @@ jobs:
 
       - name: Build & Push Auth Service
         run: |
-          docker build -t fawaz482/Elite-auth:latest ./backend/services/authService
+          docker build -t fawaz482/elite-auth:latest ./backend/services/authService
           docker push fawaz482/Elite-auth:latest
       - name: Build & Push API Gateway
         run: |
-          docker build -t fawaz482/Elite-gateway:latest ./backend/api-gateway
+          docker build -t fawaz482/elite-gateway:latest ./backend/api-gateway
           docker push fawaz482/Elite-gateway:latest
