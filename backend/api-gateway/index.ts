@@ -53,7 +53,7 @@ const targets = {
 app.use(
   "/auth",
   createProxyMiddleware({
-    target: targets.auth,
+    target: "http://localhost:3001",
     changeOrigin: true,
   })
 );
