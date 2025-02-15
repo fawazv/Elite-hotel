@@ -3,6 +3,7 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
+    restart: always
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -10,6 +11,7 @@ services:
   gateway:
     image: fawaz482/elite-gateway:latest
     container_name: api-gateway
+    restart: always
     ports:
       - "3000:3000"
     depends_on:
@@ -19,6 +21,7 @@ services:
   auth-service:
     image: fawaz482/elite-auth:latest
     container_name: elite-auth
+    restart: always
     ports:
       - "3001:3001"
     depends_on:
