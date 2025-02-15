@@ -1,0 +1,29 @@
+version: "3.8"
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: some-rabbit
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "3000:3000"
+    depends_on:
+      - some-rabbit
+      - auth-service
+
+  auth-service:
+    build:
+      context: ./backend/services/authService
+      dockerfile: Dockerfile
+    container_name: elite-auth
+    ports:
+      - "3001:3001"
+    depends_on:
+      - some-rabbit

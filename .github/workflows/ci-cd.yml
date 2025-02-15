@@ -1,5 +1,5 @@
 # This is the CI/CD pipeline for the hotelmanagement microservices project
-name: CI/CD for Microservices Blog Project
+name: CI/CD for Microservices hotelmanagement Project
 
 on:
   push:
