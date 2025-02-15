@@ -8,9 +8,7 @@ services:
       - "15672:15672"
 
   gateway:
-    build:
-      context: ./backend/api-gateway
-      dockerfile: Dockerfile
+    image: fawaz482/elite-gateway:latest
     container_name: api-gateway
     ports:
       - "3000:3000"
@@ -19,9 +17,7 @@ services:
       - auth-service
 
   auth-service:
-    build:
-      context: ./backend/services/authService
-      dockerfile: Dockerfile
+    image: fawaz482/elite-auth:latest
     container_name: elite-auth
     ports:
       - "3001:3001"
