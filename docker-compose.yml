@@ -10,7 +10,7 @@ services:
   gateway:
     image: fawaz482/elite-gateway:latest
     env_file:
-      - .env
+      - ./backend/api-gateway/.env
     container_name: api-gateway
     ports:
       - "3000:3000"
@@ -21,7 +21,7 @@ services:
   auth-service:
     image: fawaz482/elite-auth:latest
     env_file:
-      - .env
+      - ./backend/services/authService/.env
     container_name: elite-auth
     ports:
       - "3001:3001"
