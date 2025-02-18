@@ -7,7 +7,8 @@ interface IUser extends Document {
   phoneNumber: string;
   password: string;
   role: "receptionist" | "housekeeper" | "admin";
-  isApproved: boolean;
+  isVerified: boolean;
+  isApproved: "pending" | "approved" | "rejected";
   createdAt?: Date;
   updatedAt?: Date;
 }

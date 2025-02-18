@@ -17,10 +17,11 @@ const userSchema = new Schema<IUser>({
   },
   password: { type: String, required: true },
   role: { type: String, required: true },
+  isVerified: { type: Boolean, required: true, default: false },
   isApproved: {
-    type: Boolean,
+    type: String,
+    enum: ["pending", "approved", "rejected"],
     required: true,
-    default: false,
   },
   createdAt: { type: Date, default: Date.now() },
   updatedAt: { type: Date, default: null },
