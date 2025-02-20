@@ -12,5 +12,6 @@ authRoute.post(
   validateRequest(signUpSchema),
   authController.verifyOtp.bind(authController)
 );
+authRoute.post("/otp-resend", authController.resendOtp.bind(authController));
 
 export default authRoute;

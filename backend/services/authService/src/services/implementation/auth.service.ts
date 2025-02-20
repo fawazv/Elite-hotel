@@ -75,18 +75,18 @@ export class AuthService implements IAuthService {
           isVerified: true,
         };
 
-        const newUser = await this.userRepository.create(userData);
+        const user = await this.userRepository.create(userData);
         await this.otpRepository.deleteOtp(email);
 
         const accessToken = generateAccessToken({
-          id: newUser._id.toString(),
+          id: user._id.toString(),
           email,
-          role: newUser.role,
+          role: user.role,
         });
         const refreshToken = generateRefreshToken({
-          id: newUser._id.toString(),
+          id: user._id.toString(),
           email,
-          role: newUser.role,
+          role: user.role,
         });
 
         // await sendUserData('userExchange', newUser)
@@ -94,14 +94,22 @@ export class AuthService implements IAuthService {
         return {
           success: true,
           message: "OTP verified successfully!",
-          role: newUser.role,
-          accessToken,
-          refreshToken,
-          user: newUser,
+          data: { user, accessToken, refreshToken },
         };
       } else {
         throw new CustomError("otp expired or invalid!", HttpStatus.NOTFOUND);
       }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async resendOtpWork(email: string) {
+    try {
+      const otp = generateOtp();
+      await sentOTPEmail(email, otp);
+      await this.otpRepository.create({ email, otp });
+      return { success: true, message: "Resend otp passed to user" };
     } catch (error) {
       throw error;
     }

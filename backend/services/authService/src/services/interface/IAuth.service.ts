@@ -1,14 +1,16 @@
 import IUser from "../../interfaces/IUser";
 
-type common = {
+type UserData = {
+  user?: IUser;
+  role?: string;
+  accessToken?: string;
+  refreshToken?: string;
+};
+
+type ApiResponse = {
   success: boolean;
   message: string;
-  data?: {
-    user?: IUser;
-    role?: string;
-    accessToken?: string;
-    refreshToken?: string;
-  };
+  data?: UserData;
   refreshToken?: string;
   accessToken?: string;
   exist?: boolean;
@@ -25,5 +27,6 @@ export interface IAuthService {
     role: string,
     otp: string,
     type: string
-  ): Promise<common | undefined>;
+  ): Promise<ApiResponse | undefined>;
+  resendOtpWork(email: string): Promise<ApiResponse | undefined>;
 }

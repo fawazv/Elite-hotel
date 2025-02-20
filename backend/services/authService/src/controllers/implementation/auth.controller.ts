@@ -33,7 +33,7 @@ export class AuthController implements IAuthController {
     }
   }
 
-  async verifyOtp(req: Request, res: Response) {
+  async verifyOtp(req: Request, res: Response, next: NextFunction) {
     try {
       const { fullName, email, phoneNumber, password, role, otp, type } =
         req.body;
@@ -49,15 +49,26 @@ export class AuthController implements IAuthController {
       );
       console.log(response, "response in otp verification controller ");
 
-      if (response?.success) {
-        setRefreshTokenCookie(res, response.refreshToken!, role);
+      setRefreshTokenCookie(res, response?.refreshToken!, role);
 
-        return successResponse(res, HttpStatus.OK, response?.message, {
-          accessToken: response.accessToken,
-          role,
-          user: response.user,
-        });
-      }
-    } catch (error) {}
+      return successResponse(res, HttpStatus.OK, response?.message!, {
+        data: response?.data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async resendOtp(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.body;
+      const response = await this.authService.resendOtpWork(email);
+
+      return successResponse(res, HttpStatus.OK, response?.message!, {
+        success: response?.success,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 }
