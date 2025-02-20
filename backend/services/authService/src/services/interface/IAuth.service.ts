@@ -29,4 +29,9 @@ export interface IAuthService {
     type: string
   ): Promise<ApiResponse | undefined>;
   resendOtpWork(email: string): Promise<ApiResponse | undefined>;
+  signIn(
+    email: string,
+    password: string,
+    role: string
+  ): Promise<ApiResponse | undefined>;
 }
