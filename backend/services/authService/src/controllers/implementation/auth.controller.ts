@@ -37,7 +37,6 @@ export class AuthController implements IAuthController {
     try {
       const { fullName, email, phoneNumber, password, role, otp, type } =
         req.body;
-      // give here a validator
 
       const response = await this.authService.verifySignUpOtp(
         fullName,
