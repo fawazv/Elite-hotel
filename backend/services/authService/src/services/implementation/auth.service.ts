@@ -10,6 +10,7 @@ import {
   generateRefreshToken,
 } from "../../utils/token.util";
 import { IAuthService } from "../interface/IAuth.service";
+import bcrypt from "bcryptjs";
 
 export class AuthService implements IAuthService {
   private userRepository: IUserRepository;
@@ -113,5 +114,41 @@ export class AuthService implements IAuthService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async signIn(email: string, password: string, role: string) {
+    try {
+      const checkUser = await this.userRepository.findByEmail(email);
+      if (!checkUser || role !== checkUser.role) {
+        throw new CustomError("user not found!", HttpStatus.NOTFOUND);
+      }
+
+      if (checkUser.isVerified === false) {
+        throw new CustomError("User not verifed!", HttpStatus.UNAUTHORIZED);
+      }
+
+      const passwordCheck = await bcrypt.compare(password, checkUser.password);
+      if (!passwordCheck) {
+        throw new CustomError("Invalid credentials!", HttpStatus.UNAUTHORIZED);
+      }
+
+      const accessToken = generateAccessToken({
+        id: checkUser._id.toString(),
+        email,
+        role: checkUser.role,
+      });
+
+      const refreshToken = generateRefreshToken({
+        id: checkUser._id.toString(),
+        email,
+        role: checkUser.role,
+      });
+
+      return {
+        success: true,
+        message: "Sign in successfully completed!",
+        data: { user: checkUser, accessToken, refreshToken },
+      };
+    } catch (error) {}
   }
 }
