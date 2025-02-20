@@ -10,13 +10,10 @@ const signUpSchema = Joi.object({
       "any.required": "Password is a required field",
     }),
 
-  role: Joi.string()
-    .valid("Receptionalist", "Housekeeper")
-    .required()
-    .messages({
-      "any.only": "Role must be one of [Receptionalist, Housekeeper]",
-      "any.required": "Role is a required field",
-    }),
+  role: Joi.string().valid("receptionist", "housekeeper").required().messages({
+    "any.only": "Role must be one of [receptionist, housekeeper]",
+    "any.required": "Role is a required field",
+  }),
 
   fullName: Joi.string().min(1).max(100).required().messages({
     "string.base": "Name should be a type of text",
