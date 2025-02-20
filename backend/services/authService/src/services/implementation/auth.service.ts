@@ -3,7 +3,12 @@ import { OtpRepository } from "../../repository/implementation/otp.repository";
 import IUserRepository from "../../repository/interface/IUser.repository";
 import CustomError from "../../utils/CustomError";
 import { sentOTPEmail } from "../../utils/email.util";
+import { hashPassword } from "../../utils/hash.util";
 import { generateOtp } from "../../utils/otp.util";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+} from "../../utils/token.util";
 import { IAuthService } from "../interface/IAuth.service";
 
 export class AuthService implements IAuthService {
@@ -19,12 +24,84 @@ export class AuthService implements IAuthService {
     try {
       const existingUser = await this.userRepository.findByEmail(email);
 
-      if (existingUser && existingUser.isApproved) {
+      if (existingUser && existingUser.isVerified) {
         throw new CustomError("User alsready exits", HttpStatus.ALREADYEXISTS);
       }
       const otp = generateOtp();
       await sentOTPEmail(email, otp);
       await this.otpRepository.create({ email, otp });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async verifySignUpOtp(
+    fullName: string,
+    email: string,
+    phoneNumber: string,
+    password: string,
+    role: string,
+    otp: string,
+    type: string
+  ) {
+    try {
+      const checkUser = await this.userRepository.findByEmail(email);
+      if (checkUser && checkUser.isVerified && type !== "forgotPassword") {
+        throw new CustomError("User alsready exits", HttpStatus.ALREADYEXISTS);
+      }
+
+      const getOtp = await this.otpRepository.findOtpByEmail(email);
+      if (!getOtp) {
+        throw new CustomError("otp expired or invalid!", HttpStatus.NOTFOUND);
+      }
+
+      const findOtp = getOtp.find((x) => x.otp == otp);
+      if (findOtp && type === "forgetPassword") {
+        return {
+          success: true,
+          message: "otp verified Successfully!",
+          role: checkUser?.role,
+        };
+      }
+
+      const hashedPassword = await hashPassword(password);
+      if (findOtp) {
+        const userData: any = {
+          fullName,
+          email,
+          phoneNumber,
+          password: hashedPassword,
+          role: role as "receptionist" | "housekeeper" | "admin",
+          isVerified: true,
+        };
+
+        const newUser = await this.userRepository.create(userData);
+        await this.otpRepository.deleteOtp(email);
+
+        const accessToken = generateAccessToken({
+          id: newUser._id.toString(),
+          email,
+          role: newUser.role,
+        });
+        const refreshToken = generateRefreshToken({
+          id: newUser._id.toString(),
+          email,
+          role: newUser.role,
+        });
+
+        // await sendUserData('userExchange', newUser)
+
+        return {
+          success: true,
+          message: "OTP verified successfully!",
+          role: newUser.role,
+          accessToken,
+          refreshToken,
+          user: newUser,
+        };
+      } else {
+        throw new CustomError("otp expired or invalid!", HttpStatus.NOTFOUND);
+      }
     } catch (error) {
       throw error;
     }

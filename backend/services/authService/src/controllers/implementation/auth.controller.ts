@@ -4,7 +4,7 @@ import { IAuthController } from "../interface/IAuth.controller";
 import { IAuthService } from "../../services/interface/IAuth.service";
 import { HttpStatus } from "../../enums/http.status";
 import { successResponse } from "../../utils/response.handler";
-
+import { setRefreshTokenCookie } from "../../utils/tokencookie.util";
 
 interface CustomeRequest extends Request {
   user?: string | JwtPayload;
@@ -31,5 +31,34 @@ export class AuthController implements IAuthController {
     } catch (error) {
       next(error);
     }
+  }
+
+  async verifyOtp(req: Request, res: Response) {
+    try {
+      const { fullName, email, phoneNumber, password, role, otp, type } =
+        req.body;
+      // give here a validator
+
+      const response = await this.authService.verifySignUpOtp(
+        fullName,
+        email,
+        phoneNumber,
+        password,
+        role,
+        otp,
+        type
+      );
+      console.log(response, "response in otp verification controller ");
+
+      if (response?.success) {
+        setRefreshTokenCookie(res, response.refreshToken!, role);
+
+        return successResponse(res, HttpStatus.OK, response?.message, {
+          accessToken: response.accessToken,
+          role,
+          user: response.data?.user,
+        });
+      }
+    } catch (error) {}
   }
 }

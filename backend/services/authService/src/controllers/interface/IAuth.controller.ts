@@ -6,4 +6,5 @@ interface CustomeRequest extends Request {
 
 export interface IAuthController {
   signup(req: Request, res: Response, next: NextFunction): Promise<void>;
+  verifyOtp(req: Request, res: Response, next: NextFunction): Promise<void>;
 }

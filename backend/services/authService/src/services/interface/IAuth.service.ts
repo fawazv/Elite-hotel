@@ -1,5 +1,29 @@
 import IUser from "../../interfaces/IUser";
 
+type common = {
+  success: boolean;
+  message: string;
+  data?: {
+    user?: IUser;
+    role?: string;
+    accessToken?: string;
+    refreshToken?: string;
+  };
+  refreshToken?: string;
+  accessToken?: string;
+  exist?: boolean;
+  user?: object;
+};
+
 export interface IAuthService {
   signUp(email: string): Promise<void>;
+  verifySignUpOtp(
+    fullName: string,
+    email: string,
+    phoneNumber: string,
+    password: string,
+    role: string,
+    otp: string,
+    type: string
+  ): Promise<common | undefined>;
 }
