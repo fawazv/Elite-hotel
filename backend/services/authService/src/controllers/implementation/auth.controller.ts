@@ -71,4 +71,19 @@ export class AuthController implements IAuthController {
       next(error);
     }
   }
+
+  async signin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, password, role } = req.body;
+      const response = await this.authService.signIn(email, password, role);
+
+      setRefreshTokenCookie(res, response.refreshToken!, role);
+      return successResponse(res, HttpStatus.OK, response?.message!, {
+        success: response?.success,
+        data: response?.data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
