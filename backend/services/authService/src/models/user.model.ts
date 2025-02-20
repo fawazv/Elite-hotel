@@ -20,8 +20,8 @@ const userSchema = new Schema<IUser>({
   isVerified: { type: Boolean, required: true, default: false },
   isApproved: {
     type: String,
-    enum: ["pending", "approved", "rejected"],
     required: true,
+    default: "pending",
   },
   createdAt: { type: Date, default: Date.now() },
   updatedAt: { type: Date, default: null },
