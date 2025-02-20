@@ -7,10 +7,6 @@ import { signUpSchema } from "../validators/user.validator,";
 const authRoute = express.Router();
 
 authRoute.post("/signup", authController.signup.bind(authController));
-authRoute.post(
-  "/otp-signup",
-  validateRequest(signUpSchema),
-  authController.verifyOtp.bind(authController)
-);
+authRoute.post("/otp-signup", authController.verifyOtp.bind(authController));
 
 export default authRoute;
