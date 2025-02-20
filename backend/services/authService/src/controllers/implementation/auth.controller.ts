@@ -55,7 +55,7 @@ export class AuthController implements IAuthController {
         return successResponse(res, HttpStatus.OK, response?.message, {
           accessToken: response.accessToken,
           role,
-          user: response.data?.user,
+          user: response.user,
         });
       }
     } catch (error) {}
