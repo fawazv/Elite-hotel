@@ -38,6 +38,8 @@ const signUpSchema = Joi.object({
       "string.email": "Email must be a valid email",
       "any.required": "Email is a required field",
     }),
+  otp: Joi.string().length(6).required(),
+  type: Joi.string().valid("signup", "forgotPassword").required(),
 });
 
 const registerAdminSchema = Joi.object({
