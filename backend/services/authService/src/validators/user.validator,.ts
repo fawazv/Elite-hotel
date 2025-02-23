@@ -85,14 +85,15 @@ const registerAdminSchema = Joi.object({
     }),
 });
 
-const loginSchema = Joi.object({
-  username: Joi.string().alphanum().min(3).max(30).required().messages({
-    "string.base": "Username should be a type of text",
-    "string.empty": "Username cannot be an empty field",
-    "string.min": "Username should have a minimum length of {#limit}",
-    "string.max": "Username should have a maximum length of {#limit}",
-    "any.required": "Username is a required field",
-  }),
+const signInSchema = Joi.object({
+  email: Joi.string()
+    .email({ minDomainSegments: 2, tlds: { allow: ["com", "net", "org"] } })
+    .required()
+    .messages({
+      "string.email": "Email must be a valid email",
+      "any.required": "Email is a required field",
+    }),
+
   password: Joi.string().min(6).max(50).required().messages({
     "string.base": "Password should be a type of text",
     "string.empty": "Password cannot be empty",
@@ -100,6 +101,14 @@ const loginSchema = Joi.object({
     "string.max": "Password should have at most 50 characters",
     "any.required": "Password is required",
   }),
+
+  role: Joi.string()
+    .valid("Receptionalist", "Housekeeper")
+    .required()
+    .messages({
+      "any.only": "Role must be one of [Receptionalist, Housekeeper]",
+      "any.required": "Role is a required field",
+    }),
 });
 
-export { signUpSchema, registerAdminSchema, loginSchema };
+export { signUpSchema, registerAdminSchema, signInSchema };
