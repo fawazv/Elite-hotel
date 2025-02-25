@@ -13,6 +13,12 @@ import {
 import { IAuthService } from "../interface/IAuth.service";
 import bcrypt from "bcryptjs";
 
+interface PasswordUpdate {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 export class AuthService implements IAuthService {
   private userRepository: IUserRepository;
   private otpRepository: OtpRepository;
@@ -253,6 +259,37 @@ export class AuthService implements IAuthService {
         hashedPassword
       );
       return { success: true, message: "New password updated" };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async passwordUpdate(id: string, data: PasswordUpdate) {
+    try {
+      const { currentPassword, newPassword, confirmPassword } = data;
+      const checkUser = await this.userRepository.findById(id);
+      if (!checkUser) {
+        throw new CustomError("user not found", HttpStatus.NOTFOUND);
+      }
+      const checkPassword = await bcrypt.compare(
+        currentPassword,
+        checkUser.password
+      );
+
+      if (!checkPassword) {
+        return { success: false, message: "wrong password" };
+      }
+      if (newPassword !== confirmPassword) {
+        return { success: false, message: "password do not match" };
+      }
+      const hashedPassword = await hashPassword(newPassword);
+      const updatePassword = await this.userRepository.update(id, {
+        password: hashedPassword,
+      });
+      if (!updatePassword) {
+        return { success: false, message: "not updated" };
+      }
+      return { success: true, message: "updated" };
     } catch (error) {
       throw error;
     }
