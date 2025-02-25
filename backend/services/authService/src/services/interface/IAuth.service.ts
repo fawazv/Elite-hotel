@@ -41,4 +41,9 @@ export interface IAuthService {
     role: string
   ): Promise<ApiResponse | undefined>;
   sendMail(email: string): Promise<ApiResponse | undefined>;
+  resetPassword(
+    email: string,
+    password: string,
+    confirmPassword: string
+  ): Promise<ApiResponse | undefined>;
 }
