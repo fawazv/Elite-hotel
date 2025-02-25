@@ -218,4 +218,20 @@ export class AuthService implements IAuthService {
       throw error;
     }
   }
+
+  async sendMail(email: string) {
+    try {
+      const isUser = await this.userRepository.findByEmail(email);
+      if (!isUser || isUser.isVerified === false) {
+        throw new CustomError("user not found!", HttpStatus.NOTFOUND);
+      }
+      const otp = generateOtp();
+
+      await sentOTPEmail(email, otp);
+      await this.otpRepository.create({ email, otp });
+      return { success: true, message: "OTP send to user email" };
+    } catch (error) {
+      throw error;
+    }
+  }
 }

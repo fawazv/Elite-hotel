@@ -108,4 +108,17 @@ export class AuthController implements IAuthController {
       next(error);
     }
   }
+
+  async forgetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.body;
+      const response = await this.authService.sendMail(email);
+      return successResponse(res, HttpStatus.OK, response?.message!, {
+        success: response?.success,
+        response: response,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 }

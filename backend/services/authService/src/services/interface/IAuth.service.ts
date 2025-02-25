@@ -40,4 +40,5 @@ export interface IAuthService {
     phoneNumber: string,
     role: string
   ): Promise<ApiResponse | undefined>;
+  sendMail(email: string): Promise<ApiResponse | undefined>;
 }
