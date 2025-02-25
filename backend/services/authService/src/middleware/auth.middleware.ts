@@ -1,6 +1,8 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 import { User } from "../models/user.model";
+import CustomError from "../utils/CustomError";
+import { HttpStatus } from "../enums/http.status";
 
 interface CustomeRequest extends Request {
   user?: string | JwtPayload;
@@ -14,9 +16,10 @@ const authenticateToken = (
   try {
     const token = req.headers["authorization"];
     if (!token) {
-      return res
-        .status(401)
-        .json({ message: "Access denied . No token provided" });
+      throw new CustomError(
+        "Access denied. No token provided",
+        HttpStatus.UNAUTHORIZED
+      );
     }
     const newToken = token?.split(" ")[1];
     const secret = process.env.ACCESS_TOKEN_SECRET;
@@ -25,6 +28,7 @@ const authenticateToken = (
     if (!secret) {
       throw new Error("Access token secret is not defined");
     }
+
     jwt.verify(newToken, secret, async (err, user) => {
       if (err) {
         return res.status(401).json({ message: "Invalid token" });
