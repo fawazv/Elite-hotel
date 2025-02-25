@@ -218,4 +218,13 @@ export class AuthController implements IAuthController {
       next(error);
     }
   }
+
+  async logout(req: Request, res: Response, next: NextFunction) {
+    try {
+      res.clearCookie("refreshToken");
+      res.json({ message: "Logged out successfully" });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
