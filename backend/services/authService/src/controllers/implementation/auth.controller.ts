@@ -89,11 +89,12 @@ export class AuthController implements IAuthController {
 
   async googleLogin(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email, name, role } = req.body;
+      const { email, name, phoneNumber, role } = req.body;
 
       const response = await this.authService.signInWithGoogle(
         email,
         name,
+        phoneNumber,
         role
       );
 

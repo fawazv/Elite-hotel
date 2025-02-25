@@ -37,6 +37,7 @@ export interface IAuthService {
   signInWithGoogle(
     email: string,
     name: string,
+    phoneNumber: string,
     role: string
   ): Promise<ApiResponse | undefined>;
 }

@@ -1,4 +1,5 @@
 import { HttpStatus } from "../../enums/http.status";
+import { sendUserData } from "../../events/rabbitmq/producers/producer";
 import { OtpRepository } from "../../repository/implementation/otp.repository";
 import IUserRepository from "../../repository/interface/IUser.repository";
 import CustomError from "../../utils/CustomError";
@@ -90,8 +91,6 @@ export class AuthService implements IAuthService {
           role: user.role,
         });
 
-        // await sendUserData('userExchange', newUser)
-
         return {
           success: true,
           message: "OTP verified successfully!",
@@ -152,10 +151,17 @@ export class AuthService implements IAuthService {
     } catch (error) {}
   }
 
-  async signInWithGoogle(email: string, name: string, role: string) {
+  async signInWithGoogle(
+    email: string,
+    name: string,
+    phoneNumber: string,
+    role: string
+  ) {
     try {
       let userData = await this.userRepository.findByEmail(email);
       if (userData) {
+        await sendUserData("userExchange", userData);
+
         const accessToken = generateAccessToken({
           id: userData._id.toString(),
           email,
@@ -182,10 +188,13 @@ export class AuthService implements IAuthService {
       userData = await this.userRepository.create({
         email,
         fullName: name,
+        phoneNumber,
         password: hashedPassword,
-        role: role as "receptionist" | "housekeeper" | "admin",
+        role: role as "receptionist" | "housekeeper",
         isVerified: true,
       });
+
+      await sendUserData("userExchange", userData);
 
       const accessToken = generateAccessToken({
         id: userData._id.toString(),
