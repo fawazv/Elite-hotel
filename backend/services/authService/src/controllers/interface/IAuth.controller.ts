@@ -21,4 +21,9 @@ export interface IAuthController {
     res: Response,
     next: NextFunction
   ): Promise<void>;
+  changePassowrd(
+    req: CustomeRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void>;
 }
