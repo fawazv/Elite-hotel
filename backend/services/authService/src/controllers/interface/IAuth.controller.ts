@@ -10,4 +10,9 @@ export interface IAuthController {
   resendOtp(req: Request, res: Response, next: NextFunction): Promise<void>;
   signin(req: Request, res: Response, next: NextFunction): Promise<void>;
   googleLogin(req: Request, res: Response, next: NextFunction): Promise<void>;
+  forgetPassword(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void>;
 }
