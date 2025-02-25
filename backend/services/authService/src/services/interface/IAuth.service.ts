@@ -46,4 +46,5 @@ export interface IAuthService {
     password: string,
     confirmPassword: string
   ): Promise<ApiResponse | undefined>;
+  passwordUpdate(id: string, data: object): Promise<ApiResponse | undefined>;
 }
