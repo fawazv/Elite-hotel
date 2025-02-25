@@ -22,4 +22,8 @@ authRoute.post(
   "/google-signin",
   authController.googleLogin.bind(authController)
 );
+authRoute.post(
+  "/forget-password",
+  authController.forgetPassword.bind(authController)
+);
 export default authRoute;
