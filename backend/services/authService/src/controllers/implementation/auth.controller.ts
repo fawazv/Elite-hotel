@@ -192,4 +192,30 @@ export class AuthController implements IAuthController {
       next(error);
     }
   }
+
+  async changePassword(req: CustomeRequest, res: Response, next: NextFunction) {
+    try {
+      const user = req.user as JwtPayload;
+      if (!user) {
+        throw new CustomError("user does not exist", HttpStatus.UNAUTHORIZED);
+      }
+      const data = req.body;
+
+      const passwordUpdate = await this.authService.passwordUpdate(
+        user.id,
+        data
+      );
+      if (passwordUpdate?.success) {
+        res
+          .status(HttpStatus.OK)
+          .json({ success: true, message: passwordUpdate?.message });
+      } else {
+        res
+          .status(HttpStatus.OK)
+          .json({ success: false, message: passwordUpdate?.message });
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
 }
