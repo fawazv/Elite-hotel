@@ -5,6 +5,8 @@ import { IAuthService } from "../../services/interface/IAuth.service";
 import { HttpStatus } from "../../enums/http.status";
 import { successResponse } from "../../utils/response.handler";
 import { setRefreshTokenCookie } from "../../utils/tokencookie.util";
+import { generateAccessToken } from "../../utils/token.util";
+import CustomError from "../../utils/CustomError";
 
 interface CustomeRequest extends Request {
   user?: string | JwtPayload;
@@ -135,6 +137,58 @@ export class AuthController implements IAuthController {
         response: response,
       });
     } catch (error) {
+      next(error);
+    }
+  }
+
+  async setNewAccessToken(req: Request, res: Response, next: NextFunction) {
+    try {
+      const refreshToken = req.cookies.refreshToken;
+      if (!refreshToken) {
+        throw new CustomError(
+          "No refresh token provided",
+          HttpStatus.FORBIDDEN
+        );
+      }
+      const secret = process.env.REFRESH_TOKEN_SECRET;
+      if (!secret) {
+        throw new CustomError(
+          "internal server error",
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
+      const decoded = jwt.verify(refreshToken, secret);
+
+      if (
+        typeof decoded === "object" &&
+        decoded !== null &&
+        "id" in decoded &&
+        "email" in decoded &&
+        "role" in decoded
+      ) {
+        // const newAccessToken = jwt.sign({ id: (decoded as JwtPayload).id, role: (decoded as JwtPayload).role }, process.env.ACCESS_TOKEN_SECRET!, {
+        //     expiresIn: '15m',
+        // });
+        const newAccessToken = generateAccessToken({
+          id: (decoded as JwtPayload).id,
+          email: (decoded as JwtPayload).email,
+          role: (decoded as JwtPayload).role,
+        });
+        return successResponse(res, HttpStatus.OK, "New access token setted", {
+          accessToken: newAccessToken,
+        });
+      } else {
+        res.clearCookie("refreshToken");
+        throw new CustomError("Invalid token payload", HttpStatus.FORBIDDEN);
+      }
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        res.clearCookie("refreshToken");
+        throw new CustomError(
+          "refresh token expired, please log in again",
+          HttpStatus.FORBIDDEN
+        );
+      }
       next(error);
     }
   }
