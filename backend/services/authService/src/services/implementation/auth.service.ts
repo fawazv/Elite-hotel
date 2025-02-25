@@ -152,7 +152,7 @@ export class AuthService implements IAuthService {
     } catch (error) {}
   }
 
-  async singInWithGoogle(email: string, name: string, role: string) {
+  async signInWithGoogle(email: string, name: string, role: string) {
     try {
       let userData = await this.userRepository.findByEmail(email);
       if (userData) {
