@@ -18,4 +18,8 @@ authRoute.post(
   validateRequest(signInSchema),
   authController.signin.bind(authController)
 );
+authRoute.post(
+  "/google-signin",
+  authController.googleLogin.bind(authController)
+);
 export default authRoute;
