@@ -118,19 +118,24 @@ export class AuthController implements IAuthController {
         response: response,
       });
     } catch (error) {
-      throw error;
+      next(error);
     }
   }
 
-  async resetPassword(req: Request, res: Response) {
+  async resetPassword(req: Request, res: Response, next: NextFunction) {
     try {
-        const { email, password, confirmPassword } = req.body
-        const response = await this.authService.resetPassword(email, password, confirmPassword)
-        return successResponse(res, HttpStatus.OK, response?.message!, {
-          success: response?.success,
-          response: response,
-        });
+      const { email, password, confirmPassword } = req.body;
+      const response = await this.authService.resetPassword(
+        email,
+        password,
+        confirmPassword
+      );
+      return successResponse(res, HttpStatus.OK, response?.message!, {
+        success: response?.success,
+        response: response,
+      });
     } catch (error) {
-        console.error('Error founded in reset password', error);
+      next(error);
     }
+  }
 }

@@ -234,4 +234,27 @@ export class AuthService implements IAuthService {
       throw error;
     }
   }
+
+  async resetPassword(
+    email: string,
+    password: string,
+    confirmPassword: string
+  ) {
+    try {
+      if (password !== confirmPassword) {
+        return { success: false, message: "Password do not match" };
+      }
+      const hashedPassword = await hashPassword(password);
+
+      // const changePassword = await this.userRepository.updatePasswordUser(email, hashedPassword)
+      const changePassword = await this.userRepository.updateUserField(
+        email,
+        "password",
+        hashedPassword
+      );
+      return { success: true, message: "New password updated" };
+    } catch (error) {
+      throw error;
+    }
+  }
 }
