@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request, response, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { IAuthController } from "../interface/IAuth.controller";
 import { IAuthService } from "../../services/interface/IAuth.service";
@@ -80,6 +80,27 @@ export class AuthController implements IAuthController {
       setRefreshTokenCookie(res, response?.refreshToken!, role);
       return successResponse(res, HttpStatus.OK, response?.message!, {
         success: response?.success,
+        data: response?.data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async googleLogin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, name, role } = req.body;
+
+      const response = await this.authService.signInWithGoogle(
+        email,
+        name,
+        role
+      );
+
+      setRefreshTokenCookie(res, response?.refreshToken!, role);
+      return successResponse(res, HttpStatus.OK, response?.message!, {
+        success: response?.success,
+        exist: response?.exist,
         data: response?.data,
       });
     } catch (error) {

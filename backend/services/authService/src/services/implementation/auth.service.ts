@@ -3,7 +3,7 @@ import { OtpRepository } from "../../repository/implementation/otp.repository";
 import IUserRepository from "../../repository/interface/IUser.repository";
 import CustomError from "../../utils/CustomError";
 import { sentOTPEmail } from "../../utils/email.util";
-import { hashPassword } from "../../utils/hash.util";
+import { hashPassword, randomPassword } from "../../utils/hash.util";
 import { generateOtp } from "../../utils/otp.util";
 import {
   generateAccessToken,
@@ -150,5 +150,63 @@ export class AuthService implements IAuthService {
         data: { user: checkUser, accessToken, refreshToken },
       };
     } catch (error) {}
+  }
+
+  async singInWithGoogle(email: string, name: string, role: string) {
+    try {
+      let userData = await this.userRepository.findByEmail(email);
+      if (userData) {
+        const accessToken = generateAccessToken({
+          id: userData._id.toString(),
+          email,
+          role: userData.role,
+        });
+        const refreshToken = generateRefreshToken({
+          id: userData._id.toString(),
+          email,
+          role: userData.role,
+        });
+
+        return {
+          success: true,
+          message: "Sign in with google completed",
+          role: role,
+          exist: true,
+          data: { user: userData, accessToken, refreshToken },
+        };
+      }
+
+      const password = randomPassword;
+
+      const hashedPassword = await hashPassword(password);
+      userData = await this.userRepository.create({
+        email,
+        fullName: name,
+        password: hashedPassword,
+        role: role as "receptionist" | "housekeeper" | "admin",
+        isVerified: true,
+      });
+
+      const accessToken = generateAccessToken({
+        id: userData._id.toString(),
+        email,
+        role: userData.role,
+      });
+      const refreshToken = generateRefreshToken({
+        id: userData._id.toString(),
+        email,
+        role: userData.role,
+      });
+
+      return {
+        success: true,
+        message: "Sign in with google completed",
+        role: role,
+        exist: false,
+        data: { user: userData, accessToken, refreshToken },
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 }

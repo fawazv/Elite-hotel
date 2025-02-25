@@ -34,4 +34,9 @@ export interface IAuthService {
     password: string,
     role: string
   ): Promise<ApiResponse | undefined>;
+  signInWithGoogle(
+    email: string,
+    name: string,
+    role: string
+  ): Promise<ApiResponse | undefined>;
 }
