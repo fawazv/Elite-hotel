@@ -26,4 +26,8 @@ authRoute.post(
   "/forget-password",
   authController.forgetPassword.bind(authController)
 );
+authRoute.post(
+  "/reset-password",
+  authController.resetPassword.bind(authController)
+);
 export default authRoute;
