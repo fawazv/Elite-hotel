@@ -3,6 +3,7 @@ import express from "express";
 import { authController } from "../config/container";
 import validateRequest from "../middleware/validateRequest";
 import { signInSchema, signUpSchema } from "../validators/user.validator,";
+import authenticateToken from "../middleware/auth.middleware";
 
 const authRoute = express.Router();
 
@@ -33,5 +34,10 @@ authRoute.post(
 authRoute.get(
   "/refresh-token",
   authController.setNewAccessToken.bind(authController)
+);
+authRoute.patch(
+  "/change-password",
+  authenticateToken,
+  authController.changePassword.bind(authController)
 );
 export default authRoute;
