@@ -10,8 +10,12 @@ const app = express();
 
 dotenv.config();
 
+rabbitmqConnect().then(() => {
+  console.log("rabbitmq connected");
+});
+
 connectMongodb().then(() => {
-  console.log("its connected");
+  console.log("mongodb connected");
 });
 
 app.use(
