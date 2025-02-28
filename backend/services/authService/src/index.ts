@@ -20,7 +20,7 @@ connectMongodb().then(() => {
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "http://localhost:3000",
     credentials: true,
   })
 );
@@ -33,4 +33,4 @@ app.use("/", authRoute);
 // Global error handling middleware
 app.use(errorHandler);
 
-app.listen(3001, () => console.log(`server running on http://localhost:3001`));
+app.listen(4001, () => console.log(`server running on http://localhost:4001`));
