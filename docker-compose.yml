@@ -12,7 +12,7 @@ services:
       - ./backend/api-gateway/.env
     container_name: api-gateway
     ports:
-      - "3000:3000"
+      - "4000:4000"
     depends_on:
       - rabbitmq
       - auth-service
@@ -23,6 +23,6 @@ services:
       - ./backend/services/authService/.env
     container_name: elite-auth
     ports:
-      - "3001:3001"
+      - "4001:4001"
     depends_on:
       - rabbitmq
