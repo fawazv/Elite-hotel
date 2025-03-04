@@ -2,7 +2,7 @@ import { AuthController } from "../controllers/implementation/auth.controller";
 import Otp from "../models/otp.model";
 import { User } from "../models/user.model";
 import { OtpRepository } from "../repository/implementation/otp.repository";
-import { UserRepository } from "../repository/implementation/user.respository";
+import { UserRepository } from "../repository/implementation/user.repository";
 import { AuthService } from "../services/implementation/auth.service";
 
 // DEPENDENCY INJECTION
