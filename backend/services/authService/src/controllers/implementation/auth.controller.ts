@@ -147,7 +147,8 @@ export class AuthController implements IAuthController {
       if (!user) {
         throw new CustomError("user does not exist", HttpStatus.UNAUTHORIZED);
       }
-      const refreshToken = req.cookies[`refreshToken_${user?.role}`];
+      const refreshTokenName = `refreshToken_${user?.role!}`;
+      const refreshToken = req.cookies[refreshTokenName];
       if (!refreshToken) {
         throw new CustomError(
           "No refresh token provided",
