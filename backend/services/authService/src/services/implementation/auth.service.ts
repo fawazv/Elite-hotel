@@ -33,7 +33,7 @@ export class AuthService implements IAuthService {
       const existingUser = await this.userRepository.findByEmail(email);
 
       if (existingUser && existingUser.isVerified) {
-        throw new CustomError("User alsready exits", HttpStatus.ALREADYEXISTS);
+        throw new CustomError("User already exits", HttpStatus.ALREADYEXISTS);
       }
       const otp = generateOtp();
       await sentOTPEmail(email, otp);
