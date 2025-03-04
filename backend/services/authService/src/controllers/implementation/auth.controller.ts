@@ -143,7 +143,11 @@ export class AuthController implements IAuthController {
 
   async setNewAccessToken(req: Request, res: Response, next: NextFunction) {
     try {
-      const refreshToken = req.cookies.refreshToken;
+      const user = req.user as JwtPayload;
+      if (!user) {
+        throw new CustomError("user does not exist", HttpStatus.UNAUTHORIZED);
+      }
+      const refreshToken = req.cookies[`refreshToken_${user?.role}`];
       if (!refreshToken) {
         throw new CustomError(
           "No refresh token provided",
