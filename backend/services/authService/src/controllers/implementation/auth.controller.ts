@@ -141,7 +141,11 @@ export class AuthController implements IAuthController {
     }
   }
 
-  async setNewAccessToken(req: Request, res: Response, next: NextFunction) {
+  async setNewAccessToken(
+    req: CustomeRequest,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const user = req.user as JwtPayload;
       if (!user) {
