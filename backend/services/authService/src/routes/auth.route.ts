@@ -40,6 +40,6 @@ authRoute.patch(
   authenticateToken,
   authController.changePassword.bind(authController)
 );
-authRoute.post("logout", authController.logout.bind(authController));
+authRoute.post("/logout", authController.logout.bind(authController));
 
 export default authRoute;
