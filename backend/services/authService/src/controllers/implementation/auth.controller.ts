@@ -134,25 +134,16 @@ export class AuthController implements IAuthController {
       );
       return successResponse(res, HttpStatus.OK, response?.message!, {
         success: response?.success,
-        response: response,
       });
     } catch (error) {
       next(error);
     }
   }
 
-  async setNewAccessToken(
-    req: CustomeRequest,
-    res: Response,
-    next: NextFunction
-  ) {
+  async setNewAccessToken(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = req.user as JwtPayload;
-      if (!user) {
-        throw new CustomError("user does not exist", HttpStatus.UNAUTHORIZED);
-      }
-      const refreshTokenName = `refreshToken_${user?.role!}`;
-      const refreshToken = req.cookies[refreshTokenName];
+      const refreshToken = req.cookies.refreshToken;
+
       if (!refreshToken) {
         throw new CustomError(
           "No refresh token provided",

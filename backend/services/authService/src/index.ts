@@ -5,6 +5,7 @@ import cors from "cors";
 import { rabbitmqConnect } from "./config/rabbitmq";
 import authRoute from "./routes/auth.route";
 import connectMongodb from "./config/db.config";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
@@ -18,6 +19,7 @@ connectMongodb().then(() => {
   console.log("mongodb connected");
 });
 
+app.use(cookieParser());
 app.use(
   cors({
     origin: "http://localhost:3000",

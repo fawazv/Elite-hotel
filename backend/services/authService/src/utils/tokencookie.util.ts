@@ -5,9 +5,7 @@ export const setRefreshTokenCookie = (
   refreshToken: string,
   role: string
 ) => {
-  let refreshTokenName: string;
-  refreshTokenName = `refreshToken_${role}`;
-  res.cookie(refreshTokenName, refreshToken, {
+  res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     // sameSite: 'none',
