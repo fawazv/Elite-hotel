@@ -54,7 +54,7 @@ export class AuthService implements IAuthService {
   ) {
     try {
       const checkUser = await this.userRepository.findByEmail(email);
-      if (checkUser && checkUser.isVerified && type !== "forgotPassword") {
+      if (checkUser && checkUser.isVerified && type !== "forgetPassword") {
         throw new CustomError("User alsready exits", HttpStatus.ALREADYEXISTS);
       }
 
