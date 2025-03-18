@@ -1,6 +1,7 @@
 // components/HeroSection.tsx
 import Image from "next/image";
 import { PT_Serif } from "next/font/google";
+import HeroButton from "./ui/HeroButton";
 
 const ptSerifBold = PT_Serif({
   subsets: ["latin"],
@@ -39,12 +40,8 @@ export default function HeroSection() {
             of the city
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <button className="bg-primary text-white px-8 py-3 rounded-lg font-medium hover:bg-primary/90 transition-all">
-              Book Your Stay
-            </button>
-            <button className="bg-white/10 text-white border border-white/30 backdrop-blur-sm px-8 py-3 rounded-lg font-medium hover:bg-white/20 transition-all">
-              Explore Rooms
-            </button>
+            <HeroButton>Book Your stay</HeroButton>
+            <HeroButton href="/rooms">Explore Rooms</HeroButton>
           </div>
         </div>
       </div>

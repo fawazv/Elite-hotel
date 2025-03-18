@@ -159,7 +159,13 @@ export default function Header({ isAdmin = false }) {
             </div>
           ) : (
             <div className="flex items-center gap-4">
-              <button className=" bg-white text-primary px-5 py-2 rounded-lg font-medium border border-primary hover:bg-gray-50/75 transition-colors">
+              <button
+                className={`${
+                  scrolled
+                    ? "bg-white text-primary border-primary hover:bg-gray-50/75 transition-colors"
+                    : "bg-white/5 text-white border border-white/30 backdrop-blur-sm hover:bg-white/20 transition-all"
+                }  px-5 py-2 rounded-lg font-medium border `}
+              >
                 Sign In
               </button>
               <button className="bg-primary text-white px-5 py-2 rounded-lg font-medium hover:bg-primary/75 transition-colors">
