@@ -1,10 +1,10 @@
 // page.tsx
-import Header from "@/components/Header";
+import Header from "@/components/layout/Header";
 import HeroSection from "@/components/HeroSection";
 import RoomCard from "@/components/RoomCard";
 import Services from "@/components/Services";
 import ContactForm from "@/components/ContactForm";
-import Footer from "@/components/Footer";
+import Footer from "@/components/layout/Footer";
 import RoomBookingSearch from "@/components/RoomBookingSearch";
 import Testimonials from "@/components/Testimonials";
 import SearchResults from "@/components/SearchResult";

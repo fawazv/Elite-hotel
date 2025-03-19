@@ -2,9 +2,9 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import NavButton from "./ui/NavButton";
-import Sidebar from "./ui/Sidebar";
-import MobileMenuButton from "./ui/MobileMenuButton";
+import NavButton from "../ui/NavButton";
+import Sidebar from "./Sidebar";
+import MobileMenuButton from "../ui/MobileMenuButton";
 
 // Add a prop for the user role
 export default function Header({ isAdmin = false }) {
