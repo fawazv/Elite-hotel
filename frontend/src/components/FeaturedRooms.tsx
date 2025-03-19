@@ -41,7 +41,7 @@ const rooms = [
   },
 ];
 
-export default function RoomCard() {
+export default function FeaturedRooms() {
   return (
     <section id="rooms">
       <div className="text-center mb-12">

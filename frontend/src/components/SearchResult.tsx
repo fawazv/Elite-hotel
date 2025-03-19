@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
+import { useState, useEffect } from "react";
+import { RoomCard } from "@/components/ui/RoomCard";
+import { Pagination } from "@/components/ui/Pagination";
+import { SortSelect } from "@/components/ui/SortSelect";
 
 interface Room {
   id: number;
@@ -24,258 +25,126 @@ interface SearchResultsProps {
 export default function SearchResults({
   results = demoResults,
   currentPage = 1,
-  totalPages = 6,
+  totalPages = Math.ceil(demoResults.length / 4),
 }: SearchResultsProps) {
   const [page, setPage] = useState(currentPage);
+  const [sortOption, setSortOption] = useState("recommended");
+  const [filteredResults, setFilteredResults] = useState<Room[]>([]);
+  const [displayedResults, setDisplayedResults] = useState<Room[]>([]);
+  const roomsPerPage = 4;
+
+  // Apply sorting and filtering to results
+  useEffect(() => {
+    let sorted = [...results];
+
+    // Apply sorting
+    switch (sortOption) {
+      case "price-asc":
+        sorted.sort((a, b) => a.price - b.price);
+        break;
+      case "price-desc":
+        sorted.sort((a, b) => b.price - a.price);
+        break;
+      case "rating-desc":
+        // Assuming we had a rating property, for now this just keeps the original order
+        break;
+      default:
+        // "recommended" - default sorting or could be based on other criteria
+        break;
+    }
+
+    setFilteredResults(sorted);
+  }, [results, sortOption]);
+
+  // Calculate displayed results based on current page
+  useEffect(() => {
+    const startIndex = (page - 1) * roomsPerPage;
+    const endIndex = startIndex + roomsPerPage;
+    setDisplayedResults(filteredResults.slice(startIndex, endIndex));
+  }, [filteredResults, page]);
+
+  // Calculate total pages based on filtered results
+  const calculatedTotalPages = Math.ceil(filteredResults.length / roomsPerPage);
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    // In a real implementation, you would fetch new results here
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollToSearchResults();
+  };
+
+  const handleSortChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortOption(event.target.value);
+    setPage(1); // Reset to first page when sorting changes
+  };
+
+  const handleClearSearch = () => {
+    setPage(1);
+    setSortOption("recommended");
+    scrollToSearchResults();
+  };
+
+  const scrollToSearchResults = () => {
+    setTimeout(() => {
+      // Reset the search and scroll to the section element
+      const sectionElement = document.querySelector(".search-result");
+
+      if (sectionElement) {
+        // Calculate position with offset for space at the top
+        const elementPosition = sectionElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - 80; // 80px space at the top
+
+        // Scroll to that position
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: "smooth",
+        });
+      } else {
+        // Fallback to scrolling to the top of the page if element not found
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 100); // Small delay to ensure DOM updates
   };
 
   return (
-    <section className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+    <section className="search-result max-w-6xl mx-auto px-4 sm:px-6 py-8">
       <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 border border-gray-100">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
             <h2 className="text-2xl font-serif font-bold">Search Results</h2>
             <p className="text-gray-600 mt-1">
-              Found {results.length} rooms matching your criteria
+              Found {filteredResults.length} rooms matching your criteria
             </p>
           </div>
 
           <div className="mt-4 md:mt-0">
-            <select
-              className="px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-              aria-label="Sort results"
-            >
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-              <option value="rating-desc">Rating: High to Low</option>
-              <option value="recommended">Recommended</option>
-            </select>
+            <SortSelect value={sortOption} onChange={handleSortChange} />
           </div>
         </div>
 
         <div className="space-y-6">
-          {results.map((room) => (
-            <div
-              key={room.id}
-              className="flex flex-col md:flex-row border border-gray-200 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-primary/20 focus-within:ring-2 focus-within:ring-primary/20"
-            >
-              <div className="relative w-full md:w-72 h-60">
-                <Image
-                  src={room.image}
-                  alt={room.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 280px"
-                  className="transition-transform duration-700 group-hover:scale-105 object-cover"
-                />
-                <div className="absolute top-4 left-4 bg-white text-primary font-medium px-3 py-1 rounded-full text-sm shadow-sm">
-                  {room.type}
-                </div>
-              </div>
-
-              <div className="flex-1 p-6 flex flex-col">
-                <div className="flex flex-col md:flex-row justify-between">
-                  <h3 className="text-xl font-bold text-gray-800">
-                    {room.name}
-                  </h3>
-                  <div className="flex items-center mt-2 md:mt-0">
-                    <div className="flex items-center text-yellow-500">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                      </svg>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                      </svg>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                      </svg>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                      </svg>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="opacity-40"
-                      >
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                      </svg>
-                      <span className="ml-2 text-gray-700 text-sm">4.0</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 mt-3 text-sm text-gray-600">
-                  <div className="flex items-center gap-1">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                    </svg>
-                    {room.size}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="9" cy="7" r="4"></circle>
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                    </svg>
-                    {room.capacity}
-                  </div>
-                </div>
-
-                <p className="mt-3 text-gray-600">{room.description}</p>
-
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {room.amenities.map((amenity, index) => (
-                    <span
-                      key={index}
-                      className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs"
-                    >
-                      {amenity}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-6 pt-4 border-t border-gray-100">
-                  <div className="text-gray-800">
-                    <span className="text-2xl font-bold text-primary">
-                      ${room.price}
-                    </span>
-                    <span className="text-gray-600 text-sm"> / night</span>
-                  </div>
-
-                  <Link href={`/rooms/${room.id}`} className="mt-3 sm:mt-0">
-                    <button className="w-full sm:w-auto bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-primary/90 transition-all focus:ring-2 focus:ring-primary/50 focus:outline-none">
-                      View Room Now
-                    </button>
-                  </Link>
-                </div>
-              </div>
-            </div>
+          {displayedResults.map((room) => (
+            <RoomCard key={room.id} room={room} />
           ))}
         </div>
 
+        {/* Show message when no results */}
+        {displayedResults.length === 0 && (
+          <div className="py-12 text-center">
+            <p className="text-lg text-gray-600">
+              No rooms match your criteria
+            </p>
+          </div>
+        )}
+
         {/* Pagination */}
-        <div className="flex justify-center mt-8">
-          <nav className="flex items-center gap-1" aria-label="Pagination">
-            <button
-              onClick={() => handlePageChange(page - 1)}
-              disabled={page === 1}
-              className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Previous page"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-            </button>
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-              (pageNum) => (
-                <button
-                  key={pageNum}
-                  onClick={() => handlePageChange(pageNum)}
-                  className={`w-10 h-10 flex items-center justify-center rounded-md transition-colors ${
-                    pageNum === page
-                      ? "bg-primary text-white"
-                      : "hover:bg-gray-100 text-gray-700"
-                  }`}
-                  aria-label={`Page ${pageNum}`}
-                  aria-current={pageNum === page ? "page" : undefined}
-                >
-                  {pageNum}
-                </button>
-              )
-            )}
-
-            <button
-              onClick={() => handlePageChange(page + 1)}
-              disabled={page === totalPages}
-              className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Next page"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-          </nav>
-        </div>
+        <Pagination
+          currentPage={page}
+          totalPages={calculatedTotalPages}
+          onPageChange={handlePageChange}
+        />
 
         <div className="mt-8 text-center">
           <button
-            onClick={() => {
-              // In a real implementation, reset the search
-              window.location.href = "/";
-            }}
+            onClick={handleClearSearch}
             className="text-gray-600 hover:text-primary flex items-center justify-center gap-2 mx-auto transition-colors"
           >
             <svg
@@ -300,7 +169,7 @@ export default function SearchResults({
   );
 }
 
-// Demo data to show search results
+// Demo data to show search results - would be replaced with actual API data
 const demoResults: Room[] = [
   {
     id: 1,
@@ -334,7 +203,7 @@ const demoResults: Room[] = [
   },
   {
     id: 3,
-    name: "Single View",
+    name: "Deluxe Single",
     type: "Deluxe",
     price: 149,
     image: "/rooms/Room3.png",
@@ -349,5 +218,64 @@ const demoResults: Room[] = [
     ],
     size: "30m²",
     capacity: "1 Person",
+  },
+  {
+    id: 4,
+    name: "Garden View",
+    type: "Deluxe",
+    price: 189,
+    image: "/rooms/Room3.png",
+    description:
+      "Elegant room with a private balcony overlooking our beautiful gardens.",
+    amenities: [
+      "Free WiFi",
+      "TV",
+      "Breakfast",
+      "Premium Bedding",
+      "Coffee Machine",
+      "Balcony",
+    ],
+    size: "35m²",
+    capacity: "2 People",
+  },
+  {
+    id: 5,
+    name: "Junior Suite",
+    type: "Premium",
+    price: 219,
+    image: "/rooms/Room2.png",
+    description:
+      "Spacious junior suite with separate living area and luxury amenities.",
+    amenities: [
+      "Free WiFi",
+      "TV",
+      "Breakfast",
+      "Mini Bar",
+      "Coffee Machine",
+      "Sitting Area",
+    ],
+    size: "45m²",
+    capacity: "2-3 People",
+  },
+  {
+    id: 6,
+    name: "Executive Suite",
+    type: "Premium",
+    price: 299,
+    image: "/rooms/Room4.png",
+    description:
+      "Our finest accommodation with panoramic views, separate bedroom, and exclusive amenities.",
+    amenities: [
+      "Free WiFi",
+      "TV",
+      "Breakfast",
+      "Mini Bar",
+      "Coffee Machine",
+      "Bathtub",
+      "Panoramic View",
+      "Butler Service",
+    ],
+    size: "65m²",
+    capacity: "2-4 People",
   },
 ];
