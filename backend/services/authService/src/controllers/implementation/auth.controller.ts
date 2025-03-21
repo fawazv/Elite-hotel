@@ -184,10 +184,9 @@ export class AuthController implements IAuthController {
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
         res.clearCookie("refreshToken");
-        throw new CustomError(
-          "refresh token expired, please log in again",
-          HttpStatus.FORBIDDEN
-        );
+        return res
+          .status(HttpStatus.FORBIDDEN)
+          .json({ message: "Refresh token expired, please log in again" });
       }
       next(error);
     }
