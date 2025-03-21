@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import dotenv from "dotenv";
@@ -39,6 +39,8 @@ app.use(limiter);
 app.use(cookieParser());
 
 app.use(cors());
+
+console.log(process.env.AUTH_API_BASE_URL);
 
 const targets = {
   auth: process.env.AUTH_API_BASE_URL,
