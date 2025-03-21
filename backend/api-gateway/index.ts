@@ -38,12 +38,7 @@ app.use(limiter);
 
 app.use(cookieParser());
 
-app.use(
-  cors({
-    origin: "http://localhost:3000",
-    credentials: true,
-  })
-);
+app.use(cors());
 
 const targets = {
   auth: process.env.AUTH_API_BASE_URL,
