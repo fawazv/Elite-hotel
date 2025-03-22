@@ -1,4 +1,6 @@
 import axios from "axios";
+import { logout } from "@/redux/slices/authSlice";
+import { store } from "@/redux/store/store";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_AUTH_API_BASE_URL,
@@ -25,38 +27,37 @@ privateApi.interceptors.request.use(
   }
 );
 
-
 privateApi.interceptors.response.use(
-    (response) => {
-        return response;
-    },
-    async (error) => {
-        const originalRequest = error.config;
-        if (error.response && error.response.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;
-            try {
-                const response = await privateApi.get('/user/refresh-token');
-                if (response.status === 200) {
-                    const newAccessToken = response.data.accessToken;
-                    localStorage.setItem('accessToken', newAccessToken);
-                    originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-                    return privateApi(originalRequest);
-                }
-            } catch (refreshError: any) {
-                if (refreshError.response?.status === 403) {
-                    localStorage.removeItem('accessToken')
-                    const state = store.getState()
-                    const userRole = state.menteeAuth.user?.role || state.mentorAuth.user?.role
-                    if (userRole === 'mentee') {
-                        store.dispatch(menteeLogout())
-                    } else if (userRole === 'mentor') {
-                        store.dispatch(mentorLogout())
-                    }
-                }
-                console.error('Refresh token failed:', refreshError);
-                throw error
-            }
+  (response) => {
+    return response;
+  },
+  async (error) => {
+    const originalRequest = error.config;
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
+      try {
+        const response = await privateApi.get("/auth/refresh-token");
+        if (response.status === 200) {
+          const newAccessToken = response.data.accessToken;
+          localStorage.setItem("accessToken", newAccessToken);
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return privateApi(originalRequest);
         }
-        return Promise.reject(error);
+      } catch (refreshError: any) {
+        if (refreshError.response?.status === 403) {
+          localStorage.removeItem("accessToken");
+
+          // Dispatch the logout action from the auth slice
+          store.dispatch(logout());
+        }
+        console.error("Refresh token failed:", refreshError);
+        throw error;
+      }
     }
+    return Promise.reject(error);
+  }
 );

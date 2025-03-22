@@ -16,10 +16,9 @@ const authenticateToken = (
   try {
     const token = req.headers["authorization"];
     if (!token) {
-      throw new CustomError(
-        "Access denied. No token provided",
-        HttpStatus.UNAUTHORIZED
-      );
+      return res
+        .status(401)
+        .json({ message: "Access denied . No token provided" });
     }
     const newToken = token?.split(" ")[1];
     const secret = process.env.ACCESS_TOKEN_SECRET;

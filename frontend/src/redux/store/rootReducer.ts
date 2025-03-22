@@ -1,3 +1,4 @@
+//redux//storer/rootReducer.ts
 import { combineReducers } from "@reduxjs/toolkit";
 import authReducer from "..//slices/authSlice";
 
