@@ -1,5 +1,3 @@
-"use server";
-
 import { api, privateApi } from "@/services/instances/axiosConfig";
 
 export const signInRequest = async (
@@ -8,7 +6,7 @@ export const signInRequest = async (
   role: string
 ) => {
   const response = await api.post("/signin", { email, password, role });
-  return response.data;
+  return response;
 };
 
 export const signUpRequest = async (email: string) => {
@@ -45,21 +43,23 @@ export const resendOtp = async (email: string) => {
 export const googleSignIn = async (
   email: string,
   name: string,
-  role: string,
-  phoneNumber: string
+  role: string
 ) => {
-  const response = await api.post("/google-signin", {
-    email,
-    name,
-    role,
-    phoneNumber,
-  });
-  return response.data;
+  try {
+    const response = await api.post("/google-signin", { email, name, role });
+    return response;
+  } catch (error) {
+    throw error;
+  }
 };
 
 export const sendMail = async (email: string) => {
-  const response = await api.post("/forget-password", { email });
-  return response.data;
+  try {
+    const response = await api.post("/forget-password", { email });
+    return response;
+  } catch (error) {
+    return error;
+  }
 };
 
 export const resetPassword = async (
@@ -67,20 +67,32 @@ export const resetPassword = async (
   password: string,
   confirmPassword: string
 ) => {
-  const response = await api.post("/reset-password", {
-    email,
-    password,
-    confirmPassword,
-  });
-  return response.data;
+  try {
+    const response = await api.post("/reset-password", {
+      email,
+      password,
+      confirmPassword,
+    });
+    return response;
+  } catch (error) {
+    return error;
+  }
 };
 
 export const logout = async () => {
-  const response = await api.post("/logout");
-  return response.data;
+  try {
+    const response = await api.post("/logout");
+    return response;
+  } catch (error) {
+    return error;
+  }
 };
 
 export const passwordUpdate = async (data: object) => {
-  const response = await privateApi.patch("/user/change-password", data);
-  return response.data;
+  try {
+    const response = await privateApi.patch("/user/change-password", data);
+    return response;
+  } catch (error) {
+    return error;
+  }
 };

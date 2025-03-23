@@ -21,8 +21,15 @@ import { UserRole, AuthProviderProps, SignUpSchemaType } from "@/types/types";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
 import { signUpSchema } from "@/validators/authValidator";
+import { signUpRequest } from "@/lib/authApiAction";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/redux/store/store";
+import { setSignupData } from "@/redux/slices/signupSlice";
 
 export default function SignupPage() {
+  const dispatch = useDispatch();
+  const signupData = useSelector((state: RootState) => state.signup);
+
   const [role, setRole] = useState<UserRole>("receptionist");
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -40,16 +47,24 @@ export default function SignupPage() {
   };
 
   const onSubmit: SubmitHandler<SignUpSchemaType> = async (data) => {
-    const role = isMentee ? "mentee" : "mentor";
-
     try {
-      const { fullName, email, password } = data;
+      const { name, email, password, phone } = data;
       const response = await signUpRequest(email);
 
       if (response.success) {
-        navigate("/otp-signup", {
-          state: { fullName, email, password, role, type: "signup" },
-        });
+        dispatch(
+          setSignupData({
+            fullName: name,
+            email: email,
+            password: password,
+            phoneNumber: phone,
+            role: role,
+            type: "signup",
+          })
+        );
+        // navigate("/otp-signup", {
+        //   state: { fullName, email, password, role, type: "signup" },
+        // });
       } else {
         setError(response.message);
       }
