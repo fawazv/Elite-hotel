@@ -1,3 +1,5 @@
+"use server";
+
 import { api, privateApi } from "@/services/instances/axiosConfig";
 
 export const signInRequest = async (

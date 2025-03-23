@@ -17,59 +17,46 @@ import { BsTelephone, BsPerson } from "react-icons/bs";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { UserRole, UserFormData, AuthProviderProps } from "@/types/types";
+import { UserRole, AuthProviderProps, SignUpSchemaType } from "@/types/types";
+import { useForm, SubmitHandler } from "react-hook-form";
+import { joiResolver } from "@hookform/resolvers/joi";
+import { signUpSchema } from "@/validators/authValidator";
 
 export default function SignupPage() {
   const [role, setRole] = useState<UserRole>("receptionist");
-  const [formData, setFormData] = useState<UserFormData>({
-    name: "",
-    email: "",
-    password: "",
-    phone: "",
-    role: "receptionist",
-  });
+  const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData({ ...formData, [id]: value });
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignUpSchemaType>({
+    resolver: joiResolver(signUpSchema),
+  });
 
   const handleRoleChange = (selectedRole: UserRole) => {
     setRole(selectedRole);
-    setFormData({ ...formData, role: selectedRole });
   };
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const onSubmit: SubmitHandler<SignUpSchemaType> = async (data) => {
+    const role = isMentee ? "mentee" : "mentor";
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Form submitted:", formData);
-      // Here you would typically redirect to dashboard or confirmation page
+      const { fullName, email, password } = data;
+      const response = await signUpRequest(email);
+
+      if (response.success) {
+        navigate("/otp-signup", {
+          state: { fullName, email, password, role, type: "signup" },
+        });
+      } else {
+        setError(response.message);
+      }
     } catch (error) {
-      console.error("Error submitting form:", error);
-    } finally {
-      setIsLoading(false);
+      console.error("Error during sign-up:", error);
     }
   };
-
-  const handleProviderAuth = async ({ provider }: AuthProviderProps) => {
-    setIsLoading(true);
-    try {
-      // Simulate authentication with provider
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log(`Authenticating with ${provider}`);
-      // Here you would typically handle the OAuth flow
-    } catch (error) {
-      console.error(`Error authenticating with ${provider}:`, error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-white to-gray-50">
       {/* Left Section - Image with overlay text */}
@@ -136,10 +123,10 @@ export default function SignupPage() {
           >
             <TabsList className="grid w-full grid-cols-2 p-1 bg-gray-100 rounded-lg">
               <TabsTrigger value="receptionist" className="rounded-md">
-                Receptionist
+                <button>Receptionist</button>
               </TabsTrigger>
               <TabsTrigger value="housekeeper" className="rounded-md">
-                Housekeeper
+                <button>Housekeeper</button>
               </TabsTrigger>
             </TabsList>
 
@@ -162,7 +149,7 @@ export default function SignupPage() {
             <Button
               variant="outline"
               className="flex items-center justify-center w-full py-6 border rounded-xl hover:bg-gray-50 transition-all"
-              onClick={() => handleProviderAuth({ provider: "google" })}
+              // onClick={() => handleProviderAuth({ provider: "google" })}
               disabled={isLoading}
             >
               <FcGoogle className="mr-2 text-xl" /> Continue with Google
@@ -176,7 +163,7 @@ export default function SignupPage() {
             </span>
           </div>
 
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          <form className="space-y-5" onSubmit={handleSubmit(onsubmit)}>
             <div className="space-y-1">
               <Label htmlFor="name" className="text-sm font-medium">
                 Full Name

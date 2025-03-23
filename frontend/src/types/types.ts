@@ -1,10 +1,6 @@
-export type UserRole =
-  | "receptionist"
-  | "housekeeper"
-  | "manager"
-  | "maintenance";
+export type UserRole = "receptionist" | "housekeeper" | "admin";
 
-export interface UserFormData {
+export interface SignUpSchemaType {
   name: string;
   email: string;
   password: string;
@@ -14,5 +10,5 @@ export interface UserFormData {
 
 export interface AuthProviderProps {
   provider: "google" | "email";
-  userData?: UserFormData;
+  userData?: SignUpSchemaType;
 }
