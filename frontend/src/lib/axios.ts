@@ -1,3 +1,4 @@
+// src/api/xiosConfig.ts
 import axios from "axios";
 import { logout } from "@/redux/slices/authSlice";
 import { store } from "@/redux/store/store";

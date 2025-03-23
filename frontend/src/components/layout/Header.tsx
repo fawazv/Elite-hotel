@@ -159,7 +159,8 @@ export default function Header({ isAdmin = false }) {
             </div>
           ) : (
             <div className="flex items-center gap-4">
-              <button
+              <Link
+                href="/signin"
                 className={`${
                   scrolled
                     ? "bg-white text-primary border-primary hover:bg-gray-50/75 transition-colors"
@@ -167,10 +168,13 @@ export default function Header({ isAdmin = false }) {
                 }  px-5 py-2 rounded-lg font-medium border `}
               >
                 Sign In
-              </button>
-              <button className="bg-primary text-white px-5 py-2 rounded-lg font-medium hover:bg-primary/75 transition-colors">
+              </Link>
+              <Link
+                href="/signup"
+                className="bg-primary text-white px-5 py-2 rounded-lg font-medium hover:bg-primary/75 transition-colors"
+              >
                 Sign Up
-              </button>
+              </Link>
             </div>
           )}
         </nav>

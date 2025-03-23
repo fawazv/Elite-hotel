@@ -124,12 +124,18 @@ export default function Sidebar({
             </>
           ) : (
             <div className="mt-auto flex flex-col gap-4">
-              <button className="bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors">
+              <Link
+                href="/signin"
+                className="bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors text-center"
+              >
                 Sign In
-              </button>
-              <button className="border border-primary text-primary py-3 rounded-lg font-medium hover:bg-primary/10 transition-colors">
+              </Link>
+              <Link
+                href="/signup"
+                className="border border-primary  text-primary py-3 rounded-lg font-medium hover:bg-primary/10 transition-colors text-center"
+              >
                 Sign Up
-              </button>
+              </Link>
             </div>
           )}
         </div>
