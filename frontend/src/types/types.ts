@@ -1,11 +1,10 @@
 export type UserRole = "receptionist" | "housekeeper" | "admin";
 
 export interface SignUpSchemaType {
-  name: string;
+  fullName: string;
   email: string;
   password: string;
-  phone: string;
-  role: UserRole;
+  phoneNumber: string;
 }
 
 export interface AuthProviderProps {

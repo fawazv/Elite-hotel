@@ -17,18 +17,17 @@ import { BsTelephone, BsPerson } from "react-icons/bs";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { UserRole, AuthProviderProps, SignUpSchemaType } from "@/types/types";
+import { UserRole, SignUpSchemaType } from "@/types/types";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
 import { signUpSchema } from "@/validators/authValidator";
-import { signUpRequest } from "@/lib/authApiAction";
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "@/redux/store/store";
+import { signUp } from "@/lib/authAction";
+import { useDispatch } from "react-redux";
+import type { AppDispatch } from "@/redux/store/store";
 import { setSignupData } from "@/redux/slices/signupSlice";
 
 export default function SignupPage() {
-  const dispatch = useDispatch();
-  const signupData = useSelector((state: RootState) => state.signup);
+  const dispatch = useDispatch<AppDispatch>();
 
   const [role, setRole] = useState<UserRole>("receptionist");
   const [error, setError] = useState<string>("");
@@ -47,29 +46,33 @@ export default function SignupPage() {
   };
 
   const onSubmit: SubmitHandler<SignUpSchemaType> = async (data) => {
+    setIsLoading(true);
     try {
-      const { name, email, password, phone } = data;
-      const response = await signUpRequest(email);
+      const { fullName, email, password, phoneNumber } = data;
+      const formData = new FormData();
+      formData.append("fullName", fullName);
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("role", role);
+      formData.append("phoneNumber", phoneNumber);
+      formData.append("type", "signup");
+      console.log(formData);
 
-      if (response.success) {
-        dispatch(
-          setSignupData({
-            fullName: name,
-            email: email,
-            password: password,
-            phoneNumber: phone,
-            role: role,
-            type: "signup",
-          })
-        );
-        // navigate("/otp-signup", {
-        //   state: { fullName, email, password, role, type: "signup" },
-        // });
-      } else {
-        setError(response.message);
-      }
+      const response = await signUp(formData);
+      dispatch(
+        setSignupData({
+          fullName,
+          email,
+          password,
+          phoneNumber,
+          role: role,
+          type: "signup",
+        })
+      );
     } catch (error) {
       console.error("Error during sign-up:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
   return (
@@ -138,10 +141,10 @@ export default function SignupPage() {
           >
             <TabsList className="grid w-full grid-cols-2 p-1 bg-gray-100 rounded-lg">
               <TabsTrigger value="receptionist" className="rounded-md">
-                <button>Receptionist</button>
+                Receptionist
               </TabsTrigger>
               <TabsTrigger value="housekeeper" className="rounded-md">
-                <button>Housekeeper</button>
+                Housekeeper
               </TabsTrigger>
             </TabsList>
 
@@ -178,7 +181,7 @@ export default function SignupPage() {
             </span>
           </div>
 
-          <form className="space-y-5" onSubmit={handleSubmit(onsubmit)}>
+          <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-1">
               <Label htmlFor="name" className="text-sm font-medium">
                 Full Name
@@ -192,8 +195,7 @@ export default function SignupPage() {
                   placeholder="Enter your name"
                   className="pl-10 py-6 rounded-xl bg-gray-50 border-gray-200 focus:border-[#8b4513] focus:ring-[#8b4513]/10"
                   required
-                  value={formData.name}
-                  onChange={handleInputChange}
+                  {...register("fullName")}
                 />
               </div>
             </div>
@@ -212,8 +214,7 @@ export default function SignupPage() {
                   placeholder="Enter your email"
                   className="pl-10 py-6 rounded-xl bg-gray-50 border-gray-200 focus:border-[#8b4513] focus:ring-[#8b4513]/10"
                   required
-                  value={formData.email}
-                  onChange={handleInputChange}
+                  {...register("email")}
                 />
               </div>
             </div>
@@ -232,13 +233,14 @@ export default function SignupPage() {
                   placeholder="Create a password"
                   className="pl-10 py-6 rounded-xl bg-gray-50 border-gray-200 focus:border-[#8b4513] focus:ring-[#8b4513]/10"
                   required
-                  value={formData.password}
-                  onChange={handleInputChange}
+                  {...register("password")}
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Password must be at least 8 characters long
-              </p>
+              {errors.password && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-1">
@@ -251,14 +253,18 @@ export default function SignupPage() {
                 </div>
                 <Input
                   id="phone"
-                  type="tel"
+                  type="text"
                   placeholder="Enter your phone number"
                   className="pl-10 py-6 rounded-xl bg-gray-50 border-gray-200 focus:border-[#8b4513] focus:ring-[#8b4513]/10"
                   required
-                  value={formData.phone}
-                  onChange={handleInputChange}
+                  {...register("phoneNumber")}
                 />
               </div>
+              {errors.phoneNumber && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {errors.phoneNumber.message}
+                </p>
+              )}
             </div>
 
             <Button

@@ -1,35 +1,78 @@
 import Joi from "joi";
 
-export const signInSchema = Joi.object({
-  email: Joi.string().email().required(),
-  password: Joi.string().min(6).required(),
-  role: Joi.string().valid("admin", "user").required(),
-});
+// Custom error messages for better UX
+const customErrorMessages = {
+  "string.empty": "{#label} is required",
+  "string.min": "{#label} should have at least {#limit} characters",
+  "string.max": "{#label} should have at most {#limit} characters",
+  "string.email": "Please enter a valid email address",
+  "string.pattern.base": "{#label} does not match the required pattern",
+  "any.required": "{#label} is required",
+  "string.alphanum": "{#label} should only contain alpha-numeric characters",
+};
 
+// Signup schema
 export const signUpSchema = Joi.object({
-  email: Joi.string().email().required(),
+  fullName: Joi.string()
+    .min(2)
+    .max(100)
+    .required()
+    .messages(customErrorMessages),
+
+  email: Joi.string()
+    .email({ tlds: { allow: false } }) // Don't validate TLDs (top-level domains)
+    .required()
+    .messages(customErrorMessages),
+
+  password: Joi.string()
+    .min(8)
+    .max(100)
+    .pattern(
+      new RegExp(
+        "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
+      )
+    )
+    .required()
+    .messages({
+      ...customErrorMessages,
+      "string.pattern.base":
+        "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
+    }),
+
+  phoneNumber: Joi.string()
+    .pattern(
+      new RegExp("^[+]?[(]?[0-9]{3}[)]?[-\\s.]?[0-9]{3}[-\\s.]?[0-9]{4,6}$")
+    )
+    .required()
+    .messages({
+      ...customErrorMessages,
+      "string.pattern.base": "Please enter a valid phone number",
+    }),
 });
 
-export const otpVerifySchema = Joi.object({
-  fullName: Joi.string().min(3).required(),
-  email: Joi.string().email().required(),
-  password: Joi.string().min(6).required(),
-  role: Joi.string().valid("admin", "user").required(),
-  otp: Joi.string().length(6).required(),
-  type: Joi.string().valid("signup", "reset").required(),
-});
+export const signInSchema = Joi.object({
+  email: Joi.string()
+    .email({
+      minDomainSegments: 2,
+      tlds: { allow: false }, // Disable TLD validation
+    })
+    .required()
+    .messages({
+      "string.email": "Email must be a valid email",
+      "any.required": "Email is a required field",
+    }),
 
-export const resendOtpSchema = Joi.object({
-  email: Joi.string().email().required(),
-});
+  password: Joi.string()
+    .pattern(new RegExp("^[a-zA-Z0-9]{3,30}$"))
+    .required()
+    .messages({
+      "string.pattern.base":
+        "Password should be alphanumeric and between 3 to 30 characters",
+      "any.required": "Password is a required field",
+    }),
 
-export const resetPasswordSchema = Joi.object({
-  email: Joi.string().email().required(),
-  password: Joi.string().min(6).required(),
-  confirmPassword: Joi.string().valid(Joi.ref("password")).required(),
-});
-
-export const passwordUpdateSchema = Joi.object({
-  oldPassword: Joi.string().min(6).required(),
-  newPassword: Joi.string().min(6).required(),
+  role: Joi.string().valid("receptionist", "housekeeper").required().messages({
+    "any.only": "Role must be one of [receptionist, housekeeper]",
+    "any.required": "Role is a required field",
+  }),
 });

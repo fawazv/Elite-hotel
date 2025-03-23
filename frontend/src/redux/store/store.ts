@@ -3,13 +3,13 @@
 
 import { configureStore } from "@reduxjs/toolkit";
 import { persistStore, persistReducer } from "redux-persist";
-import storage from "redux-persist/lib/storage";
 import rootReducer from "./rootReducer";
+import storage from "@/lib/storage";
 
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["auth"],
+  whitelist: ["auth", "signup"],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
