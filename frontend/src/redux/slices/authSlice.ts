@@ -3,9 +3,9 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface User {
   id: string;
-  fullName?: string;
+  fullName: string;
   email: string;
-  role: "admin" | "receptionist" | "housekeeper";
+  role: string;
   phoneNumber?: string;
 }
 

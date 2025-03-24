@@ -5,14 +5,17 @@ import Link from "next/link";
 import NavButton from "../ui/NavButton";
 import Sidebar from "./Sidebar";
 import MobileMenuButton from "../ui/MobileMenuButton";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store/store";
 
 // Add a prop for the user role
-export default function Header({ isAdmin = false }) {
+export default function Header({}) {
+  const { user, isAuthenticated } = useSelector(
+    (state: RootState) => state.auth
+  );
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  // Mock authentication state - replace with your actual auth logic
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Optimize scroll handler with useCallback
   const handleScroll = useCallback(() => {

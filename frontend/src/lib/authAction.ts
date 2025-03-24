@@ -36,12 +36,12 @@ export async function signUp(formData: FormData) {
     console.log(email);
 
     const response = await signUpRequest(email);
-    if (response.success) {
-      // redirect("/otp-signup");
+    if (response.data.success) {
       console.log("success");
     }
     console.log(email);
   } catch (error) {
     console.error("Error during sign up:", error);
   }
+  redirect("/otp-signup");
 }

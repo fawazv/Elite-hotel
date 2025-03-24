@@ -1,3 +1,5 @@
+"use server";
+
 import { api, privateApi } from "@/services/instances/axiosConfig";
 
 export const signInRequest = async (
@@ -11,7 +13,7 @@ export const signInRequest = async (
 
 export const signUpRequest = async (email: string) => {
   const response = await api.post("/signup", { email });
-  return response.data;
+  return response;
 };
 
 export const otpVerify = async (

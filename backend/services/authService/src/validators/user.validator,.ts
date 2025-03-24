@@ -1,17 +1,34 @@
 import Joi from "joi";
 
+// / Custom error messages for better UX
+const customErrorMessages = {
+  "string.empty": "{#label} is required",
+  "string.min": "{#label} should have at least {#limit} characters",
+  "string.max": "{#label} should have at most {#limit} characters",
+  "string.email": "Please enter a valid email address",
+  "string.pattern.base": "{#label} does not match the required pattern",
+  "any.required": "{#label} is required",
+  "string.alphanum": "{#label} should only contain alpha-numeric characters",
+};
+
 const signUpSchema = Joi.object({
   password: Joi.string()
-    .pattern(new RegExp("^[a-zA-Z0-9]{3,30}$"))
+    .min(8)
+    .max(100)
+    .pattern(
+      new RegExp(
+        "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
+      )
+    )
     .when("type", {
       is: "signup", // If type is "signup"
       then: Joi.required(), // Make password required
       otherwise: Joi.optional(), // Otherwise, make it optional
     })
     .messages({
+      ...customErrorMessages,
       "string.pattern.base":
-        "Password should be alphanumeric and between 3 to 30 characters",
-      "any.required": "Password is a required field",
+        "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
     }),
 
   role: Joi.string()
@@ -27,7 +44,7 @@ const signUpSchema = Joi.object({
     }),
 
   fullName: Joi.string()
-    .min(1)
+    .min(2)
     .max(100)
     .when("type", {
       is: "signup", // If type is "signup"
@@ -43,7 +60,9 @@ const signUpSchema = Joi.object({
     }),
 
   phoneNumber: Joi.string()
-    .pattern(new RegExp("^[0-9]{10}$"))
+    .pattern(
+      new RegExp("^[+]?[(]?[0-9]{3}[)]?[-\\s.]?[0-9]{3}[-\\s.]?[0-9]{4,6}$")
+    )
     .when("type", {
       is: "signup", // If type is "signup"
       then: Joi.required(), // Make phoneNumber required

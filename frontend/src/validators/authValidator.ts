@@ -46,7 +46,7 @@ export const signUpSchema = Joi.object({
     .required()
     .messages({
       ...customErrorMessages,
-      "string.pattern.base": "Please enter a valid phone number",
+      "string.pattern.base": "Phone number should be a 10 digit number",
     }),
 });
 
