@@ -51,13 +51,7 @@ const signUpSchema = Joi.object({
       then: Joi.required(), // Make fullName required
       otherwise: Joi.optional(), // Otherwise, make it optional
     })
-    .messages({
-      "string.base": "Name should be a type of text",
-      "string.empty": "Name cannot be an empty field",
-      "string.min": "Name should have a minimum length of {#limit}",
-      "string.max": "Name should have a maximum length of {#limit}",
-      "any.required": "Name is a required field",
-    }),
+    .messages(customErrorMessages),
 
   phoneNumber: Joi.string()
     .pattern(
@@ -75,13 +69,9 @@ const signUpSchema = Joi.object({
 
   email: Joi.string()
     .pattern(new RegExp(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$/)) // Only allow .com domains
-    .email({ minDomainSegments: 2 })
+    .email({ tlds: { allow: false } }) // Don't validate TLDs (top-level domains)
     .required() // Email is always required
-    .messages({
-      "string.pattern.base": "Email must end with .com",
-      "string.email": "Email must be a valid email",
-      "any.required": "Email is a required field",
-    }),
+    .messages(customErrorMessages),
 
   otp: Joi.string()
     .length(6)

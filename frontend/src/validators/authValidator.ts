@@ -20,6 +20,7 @@ export const signUpSchema = Joi.object({
     .messages(customErrorMessages),
 
   email: Joi.string()
+    .pattern(new RegExp(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$/)) // Only allow .com domains
     .email({ tlds: { allow: false } }) // Don't validate TLDs (top-level domains)
     .required()
     .messages(customErrorMessages),
