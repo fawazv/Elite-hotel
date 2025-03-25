@@ -166,33 +166,33 @@ export default function OTPVerificationPage() {
 
       console.log(response.data);
 
-      // if (response.data.success === true) {
-      //   if (type === "signup") {
-      //     const reduxData = { fullName, email, role, phoneNumber };
+      if (response.data.success === true) {
+        if (type === "signup") {
+          const reduxData = { fullName, email, role, phoneNumber };
 
-      //     localStorage.setItem("accessToken", response.data.accessToken);
-      //     const id = response.data.user._id;
-      //     dispatch(
-      //       login({
-      //         token: response.data.accessToken,
-      //         user: { ...reduxData, id },
-      //       })
-      //     );
-      //     // Success notification
-      //     toast.success("Verification successful! Redirecting...");
+          localStorage.setItem("accessToken", response.data.accessToken);
+          const id = response.data.user._id;
+          dispatch(
+            login({
+              token: response.data.accessToken,
+              user: { ...reduxData, id },
+            })
+          );
+          // Success notification
+          toast.success("Verification successful! Redirecting...");
 
-      //     // Redirect to Home
-      //     router.push("/");
+          // Redirect to Home
+          router.push("/");
 
-      //     // Refresh dashboard to get updated user data
-      //     router.refresh();
-      //   } else if (type === "forgetPassword") {
-      //     toast.success("Verification successful! Redirecting...");
-      //     router.push("/new-password");
-      //   } else {
-      //     setError(response.data.message);
-      //   }
-      // }
+          // Refresh dashboard to get updated user data
+          router.refresh();
+        } else if (type === "forgetPassword") {
+          toast.success("Verification successful! Redirecting...");
+          router.push("/new-password");
+        } else {
+          setError(response.data.message);
+        }
+      }
     } catch (error) {
       console.error("Verification error:", error);
       setError("Invalid verification code. Please try again.");

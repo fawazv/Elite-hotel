@@ -11,7 +11,7 @@ const errorHandler = (
   next: NextFunction
 ) => {
   console.log(
-    "Error in mentor middleware",
+    "Error in auth middleware",
     err,
     "error.message )))) ",
     err.message

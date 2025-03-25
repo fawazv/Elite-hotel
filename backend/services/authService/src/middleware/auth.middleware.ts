@@ -1,8 +1,6 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 import { User } from "../models/user.model";
-import CustomError from "../utils/CustomError";
-import { HttpStatus } from "../enums/http.status";
 
 interface CustomeRequest extends Request {
   user?: string | JwtPayload;
@@ -22,7 +20,7 @@ const authenticateToken = (
     }
     const newToken = token?.split(" ")[1];
     const secret = process.env.ACCESS_TOKEN_SECRET;
-    const decodedToken = jwt.decode(newToken, { complete: true });
+    jwt.decode(newToken, { complete: true });
 
     if (!secret) {
       throw new Error("Access token secret is not defined");
