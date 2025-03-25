@@ -15,7 +15,7 @@
     "update": "^0.7.4"
   },
   "devDependencies": {
-    "@types/amqplib": "^0.10.6",
+    "@types/amqplib": "^0.10.5",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",
