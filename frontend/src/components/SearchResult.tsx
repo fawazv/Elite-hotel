@@ -32,6 +32,7 @@ export default function SearchResults({
   const [filteredResults, setFilteredResults] = useState<Room[]>([]);
   const [displayedResults, setDisplayedResults] = useState<Room[]>([]);
   const roomsPerPage = 4;
+  console.log(displayedResults);
 
   // Apply sorting and filtering to results
   useEffect(() => {

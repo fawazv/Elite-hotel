@@ -3,7 +3,6 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 interface SignupState {
   fullName: string;
   email: string;
-  password: string;
   phoneNumber: string;
   role: string;
   type: "signup" | "forgetPassword"; // Assuming 'type' can be either 'signup' or 'forgetPassword'
@@ -12,7 +11,6 @@ interface SignupState {
 const initialState: SignupState = {
   fullName: "",
   email: "",
-  password: "",
   phoneNumber: "",
   role: "",
   type: "signup",

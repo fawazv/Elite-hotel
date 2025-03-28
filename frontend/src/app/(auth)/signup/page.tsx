@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState } from "react";
 import { Button } from "./_components/ui/Button";
 import { Input } from "./_components/ui/Input";
 import { Label } from "./_components/ui/Label";
@@ -25,8 +25,12 @@ import { signUp } from "@/lib/authAction";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "@/redux/store/store";
 import { setSignupData } from "@/redux/slices/signupSlice";
+import { useRouter } from "next/navigation";
+import { AuthProvider, useAuth } from "@/app/context/AuthContext";
 
 export default function SignupPage() {
+  const { setPassword } = useAuth();
+  const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
   const [role, setRole] = useState<UserRole>("receptionist");
@@ -56,19 +60,20 @@ export default function SignupPage() {
       formData.append("role", role);
       formData.append("phoneNumber", phoneNumber);
       formData.append("type", "signup");
-      console.log(formData);
 
       const response = await signUp(formData);
       dispatch(
         setSignupData({
           fullName,
           email,
-          password,
           phoneNumber,
           role: role,
           type: "signup",
         })
       );
+
+      setPassword(password);
+      router.push("/otp-signup");
     } catch (error) {
       console.error("Error during sign-up:", error);
     } finally {
@@ -110,8 +115,8 @@ export default function SignupPage() {
           src="/signup.jpg"
           alt="Luxury Hotel"
           fill
-          sizes="100vw"
-          className="object-cover h-full w-full"
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className="object-cover"
           quality={100}
           priority
         />

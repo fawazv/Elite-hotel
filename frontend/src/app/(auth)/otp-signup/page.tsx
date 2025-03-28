@@ -1,46 +1,63 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+  useTransition,
+} from "react";
 import { Button } from "./_components/ui/Button";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { toast } from "sonner"; // Assuming usage of sonner for toasts
-import { otpVerify } from "@/services/authApi";
+import { toast } from "sonner";
 import { RootState } from "@/redux/store/store";
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "@/redux/slices/authSlice";
 import { useRouter } from "next/navigation";
+import { resendOtpAction } from "@/lib/authAction";
+import { useAuth } from "@/app/context/AuthContext";
+import { otpVerifyAction } from "@/lib/authAction";
 
 // Constants
 const OTP_LENGTH = 6;
 const INITIAL_COUNTDOWN = 60;
 
 export default function OTPVerificationPage() {
+  const { password } = useAuth();
+
   const router = useRouter();
-  // State management
   const dispatch = useDispatch();
-  const { fullName, email, password, phoneNumber, role, type } = useSelector(
+  const { fullName, email, phoneNumber, role, type } = useSelector(
     (state: RootState) => state.signup
   );
-  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
-  const [timeRemaining, setTimeRemaining] = useState<number>(INITIAL_COUNTDOWN);
-  const [isResending, setIsResending] = useState<boolean>(false);
-  const [isVerifying, setIsVerifying] = useState<boolean>(false);
-  const [error, setError] = useState<string>("");
 
-  // Refs
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  // State management with memoized initial values
+  const [otp, setOtp] = useState<string[]>(() => Array(OTP_LENGTH).fill(""));
+  const [timeRemaining, setTimeRemaining] = useState(INITIAL_COUNTDOWN);
+  const [isResending, setIsResending] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [error, setError] = useState("");
+
+  // Refs with stable references
+  const inputRefs = useRef<(HTMLInputElement | null)[]>(
+    Array(OTP_LENGTH).fill(null)
+  );
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Computed values
+  // Memoized computed values
   const isOtpComplete = useMemo(
-    () => !otp.some((digit) => digit === ""),
+    () => otp.every((digit) => digit !== ""),
     [otp]
   );
-  const canResend = timeRemaining <= 0 && !isResending;
+  const canResend = useMemo(
+    () => timeRemaining <= 0 && !isResending,
+    [timeRemaining, isResending]
+  );
 
-  // Format time remaining as MM:SS
+  // Stable time formatting function
   const formatTimeRemaining = useCallback(() => {
     const minutes = Math.floor(timeRemaining / 60);
     const seconds = timeRemaining % 60;
@@ -49,30 +66,40 @@ export default function OTPVerificationPage() {
       .padStart(2, "0")}`;
   }, [timeRemaining]);
 
-  // Timer countdown effect
+  // Optimized timer effect with cleanup
   useEffect(() => {
-    if (timeRemaining <= 0) {
-      if (timerRef.current) clearInterval(timerRef.current);
-      return;
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
     }
 
+    // Start a new timer
     timerRef.current = setInterval(() => {
-      setTimeRemaining((prevTime) => prevTime - 1);
+      setTimeRemaining((prevTime) => {
+        if (prevTime <= 1) {
+          clearInterval(timerRef.current!);
+          return 0;
+        }
+        return prevTime - 1;
+      });
     }, 1000);
 
+    // Cleanup function to clear timer on component unmount
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
     };
-  }, [timeRemaining]);
+  }, []);
 
   // Focus first input on mount
   useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
 
-  // Handle input change
+  // Stable input change handler
   const handleChange = useCallback((index: number, value: string) => {
-    // Only allow numbers
+    // Strict input validation
     if (!/^\d*$/.test(value)) return;
 
     setOtp((prevOtp) => {
@@ -89,18 +116,18 @@ export default function OTPVerificationPage() {
     }
   }, []);
 
-  // Handle backspace key
+  // Stable keydown handler
   const handleKeyDown = useCallback(
     (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Backspace") {
         if (!otp[index] && index > 0) {
-          // Move to previous input when current is empty
           inputRefs.current[index - 1]?.focus();
         } else if (otp[index]) {
-          // Clear current input
-          const newOtp = [...otp];
-          newOtp[index] = "";
-          setOtp(newOtp);
+          setOtp((prevOtp) => {
+            const newOtp = [...prevOtp];
+            newOtp[index] = "";
+            return newOtp;
+          });
         }
       } else if (e.key === "ArrowLeft" && index > 0) {
         inputRefs.current[index - 1]?.focus();
@@ -111,7 +138,7 @@ export default function OTPVerificationPage() {
     [otp]
   );
 
-  // Handle paste
+  // Stable paste handler
   const handlePaste = useCallback(
     (e: React.ClipboardEvent<HTMLInputElement>) => {
       e.preventDefault();
@@ -140,83 +167,35 @@ export default function OTPVerificationPage() {
     []
   );
 
-  // Handle OTP verification
-  const handleVerify = useCallback(async () => {
-    if (!isOtpComplete) {
-      setError("Please enter all 6 digits");
-      return;
-    }
-
-    setIsVerifying(true);
-    setError("");
-
-    try {
-      const otpCode = otp.join("");
-      console.log("OTP verified:", otpCode);
-
-      const response = await otpVerify(
-        fullName,
-        email,
-        password,
-        role,
-        phoneNumber,
-        otpCode,
-        type
-      );
-
-      console.log(response.data);
-
-      if (response.data.success === true) {
-        if (type === "signup") {
-          const reduxData = { fullName, email, role, phoneNumber };
-
-          localStorage.setItem("accessToken", response.data.accessToken);
-          const id = response.data.user._id;
-          dispatch(
-            login({
-              token: response.data.accessToken,
-              user: { ...reduxData, id },
-            })
-          );
-          // Success notification
-          toast.success("Verification successful! Redirecting...");
-
-          // Redirect to Home
-          router.push("/");
-
-          // Refresh dashboard to get updated user data
-          router.refresh();
-        } else if (type === "forgetPassword") {
-          toast.success("Verification successful! Redirecting...");
-          router.push("/new-password");
-        } else {
-          setError(response.data.message);
-        }
-      }
-    } catch (error) {
-      console.error("Verification error:", error);
-      setError("Invalid verification code. Please try again.");
-      toast.error("Verification failed. Please try again.");
-    } finally {
-      setIsVerifying(false);
-    }
-  }, [otp, isOtpComplete]);
-
-  // Handle resend OTP
+  // Resend OTP handler
   const handleResend = useCallback(async () => {
-    if (timeRemaining > 0) return;
+    if (timeRemaining > 0 || isResending) return;
 
     setIsResending(true);
     setError("");
 
     try {
-      // Mock resend - would connect to your API in a real app
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await resendOtpAction(email);
 
+      // Reset timer explicitly
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
       setTimeRemaining(INITIAL_COUNTDOWN);
+
+      // Restart the timer
+      timerRef.current = setInterval(() => {
+        setTimeRemaining((prevTime) => {
+          if (prevTime <= 1) {
+            clearInterval(timerRef.current!);
+            return 0;
+          }
+          return prevTime - 1;
+        });
+      }, 1000);
+
       setOtp(Array(OTP_LENGTH).fill(""));
       inputRefs.current[0]?.focus();
-
       toast.success("New verification code sent to your email");
     } catch (error) {
       console.error("Resend error:", error);
@@ -225,9 +204,67 @@ export default function OTPVerificationPage() {
     } finally {
       setIsResending(false);
     }
-  }, [timeRemaining]);
+  }, [email, timeRemaining, isResending]);
 
-  // Animation variants
+  const handleVerify = async () => {
+    if (!isOtpComplete) {
+      setError("Please enter all 6 digits");
+      return;
+    }
+
+    // Prevent multiple submissions
+    if (isVerifying) return;
+
+    setIsVerifying(true);
+    setError("");
+    try {
+      const otpCode = otp.join("");
+
+      const response = await otpVerifyAction(
+        fullName,
+        email,
+        password,
+        role,
+        phoneNumber,
+        otpCode,
+        type
+      );
+      console.log(response);
+
+      if (response.success) {
+        if (type === "signup") {
+          const reduxData = { fullName, email, role, phoneNumber };
+          localStorage.setItem("accessToken", response.data.accessToken);
+          const id = response.data.user._id;
+
+          dispatch(
+            login({
+              token: response.data.accessToken,
+              user: { ...reduxData, id },
+            })
+          );
+
+          toast.success("Verification successful! Redirecting...");
+          router.push("/");
+        } else if (type === "forgetPassword") {
+          toast.success("Verification successful! Redirecting...");
+          router.push("/new-password");
+        } else {
+          setError("Unexpected verification type");
+        }
+      } else {
+        setError(response.message || "Verification failed");
+      }
+    } catch (error) {
+      console.error("Verification error:", error);
+      setError("Invalid verification code. Please try again.");
+      toast.error("Verification failed. Please try again.");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // Animation variants (kept the same)
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -367,7 +404,6 @@ export default function OTPVerificationPage() {
             <div className="text-center text-gray-500 text-sm mb-6">
               Time remaining: {formatTimeRemaining()}
             </div>
-
             <Button
               onClick={handleVerify}
               disabled={isVerifying || !isOtpComplete}

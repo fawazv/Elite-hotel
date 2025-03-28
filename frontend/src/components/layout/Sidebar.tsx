@@ -8,6 +8,7 @@ type SidebarProps = {
   dropdownOpen: boolean;
   setDropdownOpen: (dropdownOpen: boolean) => void;
   isAuthenticated?: boolean;
+  logout: () => Promise<void>;
 };
 
 export default function Sidebar({
@@ -16,6 +17,7 @@ export default function Sidebar({
   dropdownOpen,
   setDropdownOpen,
   isAuthenticated,
+  logout,
 }: SidebarProps) {
   return (
     <div
@@ -109,16 +111,16 @@ export default function Sidebar({
                   >
                     Profile
                   </Link>
-                  <Link
-                    href="/signout"
-                    className="text-gray-700 hover:text-primary transition-colors"
+                  <button
+                    className="text-gray-700 hover:text-primary transition-colors text-left cursor-pointer"
                     onClick={() => {
+                      logout;
                       setDropdownOpen(false);
                       setOpen(false);
                     }}
                   >
                     Sign out
-                  </Link>
+                  </button>
                 </div>
               )}
             </>

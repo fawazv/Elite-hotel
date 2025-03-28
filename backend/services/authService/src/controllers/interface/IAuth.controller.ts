@@ -21,5 +21,5 @@ export interface IAuthController {
     res: Response,
     next: NextFunction
   ): Promise<void>;
-  logout(req: CustomeRequest, res: Response, next: NextFunction): Promise<void>;
+  logout(req: CustomeRequest, res: Response, next: NextFunction): Promise<any>;
 }

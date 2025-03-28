@@ -1,5 +1,3 @@
-"use server";
-
 import { api, privateApi } from "@/services/instances/axiosConfig";
 
 export const signInRequest = async (
@@ -13,27 +11,6 @@ export const signInRequest = async (
 
 export const signUpRequest = async (email: string) => {
   const response = await api.post("/signup", { email });
-  return response;
-};
-
-export const otpVerify = async (
-  fullName: string,
-  email: string,
-  password: string,
-  role: string,
-  phoneNumber: string,
-  otp: string,
-  type: string
-) => {
-  const response = await api.post("/otp-signup", {
-    fullName,
-    email,
-    password,
-    role,
-    phoneNumber,
-    otp,
-    type,
-  });
   return response;
 };
 
@@ -81,15 +58,6 @@ export const resetPassword = async (
   }
 };
 
-export const logout = async () => {
-  try {
-    const response = await api.post("/logout");
-    return response;
-  } catch (error) {
-    return error;
-  }
-};
-
 export const passwordUpdate = async (data: object) => {
   try {
     const response = await privateApi.patch("/user/change-password", data);
@@ -98,3 +66,28 @@ export const passwordUpdate = async (data: object) => {
     return error;
   }
 };
+
+export async function otpVerifyAction(
+  fullName: string,
+  email: string,
+  password: string,
+  role: string,
+  phoneNumber: string,
+  otp: string,
+  type: string
+) {
+  try {
+    const response = await api.post("/otp-signup", {
+      fullName,
+      email,
+      password,
+      role,
+      phoneNumber,
+      otp,
+      type,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error during otp verification:", error);
+  }
+}

@@ -1,26 +1,47 @@
 // components/Header.tsx
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useTransition } from "react";
 import Link from "next/link";
 import NavButton from "../ui/NavButton";
 import Sidebar from "./Sidebar";
 import MobileMenuButton from "../ui/MobileMenuButton";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
+import { logout } from "@/redux/slices/authSlice";
+import { useRouter } from "next/navigation";
+import { logoutAction } from "@/lib/authAction";
 
 // Add a prop for the user role
 export default function Header({}) {
+  const dispatch = useDispatch();
+  const router = useRouter();
+
   const { user, isAuthenticated } = useSelector(
     (state: RootState) => state.auth
   );
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  let [isPending, startTransition] = useTransition();
 
   // Optimize scroll handler with useCallback
   const handleScroll = useCallback(() => {
     setScrolled(window.scrollY > 10);
   }, []);
+
+  const logoutUser = async (): Promise<any> => {
+    try {
+      await logoutAction();
+      localStorage.removeItem("accessToken");
+      dispatch(logout());
+      setDropdownOpen(false);
+
+      router.refresh(); // Ensure authentication state updates across pages
+      router.push("/"); // Redirect user to home
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -84,6 +105,7 @@ export default function Header({}) {
           dropdownOpen={dropdownOpen}
           setDropdownOpen={setDropdownOpen}
           isAuthenticated={isAuthenticated}
+          logout={logoutUser}
         />
 
         {/* Desktop Menu */}
@@ -150,13 +172,12 @@ export default function Header({}) {
                   >
                     Profile
                   </Link>
-                  <Link
-                    href="/signout"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    onClick={() => setDropdownOpen(false)}
+                  <button
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left cursor-pointer"
+                    onClick={() => logoutUser()}
                   >
                     Sign out
-                  </Link>
+                  </button>
                 </div>
               )}
             </div>
