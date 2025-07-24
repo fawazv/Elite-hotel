@@ -105,8 +105,7 @@ export async function resendOtpAction(email: string) {
 export async function logoutAction() {
   try {
     const response = await api.post("/logout");
-    console.log(response.data.message);
-    return response;
+    return response.data;
   } catch (error) {
     return error;
   }

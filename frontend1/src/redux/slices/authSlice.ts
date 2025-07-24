@@ -7,6 +7,7 @@ interface User {
   email: string;
   role: string;
   phoneNumber?: string;
+  profileImage?: string;
 }
 
 interface AuthState {

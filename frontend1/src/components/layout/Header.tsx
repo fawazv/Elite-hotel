@@ -10,6 +10,8 @@ import { RootState } from "@/redux/store/store";
 import { logout } from "@/redux/slices/authSlice";
 import { useRouter } from "next/navigation";
 import { logoutAction } from "@/lib/authAction";
+import { toast } from "sonner";
+import Image from "next/image";
 
 // Add a prop for the user role
 export default function Header({}) {
@@ -22,22 +24,23 @@ export default function Header({}) {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  let [isPending, startTransition] = useTransition();
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Optimize scroll handler with useCallback
   const handleScroll = useCallback(() => {
     setScrolled(window.scrollY > 10);
   }, []);
 
-  const logoutUser = async (): Promise<any> => {
+  const logoutUser = async () => {
     try {
-      await logoutAction();
+      const response = await logoutAction();
+
       localStorage.removeItem("accessToken");
       dispatch(logout());
       setDropdownOpen(false);
+      toast.success(response.message + "...");
 
       router.refresh(); // Ensure authentication state updates across pages
-      router.push("/"); // Redirect user to home
     } catch (error) {
       console.log(error);
     }
@@ -102,10 +105,11 @@ export default function Header({}) {
         <Sidebar
           open={open}
           setOpen={setOpen}
-          dropdownOpen={dropdownOpen}
-          setDropdownOpen={setDropdownOpen}
           isAuthenticated={isAuthenticated}
-          logout={logoutUser}
+          Action={logoutUser}
+          isAdmin={isAdmin}
+          userName={user?.fullName}
+          profilePicture={user?.profileImage || "/default-avatar.png"}
         />
 
         {/* Desktop Menu */}
@@ -144,7 +148,17 @@ export default function Header({}) {
                 aria-expanded={dropdownOpen}
                 aria-haspopup="true"
               >
-                Account
+                <div className="flex items-center gap-2">
+                  <div className="relative w-8 h-8 rounded-full overflow-hidden ">
+                    <Image
+                      src={user?.profileImage || "/default-avatar.png"}
+                      alt="Profile"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <span>{user?.fullName || "John"}</span>
+                </div>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
