@@ -1,16 +1,14 @@
-import { useEffect, useRef, useCallback } from 'react'
-import { Building, Settings, Calendar, Mail } from 'lucide-react'
+// pages/Home/Home.tsx
+import React, { useEffect, useRef, useCallback } from 'react'
 import Header from '../../components/Header'
-import { useSelector } from 'react-redux'
-import type { RootState } from '../../redux/store/store'
 
-const Home = () => {
-  const theme = useSelector((state: RootState) => state.theme.mode)
-
+const Home: React.FC = () => {
   const sections = useRef<HTMLElement[]>([])
   const isScrollingRef = useRef(false)
 
-  const handleScroll = useCallback((event: { deltaY: number }) => {
+  const handleScroll = useCallback((event: WheelEvent) => {
+    event.preventDefault()
+
     if (isScrollingRef.current) return
     isScrollingRef.current = true
 
@@ -38,8 +36,10 @@ const Home = () => {
   }, [])
 
   useEffect(() => {
-    window.addEventListener('wheel', handleScroll, { passive: false })
-    return () => window.removeEventListener('wheel', handleScroll)
+    const wheelHandler = (e: WheelEvent) => handleScroll(e)
+    window.addEventListener('wheel', wheelHandler, { passive: false })
+
+    return () => window.removeEventListener('wheel', wheelHandler)
   }, [handleScroll])
 
   const addToRefs = (el: HTMLDivElement | null) => {
@@ -48,54 +48,53 @@ const Home = () => {
     }
   }
 
-  const heroSectionBg =
-    theme === 'dark'
-      ? 'bg-gradient-to-br from-gray-900 via-amber-900 to-yellow-900'
-      : 'bg-gradient-to-br from-amber-600 via-orange-600 to-red-600'
-
-  const sectionBg =
-    theme === 'dark' ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-900'
-
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''}`}>
+    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
       {/* Hero Section */}
       <div
         ref={addToRefs}
-        className={`min-h-screen flex items-center justify-center relative overflow-hidden ${heroSectionBg}`}
+        className="h-screen relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950"
       >
         <Header />
-        <div className="text-center text-white z-10 px-4 max-w-5xl mx-auto">
-          <h1 className="text-6xl md:text-8xl font-serif font-bold mb-6 animate-fade-in">
-            Elite Hotel
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 opacity-90 max-w-3xl mx-auto leading-relaxed">
-            Experience luxury redefined with breathtaking views and unparalleled
-            service in the heart of elegance
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button className="btn-primary px-8 py-4 rounded-full font-semibold text-lg hover:scale-105 shadow-2xl">
-              Discover More
-            </button>
-            <button className="bg-white/10 backdrop-blur-sm text-white border border-white/30 px-8 py-4 rounded-full font-semibold text-lg hover:bg-white/20 transition-all duration-300 hover:scale-105">
-              View Rooms
-            </button>
+
+        {/* Background Image Overlay */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
+          style={{
+            backgroundImage:
+              'url("https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80")',
+          }}
+        />
+
+        {/* Hero Content */}
+        <div className="relative z-10 flex items-center justify-center h-full px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-4xl mx-auto">
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white mb-6 animate-fade-in">
+              Welcome to{' '}
+              <span className="text-primary bg-gradient-to-r from-primary to-orange-600 bg-clip-text">
+                Elite Hotel
+              </span>
+            </h1>
+            <p className="text-xl sm:text-2xl text-gray-300 mb-8 leading-relaxed animate-fade-in">
+              Experience luxury and comfort in the heart of the city. Your
+              perfect stay awaits with world-class amenities and exceptional
+              service.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in">
+              <button className="bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
+                Book Your Stay
+              </button>
+              <button className="border-2 border-white text-white hover:bg-white hover:text-gray-900 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105">
+                Explore Rooms
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-white rounded-full mix-blend-overlay filter blur-xl animate-pulse"></div>
-          <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-yellow-300 rounded-full mix-blend-overlay filter blur-xl animate-pulse animation-delay-2000"></div>
-          <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-orange-300 rounded-full mix-blend-overlay filter blur-xl animate-pulse animation-delay-4000"></div>
-        </div>
-
         {/* Scroll Indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
-          <div className="flex flex-col items-center">
-            <span className="text-sm mb-2 opacity-75">Scroll to explore</span>
-            <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
-              <div className="w-1 h-3 bg-white/75 rounded-full mt-2 animate-pulse"></div>
-            </div>
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+          <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
+            <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse" />
           </div>
         </div>
       </div>
@@ -103,82 +102,53 @@ const Home = () => {
       {/* About Section */}
       <div
         ref={addToRefs}
-        className={`min-h-screen flex items-center justify-center ${sectionBg} transition-colors duration-300`}
+        className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-800 px-4 sm:px-6 lg:px-8"
       >
-        <div className="max-w-6xl mx-auto px-4 text-center">
-          <h2 className="text-5xl md:text-6xl font-serif font-bold mb-8 text-primary">
-            About Our Hotel
-          </h2>
-          <p className="text-xl md:text-2xl leading-relaxed mb-12 opacity-80 max-w-4xl mx-auto">
-            Nestled in the heart of luxury, Elite Hotel offers an unmatched
-            experience of comfort and elegance. Our world-class amenities and
-            personalized service ensure every moment of your stay is
-            extraordinary.
-          </p>
-
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
-            <div
-              className={`p-8 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-xl ${
-                theme === 'dark'
-                  ? 'bg-gray-800/50 border border-gray-700'
-                  : 'bg-amber-50 border border-amber-200'
-              }`}
-            >
-              <Building size={64} className="mx-auto mb-6 text-primary" />
-              <h3 className="text-2xl font-semibold mb-4 text-primary">
-                Luxury Rooms
-              </h3>
-              <p className="opacity-70 text-lg">
-                Spacious rooms with premium amenities and stunning city views
-              </p>
-            </div>
-
-            <div
-              className={`p-8 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-xl ${
-                theme === 'dark'
-                  ? 'bg-gray-800/50 border border-gray-700'
-                  : 'bg-amber-50 border border-amber-200'
-              }`}
-            >
-              <Settings size={64} className="mx-auto mb-6 text-primary" />
-              <h3 className="text-2xl font-semibold mb-4 text-primary">
-                Premium Service
-              </h3>
-              <p className="opacity-70 text-lg">
-                24/7 concierge and room service for your ultimate comfort
-              </p>
-            </div>
-
-            <div
-              className={`p-8 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-xl ${
-                theme === 'dark'
-                  ? 'bg-gray-800/50 border border-gray-700'
-                  : 'bg-amber-50 border border-amber-200'
-              }`}
-            >
-              <Calendar size={64} className="mx-auto mb-6 text-primary" />
-              <h3 className="text-2xl font-semibold mb-4 text-primary">
-                Easy Booking
-              </h3>
-              <p className="opacity-70 text-lg">
-                Seamless reservation experience with instant confirmation
-              </p>
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+              Luxury Redefined
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+              At Elite Hotel, we believe that every guest deserves an
+              extraordinary experience. Our commitment to excellence shines
+              through in every detail, from our elegantly appointed rooms to our
+              personalized service.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-primary rounded-full" />
+                <span className="text-gray-700 dark:text-gray-300">
+                  5-Star Service
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-primary rounded-full" />
+                <span className="text-gray-700 dark:text-gray-300">
+                  Premium Amenities
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-primary rounded-full" />
+                <span className="text-gray-700 dark:text-gray-300">
+                  Prime Location
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-primary rounded-full" />
+                <span className="text-gray-700 dark:text-gray-300">
+                  24/7 Concierge
+                </span>
+              </div>
             </div>
           </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="btn-primary px-8 py-4 rounded-full font-semibold text-lg hover:scale-105 shadow-lg">
-              Learn More
-            </button>
-            <button
-              className={`px-8 py-4 rounded-full font-semibold text-lg border-2 border-primary transition-all duration-300 hover:scale-105 ${
-                theme === 'dark'
-                  ? 'text-primary hover:bg-gray-800'
-                  : 'text-primary hover:bg-amber-50'
-              }`}
-            >
-              View Gallery
-            </button>
+          <div className="relative">
+            <img
+              src="https://images.unsplash.com/photo-1578683010236-d716f9a3f461?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+              alt="Hotel Lobby"
+              className="rounded-2xl shadow-2xl w-full h-96 object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl" />
           </div>
         </div>
       </div>
@@ -186,67 +156,87 @@ const Home = () => {
       {/* Services Section */}
       <div
         ref={addToRefs}
-        className={`min-h-screen flex items-center justify-center ${
-          theme === 'dark'
-            ? 'bg-gradient-to-br from-gray-800 to-gray-900'
-            : 'bg-gradient-to-br from-gray-50 to-gray-100'
-        } transition-colors duration-300`}
+        className="h-screen flex items-center justify-center bg-white dark:bg-gray-900 px-4 sm:px-6 lg:px-8"
       >
-        <div className="max-w-6xl mx-auto px-4 text-center">
-          <h2
-            className={`text-5xl md:text-6xl font-serif font-bold mb-8 text-primary`}
-          >
+        <div className="max-w-6xl mx-auto text-center">
+          <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-12">
             Our Services
           </h2>
-          <p
-            className={`text-xl md:text-2xl leading-relaxed mb-12 ${
-              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-            } max-w-4xl mx-auto`}
-          >
-            Discover the exceptional services that make your stay unforgettable
-          </p>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {[
-              {
-                title: 'Spa & Wellness',
-                desc: 'Rejuvenate your mind and body',
-              },
-              { title: 'Fine Dining', desc: 'Exquisite culinary experiences' },
-              {
-                title: 'Event Spaces',
-                desc: 'Perfect venues for any occasion',
-              },
-              {
-                title: 'Business Center',
-                desc: 'Professional meeting facilities',
-              },
-            ].map((service, index) => (
-              <div
-                key={index}
-                className={`p-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg ${
-                  theme === 'dark'
-                    ? 'bg-gray-800/50 border border-gray-700'
-                    : 'bg-white border border-gray-200'
-                }`}
-              >
-                <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white font-bold text-xl">
-                    {index + 1}
-                  </span>
-                </div>
-                <h3 className="text-xl font-semibold mb-2 text-primary">
-                  {service.title}
-                </h3>
-                <p
-                  className={`${
-                    theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                  }`}
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="group p-8 rounded-2xl bg-gray-50 dark:bg-gray-800 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg
+                  className="w-8 h-8 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  {service.desc}
-                </p>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                  />
+                </svg>
               </div>
-            ))}
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Luxury Rooms
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Spacious and elegantly designed rooms with modern amenities and
+                stunning city views.
+              </p>
+            </div>
+
+            <div className="group p-8 rounded-2xl bg-gray-50 dark:bg-gray-800 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg
+                  className="w-8 h-8 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Fine Dining
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Award-winning restaurants serving exquisite cuisine from around
+                the world.
+              </p>
+            </div>
+
+            <div className="group p-8 rounded-2xl bg-gray-50 dark:bg-gray-800 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg
+                  className="w-8 h-8 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Spa & Wellness
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Rejuvenate your body and mind with our world-class spa and
+                wellness facilities.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -254,54 +244,50 @@ const Home = () => {
       {/* Contact Section */}
       <div
         ref={addToRefs}
-        className={`min-h-screen flex items-center justify-center ${
-          theme === 'dark'
-            ? 'bg-gradient-to-br from-amber-900 via-orange-900 to-red-900'
-            : 'bg-gradient-to-br from-amber-500 via-orange-500 to-red-500'
-        } transition-colors duration-300`}
+        className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-800 px-4 sm:px-6 lg:px-8"
       >
-        <div className="max-w-5xl mx-auto px-4 text-center text-white">
-          <h2 className="text-5xl md:text-6xl font-serif font-bold mb-8">
-            Get In Touch
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-8">
+            Ready to Experience Luxury?
           </h2>
-          <p className="text-xl md:text-2xl leading-relaxed mb-12 opacity-90 max-w-3xl mx-auto">
-            Ready to experience luxury? Contact us today to make your
-            reservation and begin your journey of elegance.
+          <p className="text-xl text-gray-600 dark:text-gray-300 mb-12 leading-relaxed">
+            Book your stay with us today and discover what makes Elite Hotel the
+            perfect choice for discerning travelers.
           </p>
-
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail size={32} className="text-white" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Email Us</h3>
-              <p className="opacity-80">info@elitehotel.com</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">📞</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Call Us</h3>
-              <p className="opacity-80">+1 (555) 123-4567</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">📍</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Visit Us</h3>
-              <p className="opacity-80">123 Luxury Ave, City Center</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-6 justify-center">
-            <button className="bg-white text-amber-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transition-all duration-300 hover:scale-105 shadow-2xl">
-              <Mail size={20} className="inline mr-2" />
-              Contact Us
-            </button>
-            <button className="bg-white/10 backdrop-blur-sm text-white border border-white/30 px-8 py-4 rounded-full font-semibold text-lg hover:bg-white/20 transition-all duration-300 hover:scale-105">
-              <Calendar size={20} className="inline mr-2" />
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+            <button className="bg-primary hover:bg-primary/90 text-white px-10 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
               Book Now
             </button>
+            <button className="border-2 border-primary text-primary hover:bg-primary hover:text-white px-10 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105">
+              Contact Us
+            </button>
+          </div>
+
+          <div className="mt-16 grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Phone
+              </h4>
+              <p className="text-gray-600 dark:text-gray-300">
+                +1 (555) 123-4567
+              </p>
+            </div>
+            <div className="text-center">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Email
+              </h4>
+              <p className="text-gray-600 dark:text-gray-300">
+                info@elitehotel.com
+              </p>
+            </div>
+            <div className="text-center">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Address
+              </h4>
+              <p className="text-gray-600 dark:text-gray-300">
+                123 Luxury Ave, City Center
+              </p>
+            </div>
           </div>
         </div>
       </div>

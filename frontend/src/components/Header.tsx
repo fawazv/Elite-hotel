@@ -1,37 +1,43 @@
-import { useState, useEffect, useCallback } from 'react'
-import { ChevronDown, LogOut, User } from 'lucide-react'
-import MobileMenuButton from './shared/header/MobileMenuButton'
-import ProfileAvatar from './shared/header/ProfileAvatar'
-import { useSelector } from 'react-redux'
+// components/Header.tsx
+import React, { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
 import type { RootState } from '../redux/store/store'
+import { logout } from '../redux/slices/authSlice'
 import ThemeToggle from './shared/header/ThemeToggle'
+import MobileMenuButton from './shared/header/MobileMenuButton'
 import Sidebar from './shared/header/Sidebar'
 import NavButton from './shared/header/NavButton'
-import AnimatedDropdown from './shared/header/AnimatedDropdown'
 
-const Header = () => {
-  const theme = useSelector((state: RootState) => state.theme.mode)
-
-  // Mock data - replace with your actual Redux state
-  const user = {
-    fullName: 'John Doe',
-    profileImage: '/api/placeholder/40/40',
-  }
-  const isAuthenticated = true
-  const isAdmin = true
+const Header: React.FC = () => {
+  const dispatch = useDispatch()
+  const { user, isAuthenticated } = useSelector(
+    (state: RootState) => state.auth
+  )
 
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
+  // Check if user is admin
+  const isAdmin = user?.role === 'admin'
+
+  // Optimize scroll handler with useCallback
   const handleScroll = useCallback(() => {
     setScrolled(window.scrollY > 10)
   }, [])
 
   const logoutUser = async () => {
-    console.log('Logout triggered')
-    setDropdownOpen(false)
-    // Add your logout logic here
+    try {
+      // Clear any stored tokens
+      localStorage.removeItem('accessToken')
+      dispatch(logout())
+      setDropdownOpen(false)
+      // Show success message if you have a toast system
+      console.log('Logged out successfully')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
   }
 
   useEffect(() => {
@@ -42,49 +48,57 @@ const Header = () => {
       }
     }
 
+    // Add scroll event listener
     window.addEventListener('scroll', handleScroll)
-    document.addEventListener('mousedown', handleClickOutside)
 
+    // Add click outside listener
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside as EventListener)
+
+    // Cleanup function
     return () => {
       window.removeEventListener('scroll', handleScroll)
       document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener(
+        'touchstart',
+        handleClickOutside as EventListener
+      )
     }
   }, [dropdownOpen, handleScroll])
 
-  const headerBg = scrolled
-    ? theme === 'dark'
-      ? 'bg-gray-900/95 backdrop-blur-lg shadow-2xl border-b border-gray-800'
-      : 'bg-white/95 backdrop-blur-lg shadow-2xl'
-    : 'bg-transparent'
-
   return (
     <header
-      className={`fixed top-0 w-full z-50 transition-all duration-500 ${headerBg} py-2`}
+      className={`
+        fixed top-0 w-full z-50 transition-all duration-300
+        ${
+          scrolled
+            ? 'bg-white dark:bg-gray-900 shadow-lg py-2'
+            : 'bg-transparent py-4'
+        }
+      `}
     >
       <div className="container mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-8">
-        {/* Logo */}
-        <div className="flex items-center space-x-4">
-          <button className="flex items-center group">
-            <span
-              className={`font-serif text-2xl font-bold transition-all duration-300 group-hover:scale-105 ${
-                scrolled ? 'text-primary' : 'text-white'
-              }`}
-            >
-              Elite Hotel
-            </span>
-          </button>
-        </div>
+        <Link to="/" className="flex items-center">
+          <span
+            className={`
+              font-serif text-2xl font-bold transition-colors duration-200
+              ${scrolled ? 'text-primary' : 'text-white'}
+            `}
+          >
+            Elite Hotel
+          </span>
+        </Link>
 
         {/* Mobile Menu Button */}
-        <div className="flex items-center space-x-2 lg:hidden">
-          <ThemeToggle scrolled={scrolled} />
+        <div className="flex items-center gap-2 lg:hidden">
+          <ThemeToggle className="mr-2" />
           <MobileMenuButton open={open} scrolled={scrolled} setOpen={setOpen} />
         </div>
 
         {/* Sidebar Overlay */}
         {open && (
           <div
-            className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
         )}
@@ -94,95 +108,112 @@ const Header = () => {
           open={open}
           setOpen={setOpen}
           isAuthenticated={isAuthenticated}
-          logoutUser={logoutUser}
+          onLogout={logoutUser}
           isAdmin={isAdmin}
           userName={user?.fullName}
-          profilePicture={user?.profileImage}
+          profilePicture={user?.profileImage || '/default-avatar.png'}
         />
 
         {/* Desktop Menu */}
-        <nav className="hidden lg:flex gap-6 items-center">
+        <nav className="hidden lg:flex gap-8 items-center">
           <NavButton href="/rooms" scrolled={scrolled}>
-            Browse Rooms
+            Browse all rooms
           </NavButton>
+
           {isAdmin && (
             <NavButton href="/admin" scrolled={scrolled}>
               Admin
             </NavButton>
           )}
+
           <NavButton href="/bookings" scrolled={scrolled}>
-            My Bookings
+            Find my booking
           </NavButton>
 
-          <ThemeToggle scrolled={scrolled} />
+          <ThemeToggle className="mx-2" />
 
           {isAuthenticated ? (
             <div className="relative account-dropdown">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-300 hover:scale-105 focus:ring-primary ${
-                  scrolled
-                    ? theme === 'dark'
-                      ? 'hover:bg-gray-800 text-gray-200'
-                      : 'hover:bg-gray-100 text-gray-800'
-                    : 'hover:bg-white/10 text-white'
-                }`}
+                className={`
+                  font-medium transition-colors flex items-center gap-2
+                  ${
+                    scrolled
+                      ? 'text-gray-800 dark:text-gray-200 hover:text-primary'
+                      : 'text-white hover:text-white/80'
+                  }
+                `}
                 aria-expanded={dropdownOpen}
+                aria-haspopup="true"
               >
-                <ProfileAvatar src={user?.profileImage} alt="Profile" />
-                <span className="font-medium">{user?.fullName}</span>
-                <ChevronDown
-                  className={`transition-transform duration-300 ${
+                <div className="flex items-center gap-2">
+                  <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                    <img
+                      src={user?.profileImage || '/default-avatar.png'}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span>{user?.fullName || 'User'}</span>
+                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={`transform transition-transform ${
                     dropdownOpen ? 'rotate-180' : ''
                   }`}
-                  size={16}
-                />
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
               </button>
 
-              <AnimatedDropdown
-                isOpen={dropdownOpen}
-                className={`absolute right-0 mt-2 w-56 rounded-xl shadow-2xl py-2 ring-1 ring-black/5 z-50 ${
-                  theme === 'dark'
-                    ? 'bg-gray-800 border border-gray-700'
-                    : 'bg-white'
-                }`}
-              >
-                <button
-                  className={`w-full text-left px-4 py-3 text-sm transition-colors focus:ring-primary ${
-                    theme === 'dark'
-                      ? 'text-gray-200 hover:bg-gray-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                  onClick={() => setDropdownOpen(false)}
-                >
-                  <User size={16} className="inline mr-2" />
-                  Profile
-                </button>
-                <button
-                  className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors focus:ring-2 focus:ring-red-500"
-                  onClick={logoutUser}
-                >
-                  <LogOut size={16} className="inline mr-2" />
-                  Sign out
-                </button>
-              </AnimatedDropdown>
+              {dropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50 animate-fade-in">
+                  <Link
+                    to="/account/profile"
+                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    onClick={() => setDropdownOpen(false)}
+                  >
+                    Profile
+                  </Link>
+                  <button
+                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left cursor-pointer"
+                    onClick={logoutUser}
+                  >
+                    Sign out
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="flex items-center gap-3">
-              <button
-                className={`px-6 py-2 rounded-lg font-medium border transition-all duration-300 hover:scale-105 focus:ring-primary ${
-                  scrolled
-                    ? theme === 'dark'
-                      ? 'bg-gray-800 text-gray-200 border-gray-600 hover:bg-gray-700'
-                      : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'
-                    : 'bg-white/10 text-white border-white/30 backdrop-blur-sm hover:bg-white/20'
-                }`}
+            <div className="flex items-center gap-4">
+              <Link
+                to="/signin"
+                className={`
+                  px-5 py-2 rounded-lg font-medium border transition-all duration-200
+                  ${
+                    scrolled
+                      ? 'bg-white dark:bg-gray-800 text-primary border-primary hover:bg-gray-50 dark:hover:bg-gray-700'
+                      : 'bg-white/5 text-white border border-white/30 backdrop-blur-sm hover:bg-white/20'
+                  }
+                `}
               >
                 Sign In
-              </button>
-              <button className="btn-primary px-6 py-2 rounded-lg font-medium hover:scale-105 focus:ring-primary shadow-lg">
+              </Link>
+              <Link
+                to="/signup"
+                className="bg-primary text-white px-5 py-2 rounded-lg font-medium hover:bg-primary/75 transition-colors duration-200"
+              >
                 Sign Up
-              </button>
+              </Link>
             </div>
           )}
         </nav>
