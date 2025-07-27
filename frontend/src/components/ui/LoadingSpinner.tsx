@@ -23,13 +23,11 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
       <div className="flex flex-col items-center gap-4">
         <div
           className={`
-            ${sizeClasses[size]} border-4 border-gray-200 dark:border-gray-700 
+            ${sizeClasses[size]} border-4 border-gray-200 
             border-t-primary rounded-full animate-spin
           `}
         />
-        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
-          Loading...
-        </p>
+        <p className="text-gray-600 text-sm font-medium">Loading...</p>
       </div>
     </div>
   )
