@@ -14,13 +14,8 @@ export interface AuthState {
   error: string | null
 }
 
-export interface ThemeState {
-  mode: 'light' | 'dark'
-}
-
 export interface RootState {
   auth: AuthState
-  theme: ThemeState
 }
 
 export interface HeaderProps {

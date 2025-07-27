@@ -195,7 +195,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         ref={sidebarRef}
         className={`
           fixed top-0 right-0 h-full w-80 shadow-xl z-50 lg:hidden overflow-y-auto flex flex-col
-          bg-white dark:bg-gray-900 transition-all duration-300 ease-in-out
+          bg-white transition-all duration-300 ease-in-out
           ${open ? 'translate-x-0' : 'translate-x-full'}
         `}
         aria-label="Mobile navigation menu"
@@ -203,7 +203,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         aria-modal="true"
       >
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex justify-between items-center p-6 border-b border-gray-200">
           <Link to="/" onClick={() => setOpen(false)}>
             <span className="font-serif text-2xl font-bold text-primary">
               Elite Hotel
@@ -211,7 +211,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </Link>
           <button
             onClick={() => setOpen(false)}
-            className="p-2 text-gray-500 dark:text-gray-400 hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full"
+            className="p-2 text-gray-500 hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full"
             aria-label="Close menu"
           >
             <FaTimes size={24} />
@@ -221,7 +221,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         {/* Navigation */}
         <nav className="p-6 flex-1">
           {isAuthenticated && userName && (
-            <div className="mb-6 p-4 bg-primary/5 dark:bg-primary/10 rounded-lg">
+            <div className="mb-6 p-4 bg-primary/5 rounded-lg">
               <div className="flex items-center">
                 {/* Profile picture */}
                 <div className="mr-3">
@@ -232,9 +232,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Welcome back
-                  </p>
+                  <p className="text-sm text-gray-500">Welcome back</p>
                   <p className="font-medium text-primary">{userName}</p>
                 </div>
               </div>
@@ -252,7 +250,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     ${
                       location.pathname === item.href
                         ? 'bg-primary/10 text-primary font-medium'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        : 'text-gray-700 hover:bg-gray-100'
                     }
                   `}
                 >
@@ -274,7 +272,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               </h3>
 
               <button
-                className="w-full flex items-center justify-between py-3 px-4 text-gray-700 dark:text-gray-300 font-medium cursor-pointer rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                className="w-full flex items-center justify-between py-3 px-4 text-gray-700 font-medium cursor-pointer rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 onClick={() => setAdminDropdownOpen(!adminDropdownOpen)}
                 aria-expanded={adminDropdownOpen}
                 aria-controls="admin-dropdown"
@@ -294,7 +292,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               {adminDropdownOpen && (
                 <div
                   id="admin-dropdown"
-                  className="mt-2 ml-4 pl-4 space-y-1 border-l-2 border-gray-200 dark:border-gray-700 animate-fade-in"
+                  className="mt-2 ml-4 pl-4 space-y-1 border-l-2 border-gray-200 animate-fade-in"
                 >
                   {/* {adminItems.map((item) => (
                     <Link
@@ -309,7 +307,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         ${
                           location.pathname === item.href
                             ? 'text-primary font-medium bg-primary/5'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800'
+                            : 'text-gray-600 hover:text-primary hover:bg-gray-50'
                         }
                       `}
                     >
@@ -324,11 +322,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         </nav>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+        <div className="p-6 border-t border-gray-200">
           {isAuthenticated ? (
             <div>
               <button
-                className="w-full flex items-center justify-between py-2 px-4 text-gray-700 dark:text-gray-300 font-medium cursor-pointer rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                className="w-full flex items-center justify-between py-2 px-4 text-gray-700 font-medium cursor-pointer rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 aria-expanded={dropdownOpen}
                 aria-controls="account-dropdown"
@@ -355,7 +353,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               {dropdownOpen && (
                 <div
                   id="account-dropdown"
-                  className="mt-2 ml-4 pl-4 space-y-1 border-l-2 border-gray-200 dark:border-gray-700 animate-fade-in"
+                  className="mt-2 ml-4 pl-4 space-y-1 border-l-2 border-gray-200 animate-fade-in"
                 >
                   <Link
                     to="/account/profile"
@@ -363,7 +361,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       setDropdownOpen(false)
                       setOpen(false)
                     }}
-                    className="flex items-center py-2 px-4 text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
+                    className="flex items-center py-2 px-4 text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors duration-200"
                   >
                     <FaUser className="mr-2" size={16} />
                     Profile
@@ -374,7 +372,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       setOpen(false)
                       await onLogout()
                     }}
-                    className="flex items-center py-2 px-4 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200 w-full text-left focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                    className="flex items-center py-2 px-4 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 w-full text-left focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                   >
                     <FaSignOutAlt className="mr-2" size={16} />
                     Sign out
@@ -405,23 +403,23 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Help & Social Links */}
-        <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+        <div className="p-6 border-t border-gray-200 ">
           <div className="flex justify-between">
             <a
               href="/help"
-              className="text-sm text-gray-500 dark:text-gray-400 hover:text-primary transition-colors duration-200"
+              className="text-sm text-gray-500 hover:text-primary transition-colors duration-200"
             >
               Help
             </a>
             <a
               href="/terms"
-              className="text-sm text-gray-500 dark:text-gray-400 hover:text-primary transition-colors duration-200"
+              className="text-sm text-gray-500 hover:text-primary transition-colors duration-200"
             >
               Terms
             </a>
             <a
               href="/privacy"
-              className="text-sm text-gray-500 dark:text-gray-400 hover:text-primary transition-colors duration-200"
+              className="text-sm text-gray-500 hover:text-primary transition-colors duration-200"
             >
               Privacy
             </a>

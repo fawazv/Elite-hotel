@@ -1,20 +1,56 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-serif: Georgia, serif;
+
+  --color-primary-50: #faf6f1;
+  --color-primary-100: #f4ebe0;
+  --color-primary-200: #e8d4c0;
+  --color-primary-300: #d9b896;
+  --color-primary-400: #c8976a;
+  --color-primary-500: #bc7f4d;
+  --color-primary-600: #ae6e41;
+  --color-primary-700: #8b4513;
+  --color-primary-800: #7a400f;
+  --color-primary-900: #65340c;
+  --color-primary: #8b4513;
+
+  --animation-fade-in: fadeIn 0.6s ease-out forwards;
+  --animation-bounce-slow: bounce 2s infinite;
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes bounce {
+    0%,
+    100% {
+      transform: translateY(-25%);
+      animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+    50% {
+      transform: none;
+      animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+  }
+
+  --backdrop-blur-xs: 2px;
+}
+
 :root {
   --primary-color: #8b4513;
   --primary-hover: #7a400f;
   --background-light: #ffffff;
-  --background-dark: #0f172a;
   --text-light: #1f2937;
-  --text-dark: #f8fafc;
   --card-light: #ffffff;
-  --card-dark: #1e293b;
   --border-light: #e5e7eb;
-  --border-dark: #374151;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
 }
 
 html {
@@ -34,12 +70,6 @@ body {
   color: var(--text-light);
 }
 
-/* Dark mode */
-body.dark {
-  background-color: var(--background-dark);
-  color: var(--text-dark);
-}
-
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -47,10 +77,6 @@ body.dark {
 
 ::-webkit-scrollbar-track {
   background: var(--background-light);
-}
-
-body.dark ::-webkit-scrollbar-track {
-  background: var(--background-dark);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -114,16 +140,8 @@ body.dark ::-webkit-scrollbar-track {
   background-color: var(--card-light);
 }
 
-body.dark .bg-card {
-  background-color: var(--card-dark);
-}
-
 .border-card {
   border-color: var(--border-light);
-}
-
-body.dark .border-card {
-  border-color: var(--border-dark);
 }
 
 /* Smooth transitions for theme changes */
@@ -172,13 +190,6 @@ body.dark .border-card {
 
 .backdrop-blur-md {
   backdrop-filter: blur(12px);
-}
-
-/* Glass morphism effect for dark mode */
-body.dark .glass-effect {
-  background: rgba(30, 41, 59, 0.8);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .glass-effect {

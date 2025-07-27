@@ -22,22 +22,20 @@ const MobileMenuButton: React.FC<MobileMenuButtonProps> = ({
         <span
           className={`block w-full h-0.5 transform transition-all duration-300 ${
             open
-              ? 'rotate-45 translate-y-1.5 bg-gray-800 dark:bg-gray-200'
-              : `${scrolled ? 'bg-gray-800 dark:bg-gray-200' : 'bg-white'}`
+              ? 'rotate-45 translate-y-1.5 bg-gray-800'
+              : `${scrolled ? 'bg-gray-800' : 'bg-white'}`
           }`}
         />
         <span
           className={`block w-full h-0.5 transition-opacity duration-300 ${
-            open
-              ? 'opacity-0'
-              : `${scrolled ? 'bg-gray-800 dark:bg-gray-200' : 'bg-white'}`
+            open ? 'opacity-0' : `${scrolled ? 'bg-gray-800' : 'bg-white'}`
           }`}
         />
         <span
           className={`block w-full h-0.5 transform transition-all duration-300 ${
             open
-              ? '-rotate-45 -translate-y-1.5 bg-gray-800 dark:bg-gray-200'
-              : `${scrolled ? 'bg-gray-800 dark:bg-gray-200' : 'bg-white'}`
+              ? '-rotate-45 -translate-y-1.5 bg-gray-800'
+              : `${scrolled ? 'bg-gray-800' : 'bg-white'}`
           }`}
         />
       </div>

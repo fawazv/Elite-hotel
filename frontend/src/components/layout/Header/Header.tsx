@@ -2,12 +2,11 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import type { RootState } from '../redux/store/store'
-import { logout } from '../redux/slices/authSlice'
-import ThemeToggle from './shared/header/ThemeToggle'
-import MobileMenuButton from './shared/header/MobileMenuButton'
-import Sidebar from './shared/header/Sidebar'
-import NavButton from './shared/header/NavButton'
+import type { RootState } from '../../../redux/store/store'
+import { logout } from '../../../redux/slices/authSlice'
+import MobileMenuButton from './MobileMenuButton'
+import Sidebar from './Sidebar'
+import NavButton from './NavButton'
 
 const Header: React.FC = () => {
   const dispatch = useDispatch()
@@ -70,11 +69,7 @@ const Header: React.FC = () => {
     <header
       className={`
         fixed top-0 w-full z-50 transition-all duration-300
-        ${
-          scrolled
-            ? 'bg-white dark:bg-gray-900 shadow-lg py-2'
-            : 'bg-transparent py-4'
-        }
+        ${scrolled ? 'bg-white shadow-lg py-2' : 'bg-transparent py-4'}
       `}
     >
       <div className="container mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-8">
@@ -91,7 +86,6 @@ const Header: React.FC = () => {
 
         {/* Mobile Menu Button */}
         <div className="flex items-center gap-2 lg:hidden">
-          <ThemeToggle className="mr-2" />
           <MobileMenuButton open={open} scrolled={scrolled} setOpen={setOpen} />
         </div>
 
@@ -130,8 +124,6 @@ const Header: React.FC = () => {
             Find my booking
           </NavButton>
 
-          <ThemeToggle className="mx-2" />
-
           {isAuthenticated ? (
             <div className="relative account-dropdown">
               <button
@@ -140,7 +132,7 @@ const Header: React.FC = () => {
                   font-medium transition-colors flex items-center gap-2
                   ${
                     scrolled
-                      ? 'text-gray-800 dark:text-gray-200 hover:text-primary'
+                      ? 'text-gray-800  hover:text-primary'
                       : 'text-white hover:text-white/80'
                   }
                 `}
@@ -176,16 +168,16 @@ const Header: React.FC = () => {
               </button>
 
               {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50 animate-fade-in">
+                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white  ring-1 ring-black ring-opacity-5 focus:outline-none z-50 animate-fade-in">
                   <Link
                     to="/account/profile"
-                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="block px-4 py-2 text-sm text-gray-700  hover:bg-gray-100 "
                     onClick={() => setDropdownOpen(false)}
                   >
                     Profile
                   </Link>
                   <button
-                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left cursor-pointer"
+                    className="block px-4 py-2 text-sm text-gray-700  hover:bg-gray-100  w-full text-left cursor-pointer"
                     onClick={logoutUser}
                   >
                     Sign out
@@ -201,7 +193,7 @@ const Header: React.FC = () => {
                   px-5 py-2 rounded-lg font-medium border transition-all duration-200
                   ${
                     scrolled
-                      ? 'bg-white dark:bg-gray-800 text-primary border-primary hover:bg-gray-50 dark:hover:bg-gray-700'
+                      ? 'bg-white  text-primary border-primary hover:bg-gray-50'
                       : 'bg-white/5 text-white border border-white/30 backdrop-blur-sm hover:bg-white/20'
                   }
                 `}

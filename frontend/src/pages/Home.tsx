@@ -1,6 +1,8 @@
 // pages/Home/Home.tsx
 import React, { useEffect, useRef, useCallback } from 'react'
-import Header from '../../components/Header'
+import Header from '../components/layout/Header/Header'
+import Hero from '../components/sections/Hero/Hero'
+import Footer from '../components/layout/Footer/Footer'
 
 const Home: React.FC = () => {
   const sections = useRef<HTMLElement[]>([])
@@ -49,67 +51,26 @@ const Home: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
-      {/* Hero Section */}
+    <div className="min-h-screen bg-white transition-colors duration-300">
       <div
         ref={addToRefs}
-        className="h-screen relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950"
+        className="h-screen relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 "
       >
         <Header />
-
-        {/* Background Image Overlay */}
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
-          style={{
-            backgroundImage:
-              'url("https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80")',
-          }}
-        />
-
-        {/* Hero Content */}
-        <div className="relative z-10 flex items-center justify-center h-full px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white mb-6 animate-fade-in">
-              Welcome to{' '}
-              <span className="text-primary bg-gradient-to-r from-primary to-orange-600 bg-clip-text">
-                Elite Hotel
-              </span>
-            </h1>
-            <p className="text-xl sm:text-2xl text-gray-300 mb-8 leading-relaxed animate-fade-in">
-              Experience luxury and comfort in the heart of the city. Your
-              perfect stay awaits with world-class amenities and exceptional
-              service.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in">
-              <button className="bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
-                Book Your Stay
-              </button>
-              <button className="border-2 border-white text-white hover:bg-white hover:text-gray-900 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105">
-                Explore Rooms
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
-            <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse" />
-          </div>
-        </div>
+        <Hero />
       </div>
 
       {/* About Section */}
       <div
         ref={addToRefs}
-        className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-800 px-4 sm:px-6 lg:px-8"
+        className="h-screen flex items-center justify-center bg-gray-50  px-4 sm:px-6 lg:px-8"
       >
         <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
               Luxury Redefined
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+            <p className="text-lg text-gray-600  mb-6 leading-relaxed">
               At Elite Hotel, we believe that every guest deserves an
               extraordinary experience. Our commitment to excellence shines
               through in every detail, from our elegantly appointed rooms to our
@@ -118,33 +79,25 @@ const Home: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 bg-primary rounded-full" />
-                <span className="text-gray-700 dark:text-gray-300">
-                  5-Star Service
-                </span>
+                <span className="text-gray-700 ">5-Star Service</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 bg-primary rounded-full" />
-                <span className="text-gray-700 dark:text-gray-300">
-                  Premium Amenities
-                </span>
+                <span className="text-gray-700 ">Premium Amenities</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 bg-primary rounded-full" />
-                <span className="text-gray-700 dark:text-gray-300">
-                  Prime Location
-                </span>
+                <span className="text-gray-700 ">Prime Location</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 bg-primary rounded-full" />
-                <span className="text-gray-700 dark:text-gray-300">
-                  24/7 Concierge
-                </span>
+                <span className="text-gray-700 ">24/7 Concierge</span>
               </div>
             </div>
           </div>
           <div className="relative">
             <img
-              src="https://images.unsplash.com/photo-1578683010236-d716f9a3f461?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+              src="/Hero2.avif"
               alt="Hotel Lobby"
               className="rounded-2xl shadow-2xl w-full h-96 object-cover"
             />
@@ -156,14 +109,14 @@ const Home: React.FC = () => {
       {/* Services Section */}
       <div
         ref={addToRefs}
-        className="h-screen flex items-center justify-center bg-white dark:bg-gray-900 px-4 sm:px-6 lg:px-8"
+        className="h-screen flex items-center justify-center bg-white  px-4 sm:px-6 lg:px-8"
       >
         <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-12">
+          <h2 className="text-4xl lg:text-5xl font-bold text-gray-900  mb-12">
             Our Services
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="group p-8 rounded-2xl bg-gray-50 dark:bg-gray-800 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+            <div className="group p-8 rounded-2xl bg-gray-50 -800 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
               <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
                 <svg
                   className="w-8 h-8 text-white"
@@ -179,16 +132,16 @@ const Home: React.FC = () => {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              <h3 className="text-xl font-semibold text-gray-900  mb-4">
                 Luxury Rooms
               </h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-gray-600 ">
                 Spacious and elegantly designed rooms with modern amenities and
                 stunning city views.
               </p>
             </div>
 
-            <div className="group p-8 rounded-2xl bg-gray-50 dark:bg-gray-800 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+            <div className="group p-8 rounded-2xl bg-gray-50  hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
               <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
                 <svg
                   className="w-8 h-8 text-white"
@@ -204,16 +157,16 @@ const Home: React.FC = () => {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              <h3 className="text-xl font-semibold text-gray-900  mb-4">
                 Fine Dining
               </h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-gray-600 ">
                 Award-winning restaurants serving exquisite cuisine from around
                 the world.
               </p>
             </div>
 
-            <div className="group p-8 rounded-2xl bg-gray-50 dark:bg-gray-800 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+            <div className="group p-8 rounded-2xl bg-gray-50  hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
               <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
                 <svg
                   className="w-8 h-8 text-white"
@@ -229,10 +182,10 @@ const Home: React.FC = () => {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              <h3 className="text-xl font-semibold text-gray-900  mb-4">
                 Spa & Wellness
               </h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-gray-600 ">
                 Rejuvenate your body and mind with our world-class spa and
                 wellness facilities.
               </p>
@@ -244,13 +197,13 @@ const Home: React.FC = () => {
       {/* Contact Section */}
       <div
         ref={addToRefs}
-        className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-800 px-4 sm:px-6 lg:px-8"
+        className="h-screen flex items-center justify-center bg-gray-50  px-4 sm:px-6 lg:px-8"
       >
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-8">
+          <h2 className="text-4xl lg:text-5xl font-bold text-gray-900  mb-8">
             Ready to Experience Luxury?
           </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-12 leading-relaxed">
+          <p className="text-xl text-gray-600  mb-12 leading-relaxed">
             Book your stay with us today and discover what makes Elite Hotel the
             perfect choice for discerning travelers.
           </p>
@@ -265,31 +218,25 @@ const Home: React.FC = () => {
 
           <div className="mt-16 grid md:grid-cols-3 gap-8">
             <div className="text-center">
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                Phone
-              </h4>
-              <p className="text-gray-600 dark:text-gray-300">
-                +1 (555) 123-4567
-              </p>
+              <h4 className="font-semibold text-gray-900  mb-2">Phone</h4>
+              <p className="text-gray-600 ">+1 (555) 123-4567</p>
             </div>
             <div className="text-center">
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                Email
-              </h4>
-              <p className="text-gray-600 dark:text-gray-300">
-                info@elitehotel.com
-              </p>
+              <h4 className="font-semibold text-gray-900  mb-2">Email</h4>
+              <p className="text-gray-600 ">info@elitehotel.com</p>
             </div>
             <div className="text-center">
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                Address
-              </h4>
-              <p className="text-gray-600 dark:text-gray-300">
-                123 Luxury Ave, City Center
-              </p>
+              <h4 className="font-semibold text-gray-900  mb-2">Address</h4>
+              <p className="text-gray-600 ">123 Luxury Ave, City Center</p>
             </div>
           </div>
         </div>
+      </div>
+      <div
+        ref={addToRefs}
+        className="h-screen relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 bottom-0"
+      >
+        <Footer />
       </div>
     </div>
   )

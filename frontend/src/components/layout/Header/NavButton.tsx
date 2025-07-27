@@ -17,7 +17,7 @@ const NavButton: React.FC<NavButtonProps> = ({
         font-medium transition-colors duration-200 hover:scale-105 transform
         ${
           scrolled
-            ? 'text-gray-800 dark:text-gray-200 hover:text-primary dark:hover:text-primary'
+            ? 'text-gray-800 hover:text-primary'
             : 'text-white hover:text-white/80'
         }
       `}

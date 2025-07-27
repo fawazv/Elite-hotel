@@ -5,7 +5,7 @@ import { Route, Routes } from 'react-router-dom'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 
 // Lazy load components for better performance
-const Home = React.lazy(() => import('../pages/Home/Home'))
+const Home = React.lazy(() => import('../pages/Home'))
 // const Rooms = React.lazy(() => import('../pages/Rooms/Rooms'));
 // const Bookings = React.lazy(() => import('../pages/Bookings/Bookings'));
 // const About = React.lazy(() => import('../pages/About/About'));
