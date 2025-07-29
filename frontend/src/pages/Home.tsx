@@ -5,6 +5,7 @@ import Hero from '../components/sections/Hero/Hero'
 import About from '../components/sections/About/About'
 import Services from '../components/sections/Services/Services'
 import Contact from '../components/sections/Contact/Contact'
+import FeaturedRoomsCarousel from '../components/sections/FeaturedRooms/FeaturedRooms'
 
 const Home: React.FC = () => {
   const { addToRefs } = useMainLayoutContext()
@@ -25,6 +26,14 @@ const Home: React.FC = () => {
         className="h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8"
       >
         <About />
+      </div>
+
+      {/* FeaturedRooms Section */}
+      <div
+        ref={addToRefs}
+        className="h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8"
+      >
+        <FeaturedRoomsCarousel />
       </div>
 
       {/* Services Section */}

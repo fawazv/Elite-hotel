@@ -1,6 +1,6 @@
 // components/Header.tsx
 import React, { useState, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState } from '../../../redux/store/store'
 import { logout } from '../../../redux/slices/authSlice'
@@ -10,6 +10,7 @@ import NavButton from './NavButton'
 
 const Header: React.FC = () => {
   const dispatch = useDispatch()
+  const location = useLocation()
   const { user, isAuthenticated } = useSelector(
     (state: RootState) => state.auth
   )
@@ -18,13 +19,22 @@ const Header: React.FC = () => {
   const [scrolled, setScrolled] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
+  // Check if current route is home page
+  const isHomePage = location.pathname === '/'
+
+  // Determine if header should be in scrolled state
+  const isScrolledState = !isHomePage || scrolled
+
   // Check if user is admin
   const isAdmin = user?.role === 'admin'
 
   // Optimize scroll handler with useCallback
   const handleScroll = useCallback(() => {
-    setScrolled(window.scrollY > 10)
-  }, [])
+    // Only update scroll state on home page
+    if (isHomePage) {
+      setScrolled(window.scrollY > 10)
+    }
+  }, [isHomePage])
 
   const logoutUser = async () => {
     try {
@@ -47,8 +57,10 @@ const Header: React.FC = () => {
       }
     }
 
-    // Add scroll event listener
-    window.addEventListener('scroll', handleScroll)
+    // Add scroll event listener only on home page
+    if (isHomePage) {
+      window.addEventListener('scroll', handleScroll)
+    }
 
     // Add click outside listener
     document.addEventListener('mousedown', handleClickOutside)
@@ -56,20 +68,29 @@ const Header: React.FC = () => {
 
     // Cleanup function
     return () => {
-      window.removeEventListener('scroll', handleScroll)
+      if (isHomePage) {
+        window.removeEventListener('scroll', handleScroll)
+      }
       document.removeEventListener('mousedown', handleClickOutside)
       document.removeEventListener(
         'touchstart',
         handleClickOutside as EventListener
       )
     }
-  }, [dropdownOpen, handleScroll])
+  }, [dropdownOpen, handleScroll, isHomePage])
+
+  // Reset scroll state when route changes
+  useEffect(() => {
+    if (!isHomePage) {
+      setScrolled(false)
+    }
+  }, [isHomePage])
 
   return (
     <header
       className={`
         fixed top-0 w-full z-50 transition-all duration-300
-        ${scrolled ? 'bg-white shadow-lg py-2' : 'bg-transparent py-4'}
+        ${isScrolledState ? 'bg-white shadow-lg py-2' : 'bg-transparent py-4'}
       `}
     >
       <div className="container mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-8">
@@ -77,7 +98,7 @@ const Header: React.FC = () => {
           <span
             className={`
               font-serif text-2xl font-bold transition-colors duration-200
-              ${scrolled ? 'text-primary' : 'text-white'}
+              ${isScrolledState ? 'text-primary' : 'text-white'}
             `}
           >
             Elite Hotel
@@ -86,7 +107,11 @@ const Header: React.FC = () => {
 
         {/* Mobile Menu Button */}
         <div className="flex items-center gap-2 lg:hidden">
-          <MobileMenuButton open={open} scrolled={scrolled} setOpen={setOpen} />
+          <MobileMenuButton
+            open={open}
+            scrolled={isScrolledState}
+            setOpen={setOpen}
+          />
         </div>
 
         {/* Sidebar Overlay */}
@@ -110,17 +135,17 @@ const Header: React.FC = () => {
 
         {/* Desktop Menu */}
         <nav className="hidden lg:flex gap-8 items-center">
-          <NavButton href="/rooms" scrolled={scrolled}>
+          <NavButton href="/rooms" scrolled={isScrolledState}>
             Browse all rooms
           </NavButton>
 
           {isAdmin && (
-            <NavButton href="/admin" scrolled={scrolled}>
+            <NavButton href="/admin" scrolled={isScrolledState}>
               Admin
             </NavButton>
           )}
 
-          <NavButton href="/bookings" scrolled={scrolled}>
+          <NavButton href="/bookings" scrolled={isScrolledState}>
             Find my booking
           </NavButton>
 
@@ -131,7 +156,7 @@ const Header: React.FC = () => {
                 className={`
                   font-medium transition-colors flex items-center gap-2
                   ${
-                    scrolled
+                    isScrolledState
                       ? 'text-gray-800  hover:text-primary'
                       : 'text-white hover:text-white/80'
                   }
@@ -192,7 +217,7 @@ const Header: React.FC = () => {
                 className={`
                   px-5 py-2 rounded-lg font-medium border transition-all duration-200
                   ${
-                    scrolled
+                    isScrolledState
                       ? 'bg-white  text-primary border-primary hover:bg-gray-50'
                       : 'bg-white/5 text-white border border-white/30 backdrop-blur-sm hover:bg-white/20'
                   }
