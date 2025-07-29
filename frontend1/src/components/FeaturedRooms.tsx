@@ -1,45 +1,49 @@
 //components/RoomCard.tsx
-import Image from "next/image";
-import Link from "next/link";
+import Image from 'next/image'
+import Link from 'next/link'
 
 const rooms = [
   {
     id: 1,
-    name: "Single Bed",
+    name: 'Single Bed',
     price: 99,
-    image: "/rooms/Room1.png",
-    amenities: ["Free WiFi", "TV", "Breakfast"],
-    size: "25m²",
-    capacity: "1 Person",
+    image:
+      'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&h=600&fit=crop&crop=center',
+    amenities: ['Free WiFi', 'TV', 'Breakfast'],
+    size: '25m²',
+    capacity: '1 Person',
   },
   {
     id: 2,
-    name: "Triple Suite",
+    name: 'Triple Suite',
     price: 199,
-    image: "/rooms/Room2.png",
-    amenities: ["Free WiFi", "Minibar", "Balcony"],
-    size: "45m²",
-    capacity: "3 People",
+    image:
+      'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&h=600&fit=crop&crop=center',
+    amenities: ['Free WiFi', 'Minibar', 'Balcony'],
+    size: '45m²',
+    capacity: '3 People',
   },
   {
     id: 3,
-    name: "Single Suite",
+    name: 'Single Suite',
     price: 149,
-    image: "/rooms/Room3.png",
-    amenities: ["Free WiFi", "Workspace", "Breakfast"],
-    size: "35m²",
-    capacity: "1 Person",
+    image:
+      'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=800&h=600&fit=crop&crop=center',
+    amenities: ['Free WiFi', 'Workspace', 'Breakfast'],
+    size: '35m²',
+    capacity: '1 Person',
   },
   {
     id: 4,
-    name: "Beach View",
+    name: 'Beach View',
     price: 249,
-    image: "/rooms/Room4.png",
-    amenities: ["Ocean View", "Balcony", "Breakfast"],
-    size: "40m²",
-    capacity: "2 People",
+    image:
+      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop&crop=center',
+    amenities: ['Ocean View', 'Balcony', 'Breakfast'],
+    size: '40m²',
+    capacity: '2 People',
   },
-];
+]
 
 export default function FeaturedRooms() {
   return (
@@ -129,7 +133,7 @@ export default function FeaturedRooms() {
                 ))}
               </div>
 
-              <Link href={`/rooms/${room.id} `}>
+              <Link href={`/rooms/${room.id}`}>
                 <button className="w-full bg-primary/10 text-primary font-medium py-2 rounded-lg transition-colors hover:bg-primary hover:text-white">
                   View Details
                 </button>
@@ -148,5 +152,5 @@ export default function FeaturedRooms() {
         </Link>
       </div>
     </section>
-  );
+  )
 }
