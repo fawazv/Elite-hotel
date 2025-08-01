@@ -6,6 +6,7 @@ import MainLayout from '../layouts/MainLayout'
 import AuthLayout from '../layouts/AuthLayout'
 import SnapScrollLayout from '../layouts/SnapScrollLayout'
 import NotFound from '../pages/NotFound'
+import SearchResults from '@/components/sections/SearchResult/SearchResult'
 
 // Lazy load components for better performance
 const Home = React.lazy(() => import('../pages/Home'))
@@ -35,6 +36,7 @@ const UserRoute: React.FC = () => {
           {/* <Route path="contact" element={<Contact />} /> */}
           {/* <Route path="account/profile" element={<Profile />} /> */}
           <Route path="*" element={<NotFound />} />
+          <Route path="/search-results" element={<SearchResults />} />
         </Route>
 
         {/* Auth layout routes (without Header/Footer) */}

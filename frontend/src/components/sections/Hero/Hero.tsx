@@ -81,7 +81,7 @@ const Hero = () => {
       </div>
 
       {/* Scroll Indicator */}
-      <div className="relative z-30">
+      <div className="relative z-30 hidden md:block">
         <ScrollIndicator />
       </div>
 

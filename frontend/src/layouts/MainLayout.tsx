@@ -1,4 +1,3 @@
-// layouts/MainLayout.tsx
 import React, { useEffect, useRef, useCallback } from 'react'
 import { Outlet } from 'react-router-dom'
 import Header from '../components/layout/Header/Header'
@@ -22,6 +21,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     (event: WheelEvent) => {
       if (!enableSnapScrolling) return
 
+      // Allow normal scrolling on smaller screens
+      if (window.innerWidth < 1024) {
+        return
+      }
+
       const viewportHeight = window.innerHeight
       const documentHeight = document.documentElement.scrollHeight
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop
@@ -31,12 +35,41 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         return
       }
 
-      // Find current section
-      const currentSectionIndex = sections.current.findIndex((section) => {
-        if (!section) return false
+      // Find current section based on viewport center
+      const viewportCenter = scrollTop + viewportHeight / 2
+      let currentSectionIndex = -1
+
+      for (let i = 0; i < sections.current.length; i++) {
+        const section = sections.current[i]
+        if (!section) continue
+
         const rect = section.getBoundingClientRect()
-        return rect.top >= -viewportHeight / 2 && rect.top <= viewportHeight / 2
-      })
+        const sectionTop = scrollTop + rect.top
+        const sectionBottom = sectionTop + rect.height
+
+        if (viewportCenter >= sectionTop && viewportCenter <= sectionBottom) {
+          currentSectionIndex = i
+          break
+        }
+      }
+
+      // If no section found, find the closest one
+      if (currentSectionIndex === -1) {
+        let minDistance = Infinity
+        for (let i = 0; i < sections.current.length; i++) {
+          const section = sections.current[i]
+          if (!section) continue
+
+          const rect = section.getBoundingClientRect()
+          const sectionCenter = scrollTop + rect.top + rect.height / 2
+          const distance = Math.abs(viewportCenter - sectionCenter)
+
+          if (distance < minDistance) {
+            minDistance = distance
+            currentSectionIndex = i
+          }
+        }
+      }
 
       // If we're at the last section and scrolling down, allow normal scrolling
       if (
@@ -53,19 +86,25 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       isScrollingRef.current = true
 
       const direction = event.deltaY > 0 ? 1 : -1
-
       const nextIndex = Math.min(
         Math.max(0, currentSectionIndex + direction),
         sections.current.length - 1
       )
 
       if (sections.current[nextIndex]) {
-        sections.current[nextIndex].scrollIntoView({ behavior: 'smooth' })
+        const targetSection = sections.current[nextIndex]
+        const rect = targetSection.getBoundingClientRect()
+        const targetScrollTop = window.pageYOffset + rect.top
+
+        window.scrollTo({
+          top: targetScrollTop,
+          behavior: 'smooth',
+        })
       }
 
       setTimeout(() => {
         isScrollingRef.current = false
-      }, 800)
+      }, 1000)
     },
     [enableSnapScrolling]
   )

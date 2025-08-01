@@ -1,10 +1,13 @@
 import { useState, type SetStateAction } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const RoomBookingSearch = () => {
   const [checkIn, setCheckIn] = useState('')
   const [checkOut, setCheckOut] = useState('')
   const [roomType, setRoomType] = useState('')
   const [guests, setGuests] = useState('2')
+
+  const navigate = useNavigate()
 
   const roomTypeOptions = [
     { value: '', label: 'Select a Room Type' },
@@ -125,6 +128,7 @@ const RoomBookingSearch = () => {
       guests,
     })
     // Here you would typically trigger a search or navigate to search results
+    navigate('/search-results')
   }
 
   return (

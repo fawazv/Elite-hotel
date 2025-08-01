@@ -6,13 +6,14 @@ import About from '../components/sections/About/About'
 import Services from '../components/sections/Services/Services'
 import Contact from '../components/sections/Contact/Contact'
 import FeaturedRoomsCarousel from '../components/sections/FeaturedRooms/FeaturedRooms'
+import Testimonials from '@/components/sections/Testimonials/Testimonials'
 
 const Home: React.FC = () => {
   const { addToRefs } = useMainLayoutContext()
 
   return (
     <>
-      {/* Hero Section */}
+      {/* Hero Section - Always full screen */}
       <div
         ref={addToRefs}
         className="h-screen relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"
@@ -20,36 +21,49 @@ const Home: React.FC = () => {
         <Hero />
       </div>
 
-      {/* About Section */}
+      {/* About Section - Responsive height */}
       <div
         ref={addToRefs}
-        className="h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8"
+        className="min-h-screen lg:h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8 py-8 lg:py-12"
       >
-        <About />
+        <div className="w-full max-w-7xl">
+          <About />
+        </div>
       </div>
 
-      {/* FeaturedRooms Section */}
+      {/* FeaturedRooms Section - Responsive height */}
       <div
         ref={addToRefs}
-        className="h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8"
+        className="min-h-screen lg:h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8 py-8 lg:py-12"
       >
-        <FeaturedRoomsCarousel />
+        <div className="w-full max-w-7xl">
+          <FeaturedRoomsCarousel />
+        </div>
       </div>
 
-      {/* Services Section */}
+      {/* Services Section - Responsive height */}
       <div
         ref={addToRefs}
-        className="h-screen flex items-center justify-center bg-white px-4 sm:px-6 lg:px-8"
+        className="min-h-screen lg:h-screen flex items-center justify-center bg-white px-4 sm:px-6 lg:px-8 py-8 lg:py-12"
       >
-        <Services />
+        <div className="w-full max-w-7xl">
+          <Services />
+        </div>
       </div>
 
-      {/* Contact Section */}
+      {/* Testimonials Section - Responsive height */}
+      <div ref={addToRefs} className="min-h-screen lg:h-screen ">
+        <Testimonials />
+      </div>
+
+      {/* Contact Section - Responsive height */}
       <div
         ref={addToRefs}
-        className="h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8"
+        className="min-h-screen lg:h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8 py-8 lg:py-12"
       >
-        <Contact />
+        <div className="w-full max-w-7xl">
+          <Contact />
+        </div>
       </div>
     </>
   )
