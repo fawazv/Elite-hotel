@@ -21,10 +21,11 @@ export class AuthController implements IAuthController {
 
   async signup(req: Request, res: Response, next: NextFunction) {
     try {
-      const { fullName, email, password, role } = req.body
+      const { fullName, email, phoneNumber, password, role } = req.body
       const response = await this.authService.signUp(
         fullName,
         email,
+        phoneNumber,
         password,
         role
       )

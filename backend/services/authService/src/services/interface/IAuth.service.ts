@@ -23,9 +23,7 @@ export interface IAuthService {
     email: string,
     phoneNumber: string,
     password: string,
-    role: string,
-    otp: string,
-    type: string
+    role: string
   ): Promise<void>
   verifySignUpOtp(
     email: string,

@@ -34,9 +34,7 @@ export class AuthService implements IAuthService {
     email: string,
     phoneNumber: string,
     password: string,
-    role: string,
-    otp: string,
-    type: string
+    role: string
   ) {
     try {
       const existingUser = await this.userRepository.findByEmail(email)
@@ -68,6 +66,10 @@ export class AuthService implements IAuthService {
     try {
       const checkUser = await this.userRepository.findByEmail(email)
 
+      if (!checkUser) {
+        throw new CustomError('user not found!', HttpStatus.NOTFOUND)
+      }
+
       if (checkUser && checkUser.isVerified && type !== 'forgetPassword') {
         throw new CustomError('User alsready exits', HttpStatus.ALREADYEXISTS)
       }
@@ -86,28 +88,24 @@ export class AuthService implements IAuthService {
         }
       }
 
-      
-        await this.userRepository.updateUserField(email, 'isVerified', true);
-        await this.otpRepository.deleteOtp(email)
+      await this.userRepository.updateUserField(email, 'isVerified', true)
+      await this.otpRepository.deleteOtp(email)
 
-        const accessToken = generateAccessToken({
-          id: checkUser._id.toString(),
-          email,
-          role: checkUser.role,
-        })
-        const refreshToken = generateRefreshToken({
-          id: checkUser._id.toString(),
-          email,
-          role: checkUser.role,
-        })
+      const accessToken = generateAccessToken({
+        id: checkUser._id.toString(),
+        email,
+        role: checkUser.role,
+      })
+      const refreshToken = generateRefreshToken({
+        id: checkUser._id.toString(),
+        email,
+        role: checkUser.role,
+      })
 
-        return {
-          success: true,
-          message: 'OTP verified successfully!',
-          data: { user, accessToken, refreshToken },
-        }
-      } else {
-        throw new CustomError('otp expired or invalid!', HttpStatus.NOTFOUND)
+      return {
+        success: true,
+        message: 'OTP verified successfully!',
+        data: { checkUser, accessToken, refreshToken },
       }
     } catch (error) {
       throw error
