@@ -10,26 +10,26 @@ export const signInRequest = async (
   return response
 }
 
-export const signUpRequest = async (email: string) => {
-  const response = await api.post('/signup', { email })
-  return response
-}
-
-export const otpVerify = async (
+export const signUpRequest = async (
   fullName: string,
   email: string,
   password: string,
   role: string,
-  phoneNumber: string,
-  otp: string,
-  type: string
+  phoneNumber: string
 ) => {
-  const response = await api.post('/otp-signup', {
-    fullName,
+  const response = await api.post('/signup', {
     email,
     password,
     role,
+    fullName,
     phoneNumber,
+  })
+  return response
+}
+
+export const otpVerify = async (email: string, otp: string, type: string) => {
+  const response = await api.post('/otp-signup', {
+    email,
     otp,
     type,
   })

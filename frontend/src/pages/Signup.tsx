@@ -42,8 +42,14 @@ export default function Signup() {
   const onSubmit: SubmitHandler<SignUpSchemaType> = async (data) => {
     setIsLoading(true)
     try {
-      const { fullName, email, password, phoneNumber } = data
-      const response = await signUpRequest(email)
+      const { fullName, email, password, phoneNumber, role } = data
+      const response = await signUpRequest(
+        fullName,
+        email,
+        password,
+        phoneNumber,
+        role
+      )
       dispatch(
         setSignupData({
           fullName,
