@@ -1,11 +1,12 @@
 // types/index.ts
-export type UserRole = 'receptionist' | 'housekeeper' | 'admin'
+export type UserRole = 'receptionist' | 'housekeeper'
 
 export interface SignUpSchemaType {
   fullName: string
   email: string
   password: string
   phoneNumber: string
+  role: UserRole
 }
 
 export interface AuthProviderProps {
@@ -18,7 +19,7 @@ export interface User {
   fullName: string
   email: string
   profileImage?: string
-  role?: 'user' | 'admin'
+  role?: 'receptionist' | 'housekeeper'
 }
 
 export interface AuthState {

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './_components/ui/Tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FcGoogle } from 'react-icons/fc'
 import { HiOutlineMail } from 'react-icons/hi'
 import { RiLockPasswordLine } from 'react-icons/ri'
@@ -19,12 +19,11 @@ import { setSignupData } from '@/redux/slices/signupSlice'
 import { signUpRequest } from '@/services/authApi'
 
 export default function Signup() {
-  const { setPassword } = useAuth()
   const navigate = useNavigate()
   const dispatch = useDispatch<AppDispatch>()
 
   const [role, setRole] = useState<UserRole>('receptionist')
-  const [error, setError] = useState<string>('')
+  // const [error, setError] = useState<string>('')
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
   const handleRoleChange = (selectedRole: UserRole) => {
@@ -50,6 +49,9 @@ export default function Signup() {
         phoneNumber,
         role
       )
+      console.log('Sign up response:', response)
+      console.log(role, 'role in signup')
+
       dispatch(
         setSignupData({
           fullName,

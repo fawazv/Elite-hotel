@@ -4,14 +4,17 @@ import axios from 'axios'
 import { logout } from '@/redux/slices/authSlice'
 import { store } from '@/redux/store/store'
 
+const authBaseUrl = import.meta.env.VITE_AUTH_API_BASE_URL
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_AUTH_API_BASE_URL,
+  baseURL: authBaseUrl,
   withCredentials: true,
 })
 
 // Private API (for token-based requests)
 export const privateApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  baseURL: apiBaseUrl,
   withCredentials: true,
 })
 
