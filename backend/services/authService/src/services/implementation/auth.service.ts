@@ -40,7 +40,7 @@ export class AuthService implements IAuthService {
       const existingUser = await this.userRepository.findByEmail(email)
 
       if (existingUser) {
-        throw new CustomError('User already exists', HttpStatus.ALREADYEXISTS)
+        throw new CustomError('Email already exists', HttpStatus.ALREADYEXISTS)
       }
 
       const hashedPassword = await hashPassword(password)

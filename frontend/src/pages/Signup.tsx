@@ -73,8 +73,7 @@ export default function Signup() {
       } else {
         setError(response.message || 'Failed to create account')
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error during sign up:', error)
 
       // Assert the type of the error object
