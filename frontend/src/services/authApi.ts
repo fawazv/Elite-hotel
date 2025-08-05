@@ -24,7 +24,7 @@ export const signUpRequest = async (
     fullName,
     phoneNumber,
   })
-  return response
+  return response.data
 }
 
 export const otpVerify = async (email: string, otp: string, type: string) => {

@@ -9,10 +9,10 @@ import { RiLockPasswordLine } from 'react-icons/ri'
 import { BsTelephone, BsPerson } from 'react-icons/bs'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import type { UserRole, SignUpSchemaType } from '@/types/index'
+import type { UserRole } from '@/types/index'
 import { useForm, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { signUpSchema } from '@/validators/authValidator'
+import { signUpSchema, type SignUpSchemaType } from '@/validators/authValidator'
 import { useDispatch } from 'react-redux'
 import type { AppDispatch } from '@/redux/store/store'
 import { setSignupData } from '@/redux/slices/signupSlice'
@@ -23,11 +23,15 @@ export default function Signup() {
   const dispatch = useDispatch<AppDispatch>()
 
   const [role, setRole] = useState<UserRole>('receptionist')
-  // const [error, setError] = useState<string>('')
+  const [error, setError] = useState<string>('')
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
   const handleRoleChange = (selectedRole: UserRole) => {
     setRole(selectedRole)
+  }
+
+  const clearError = () => {
+    if (error) setError('')
   }
 
   const {
@@ -39,6 +43,7 @@ export default function Signup() {
   })
 
   const onSubmit: SubmitHandler<SignUpSchemaType> = async (data) => {
+    setError('') // Clear any previous errors
     setIsLoading(true)
     try {
       const { fullName, email, password, phoneNumber } = data
@@ -46,11 +51,11 @@ export default function Signup() {
         fullName,
         email,
         password,
-        phoneNumber,
-        role
+        role,
+        phoneNumber
       )
-      console.log('Sign up response:', response)
-      console.log(role, 'role in signup')
+
+      console.log(response, 'response from signup API')
 
       dispatch(
         setSignupData({
@@ -62,9 +67,11 @@ export default function Signup() {
         })
       )
 
-      navigate('/otp-signup')
+      navigate('/otp-signup', { state: { email, type: 'signup' } })
     } catch (error) {
-      console.error('Error during sign-up:', error)
+      if (error instanceof Error) {
+        setError('Internal server error, please try again later.')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -173,6 +180,17 @@ export default function Signup() {
             </span>
           </div>
 
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg"
+            >
+              <p className="text-sm text-red-600">{error}</p>
+            </motion.div>
+          )}
+
           <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-1">
               <Label htmlFor="name" className="text-sm font-medium">
@@ -185,9 +203,10 @@ export default function Signup() {
                 <Input
                   id="name"
                   placeholder="Enter your name"
+                  autoComplete="name"
                   className="pl-10 py-6 rounded-xl bg-gray-50 border-gray-200 focus:border-[#8b4513] focus:ring-[#8b4513]/10"
                   required
-                  {...register('fullName')}
+                  {...register('fullName', { onChange: clearError })}
                 />
               </div>
             </div>
@@ -203,10 +222,11 @@ export default function Signup() {
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="Enter your email"
                   className="pl-10 py-6 rounded-xl bg-gray-50 border-gray-200 focus:border-[#8b4513] focus:ring-[#8b4513]/10"
                   required
-                  {...register('email')}
+                  {...register('email', { onChange: clearError })}
                 />
               </div>
             </div>
@@ -225,7 +245,7 @@ export default function Signup() {
                   placeholder="Create a password"
                   className="pl-10 py-6 rounded-xl bg-gray-50 border-gray-200 focus:border-[#8b4513] focus:ring-[#8b4513]/10"
                   required
-                  {...register('password')}
+                  {...register('password', { onChange: clearError })}
                 />
               </div>
               {errors.password && (
@@ -246,10 +266,11 @@ export default function Signup() {
                 <Input
                   id="phone"
                   type="text"
+                  autoComplete="tel"
                   placeholder="Enter your phone number"
                   className="pl-10 py-6 rounded-xl bg-gray-50 border-gray-200 focus:border-[#8b4513] focus:ring-[#8b4513]/10"
                   required
-                  {...register('phoneNumber')}
+                  {...register('phoneNumber', { onChange: clearError })}
                 />
               </div>
               {errors.phoneNumber && (

@@ -39,9 +39,18 @@ export class AuthService implements IAuthService {
     try {
       const existingUser = await this.userRepository.findByEmail(email)
 
-      if (existingUser && existingUser.isVerified) {
-        throw new CustomError('User already exits', HttpStatus.ALREADYEXISTS)
+      if (existingUser?.isVerified) {
+        throw new CustomError('User already exists', HttpStatus.ALREADYEXISTS)
       }
+
+      if (existingUser && !existingUser.isVerified) {
+        // Handle unverified user logic
+        throw new CustomError(
+          'Please verify your email first',
+          HttpStatus.UNAUTHORIZED
+        )
+      }
+
       const hashedPassword = await hashPassword(password)
       const userData: any = {
         fullName,

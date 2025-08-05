@@ -34,13 +34,6 @@ export const signUpSchema = z.object({
     .length(10, 'Phone number must be exactly 10 digits')
     .min(1, { message: 'Phone number is required' })
     .regex(/^\d+$/, 'Phone number must contain only digits'),
-  role: z
-    .enum(['receptionist', 'housekeeper'], {
-      message: 'Role must be one of [receptionist, housekeeper]',
-    })
-    .refine((val) => val !== undefined && val !== null, {
-      message: 'Role is a required field',
-    }),
 })
 
 // Sign in schema
