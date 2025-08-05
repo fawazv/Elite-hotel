@@ -17,6 +17,7 @@ import { useDispatch } from 'react-redux'
 import type { AppDispatch } from '@/redux/store/store'
 import { setSignupData } from '@/redux/slices/signupSlice'
 import { signUpRequest } from '@/services/authApi'
+import type { ServerErrorResponse } from '@/utils/serverErrorResponse'
 
 export default function Signup() {
   const navigate = useNavigate()
@@ -76,17 +77,18 @@ export default function Signup() {
     } catch (error: any) {
       console.error('Error during sign up:', error)
 
-      // Corrected error handling
+      // Assert the type of the error object
+      const serverError = error as ServerErrorResponse
+
       if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
+        serverError &&
+        serverError.response &&
+        serverError.response.data &&
+        serverError.response.data.message
       ) {
-        // Assuming your error response has a structure like { message: "User already exists" }
-        setError(error.response.data.message)
-      } else if (error.message) {
-        setError(error.message)
+        setError(serverError.response.data.message)
       } else {
+        // Fallback for other error types
         setError('An unknown error occurred. Please try again.')
       }
     } finally {
