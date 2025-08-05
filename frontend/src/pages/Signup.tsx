@@ -127,7 +127,7 @@ export default function Signup() {
           </motion.div>
         </div>
         <img
-          src="/signup.jpg"
+          src="/images/signup.avif"
           alt="Luxury Hotel"
           className="absolute inset-0 w-full h-full object-cover"
           loading="eager"
