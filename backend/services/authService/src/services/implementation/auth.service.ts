@@ -1,4 +1,3 @@
-import e from 'express'
 import { HttpStatus } from '../../enums/http.status'
 import { sendUserData } from '../../events/rabbitmq/producers/producer'
 import { OtpRepository } from '../../repository/implementation/otp.repository'
@@ -37,10 +36,19 @@ export class AuthService implements IAuthService {
     role: string
   ) {
     try {
-      const existingUser = await this.userRepository.findByEmail(email)
+      const existingEmail = await this.userRepository.findByEmail(email)
+      const existingPhone = await this.userRepository.findByPhoneNumber(
+        phoneNumber
+      )
 
-      if (existingUser) {
+      if (existingEmail) {
         throw new CustomError('Email already exists', HttpStatus.ALREADYEXISTS)
+      }
+      if (existingPhone) {
+        throw new CustomError(
+          'Phone number already exists',
+          HttpStatus.ALREADYEXISTS
+        )
       }
 
       const hashedPassword = await hashPassword(password)

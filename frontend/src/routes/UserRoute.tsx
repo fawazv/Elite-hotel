@@ -8,6 +8,7 @@ import SnapScrollLayout from '../layouts/SnapScrollLayout'
 import NotFound from '../pages/NotFound'
 import SearchResults from '@/components/sections/SearchResult/SearchResult'
 import Signup from '@/pages/Signup'
+import OtpVerification from '@/pages/OtpVerification'
 
 // Lazy load components for better performance
 const Home = React.lazy(() => import('../pages/Home'))
@@ -44,6 +45,7 @@ const UserRoute: React.FC = () => {
         <Route path="/auth" element={<AuthLayout />}>
           <Route path="signin" element={<>signin</>} />
           <Route path="signup" element={<Signup />} />
+          <Route path="otp-verification" element={<OtpVerification />} />
         </Route>
       </Routes>
     </Suspense>

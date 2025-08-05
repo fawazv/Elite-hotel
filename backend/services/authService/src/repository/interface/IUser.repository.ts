@@ -8,6 +8,7 @@ interface IUserRepository extends IBaseRepository<IUser> {
     field: string,
     value: string | boolean
   ): Promise<IUser | null>
+  findByPhoneNumber(phoneNumber: string): Promise<IUser | null>
 }
 
 export default IUserRepository
