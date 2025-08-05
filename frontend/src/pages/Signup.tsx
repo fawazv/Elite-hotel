@@ -55,22 +55,39 @@ export default function Signup() {
         phoneNumber
       )
 
-      console.log(response, 'response from signup API')
+      if (response.success) {
+        setError('') // Clear error on success
 
-      dispatch(
-        setSignupData({
-          fullName,
-          email,
-          phoneNumber,
-          role: role,
-          type: 'signup',
-        })
-      )
+        dispatch(
+          setSignupData({
+            fullName,
+            email,
+            phoneNumber,
+            role: role,
+            type: 'signup',
+          })
+        )
 
-      navigate('/otp-signup', { state: { email, type: 'signup' } })
-    } catch (error) {
-      if (error instanceof Error) {
-        setError('Internal server error, please try again later.')
+        navigate('/otp-signup', { state: { email, type: 'signup' } })
+      } else {
+        setError(response.message || 'Failed to create account')
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      console.error('Error during sign up:', error)
+
+      // Corrected error handling
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        // Assuming your error response has a structure like { message: "User already exists" }
+        setError(error.response.data.message)
+      } else if (error.message) {
+        setError(error.message)
+      } else {
+        setError('An unknown error occurred. Please try again.')
       }
     } finally {
       setIsLoading(false)
