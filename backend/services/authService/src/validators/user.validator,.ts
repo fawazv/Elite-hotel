@@ -1,105 +1,121 @@
 import Joi from 'joi'
 
-// / Custom error messages for better UX
-const customErrorMessages = {
-  'string.empty': '{#label} is required',
-  'string.min': '{#label} should have at least {#limit} characters',
-  'string.max': '{#label} should have at most {#limit} characters',
-  'string.email': 'Please enter a valid email address',
-  'string.pattern.base': '{#label} does not match the required pattern',
-  'any.required': '{#label} is required',
-  'string.alphanum': '{#label} should only contain alpha-numeric characters',
-}
-
 const signUpSchema = Joi.object({
-  password: Joi.string()
-    .min(8)
+  fullName: Joi.string()
+    .required()
+    .min(2)
     .max(50)
-    .pattern(
-      new RegExp(
-        '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$'
-      )
-    )
+    .trim()
     .when('type', {
-      is: 'signup', // If type is "signup"
-      then: Joi.required(), // Make password required
-      otherwise: Joi.optional(), // Otherwise, make it optional
+      is: 'signup',
+      then: Joi.required(),
+      otherwise: Joi.optional(),
     })
     .messages({
-      ...customErrorMessages,
+      'string.base': 'Full Name must be a string',
+      'string.empty': 'Full Name is required',
+      'string.min': 'Full Name should have at least 2 characters',
+      'string.max': 'Full Name should have at most 50 characters',
+      'any.required': 'Full Name is required',
+    }),
+
+  email: Joi.string()
+    .required()
+    .email({ tlds: { allow: false } })
+    .pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$/)
+    .messages({
+      'string.empty': 'Email is required',
+      'string.email': 'Please enter a valid email address',
+      'string.pattern.base': 'Email must have a .com domain',
+      'any.required': 'Email is required',
+    }),
+
+  password: Joi.string()
+    .required()
+    .min(8)
+    .max(50)
+    .pattern(/[a-z]/)
+    .pattern(/[A-Z]/)
+    .pattern(/[0-9]/)
+    .pattern(/[^a-zA-Z0-9]/)
+    .when('type', {
+      is: 'signup',
+      then: Joi.required(),
+      otherwise: Joi.optional(),
+    })
+    .messages({
+      'string.base': 'Password must be a string',
+      'string.empty': 'Password is required',
+      'string.min': 'Password should have at least 8 characters',
+      'string.max': 'Password should have at most 50 characters',
+      'any.required': 'Password is required',
       'string.pattern.base':
-        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+        'Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character',
+    }),
+
+  phoneNumber: Joi.string()
+    .length(10)
+    .required()
+    .pattern(/^\d+$/)
+    .when('type', {
+      is: 'signup',
+      then: Joi.required(),
+      otherwise: Joi.optional(),
+    })
+    .messages({
+      'string.empty': 'Phone number is required',
+      'string.length': 'Phone number must be exactly 10 digits',
+      'string.pattern.base': 'Phone number must contain only digits',
+      'any.required': 'Phone number is required',
     }),
 
   role: Joi.string()
     .valid('receptionist', 'housekeeper')
     .when('type', {
-      is: 'signup', // If type is "signup"
-      then: Joi.required(), // Make role required
-      otherwise: Joi.optional(), // Otherwise, make it optional
+      is: 'signup',
+      then: Joi.required(),
+      otherwise: Joi.optional(),
     })
     .messages({
       'any.only': 'Role must be one of [receptionist, housekeeper]',
       'any.required': 'Role is a required field',
     }),
-
-  fullName: Joi.string()
-    .min(2)
-    .max(50)
-    .when('type', {
-      is: 'signup', // If type is "signup"
-      then: Joi.required(), // Make fullName required
-      otherwise: Joi.optional(), // Otherwise, make it optional
-    })
-    .messages(customErrorMessages),
-
-  phoneNumber: Joi.string()
-    .pattern(
-      new RegExp('^[+]?[(]?[0-9]{3}[)]?[-\\s.]?[0-9]{3}[-\\s.]?[0-9]{4,6}$')
-    )
-    .when('type', {
-      is: 'signup', // If type is "signup"
-      then: Joi.required(), // Make phoneNumber required
-      otherwise: Joi.optional(), // Otherwise, make it optional
-    })
-    .messages({
-      'string.pattern.base': 'Phone number should be a 10 digit number',
-      'any.required': 'Phone number is a required field',
-    }),
-
-  email: Joi.string()
-    .pattern(new RegExp(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$/)) // Only allow .com domains
-    .email({ tlds: { allow: false } }) // Don't validate TLDs (top-level domains)
-    .required() // Email is always required
-    .messages(customErrorMessages),
 })
 
 const signInSchema = Joi.object({
   email: Joi.string()
-    .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net', 'org'] } })
     .required()
+    .email({ tlds: { allow: false } })
+    .pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$/)
     .messages({
-      'string.email': 'Email must be a valid email',
-      'any.required': 'Email is a required field',
+      'string.empty': 'Email is required',
+      'string.email': 'Please enter a valid email address',
+      'string.pattern.base': 'Email must have a .com domain',
+      'any.required': 'Email is required',
     }),
 
   password: Joi.string()
-    .pattern(
-      new RegExp(
-        '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$'
-      )
-    )
     .required()
+    .min(8)
+    .max(50)
+    .pattern(/[a-z]/)
+    .pattern(/[A-Z]/)
+    .pattern(/[0-9]/)
+    .pattern(/[^a-zA-Z0-9]/)
     .messages({
+      'string.empty': 'Password is required',
+      'string.min': 'Password should have at least 8 characters',
+      'string.max': 'Password should have at most 50 characters',
+      'any.required': 'Password is required',
       'string.pattern.base':
-        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+        'Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character',
     }),
 
   role: Joi.string()
     .valid('receptionist', 'housekeeper', 'admin')
     .required()
     .messages({
-      'any.only': 'Role must be one of [receptionist, housekeeper]',
+      'any.only': 'Role must be one of [receptionist, housekeeper, admin]',
       'any.required': 'Role is a required field',
     }),
 })
