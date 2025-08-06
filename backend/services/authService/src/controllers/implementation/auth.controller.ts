@@ -78,7 +78,6 @@ export class AuthController implements IAuthController {
 
       setRefreshTokenCookie(res, response?.data?.refreshToken!, role)
       return successResponse(res, HttpStatus.OK, response?.message!, {
-        success: response?.success,
         data: response?.data,
       })
     } catch (error) {
