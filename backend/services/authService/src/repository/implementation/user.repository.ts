@@ -27,4 +27,17 @@ export class UserRepository
   async findByPhoneNumber(phoneNumber: string): Promise<IUser | null> {
     return await User.findOne({ phoneNumber })
   }
+
+  async updateByEmail(
+    email: string,
+    updateData: Partial<IUser>
+  ): Promise<IUser | null> {
+    const updatedUser = await User.findOneAndUpdate(
+      { email: email },
+      { $set: updateData }, // $set operator updates specific fields
+      { new: true, upsert: false }
+    ).lean()
+
+    return updatedUser
+  }
 }

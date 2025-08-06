@@ -41,7 +41,7 @@ export class AuthService implements IAuthService {
         phoneNumber
       )
 
-      if (existingEmail) {
+      if (existingEmail && existingEmail.isVerified) {
         throw new CustomError('Email already exists', HttpStatus.ALREADYEXISTS)
       }
       if (existingPhone) {
@@ -61,7 +61,15 @@ export class AuthService implements IAuthService {
         isVerified: false,
       }
 
-      await this.userRepository.create(userData)
+      if (!existingEmail && !existingPhone) {
+        await this.userRepository.create(userData)
+      } else {
+        await this.userRepository.updateByEmail(email, {
+          ...userData,
+          isVerified: false,
+        })
+        await this.otpRepository.deleteOtp(email)
+      }
 
       const otp = generateOtp()
       await sentOTPEmail(email, otp)

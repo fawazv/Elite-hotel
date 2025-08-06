@@ -9,6 +9,10 @@ interface IUserRepository extends IBaseRepository<IUser> {
     value: string | boolean
   ): Promise<IUser | null>
   findByPhoneNumber(phoneNumber: string): Promise<IUser | null>
+  updateByEmail(
+    email: string,
+    updateData: Partial<IUser>
+  ): Promise<IUser | null>
 }
 
 export default IUserRepository
