@@ -1,5 +1,5 @@
-import mongoose, { Schema } from "mongoose";
-import IUser from "../interfaces/IUser";
+import mongoose, { Schema } from 'mongoose'
+import IUser from '../interfaces/IUser'
 
 const userSchema = new Schema<IUser>({
   fullName: { type: String, required: true },
@@ -7,10 +7,9 @@ const userSchema = new Schema<IUser>({
   phoneNumber: {
     type: String,
     required: true,
-    unique: true,
     validate: {
       validator: function (v: string) {
-        return /^[0-9]{10,15}$/.test(v); // Allows only numbers with 10 to 15 digits
+        return /^[0-9]{10,15}$/.test(v) // Allows only numbers with 10 to 15 digits
       },
       message: (props) => `${props.value} is not a valid phone number!`,
     },
@@ -21,10 +20,10 @@ const userSchema = new Schema<IUser>({
   isApproved: {
     type: String,
     required: true,
-    default: "pending",
+    default: 'pending',
   },
   createdAt: { type: Date, default: Date.now() },
   updatedAt: { type: Date, default: null },
-});
+})
 
-export const User = mongoose.model("User", userSchema);
+export const User = mongoose.model('User', userSchema)
