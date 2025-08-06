@@ -165,7 +165,9 @@ export class AuthService implements IAuthService {
         message: 'Signed in successfully',
         data: { user: checkUser, accessToken, refreshToken },
       }
-    } catch (error) {}
+    } catch (error) {
+      throw error
+    }
   }
 
   async signInWithGoogle(
