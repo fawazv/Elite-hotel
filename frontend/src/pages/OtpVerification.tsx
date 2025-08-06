@@ -9,6 +9,7 @@ import { type RootState } from '@/redux/store/store'
 import { useDispatch, useSelector } from 'react-redux'
 import { login } from '@/redux/slices/authSlice'
 import { otpVerify, resendOtp } from '@/services/authApi'
+import type { ServerErrorResponse } from '@/utils/serverErrorResponse'
 
 // Constants
 const OTP_LENGTH = 6
@@ -211,7 +212,7 @@ export default function OTPVerification() {
         if (type === 'signup') {
           const reduxData = { fullName, email, role, phoneNumber }
           localStorage.setItem('accessToken', response.data.accessToken)
-          const id = response.data.user._id
+          const id = response.data.checkUser._id
 
           dispatch(
             login({
@@ -233,8 +234,20 @@ export default function OTPVerification() {
       }
     } catch (error) {
       console.error('Verification error:', error)
-      setError('Invalid verification code. Please try again.')
-      toast.error('Verification failed. Please try again.')
+      // Assert the type of the error object
+      const serverError = error as ServerErrorResponse
+
+      if (
+        serverError &&
+        serverError.response &&
+        serverError.response.data &&
+        serverError.response.data.message
+      ) {
+        setError(serverError.response.data.message)
+      } else {
+        // Fallback for other error types
+        setError('An unknown error occurred. Please try again.')
+      }
     } finally {
       setIsVerifying(false)
     }

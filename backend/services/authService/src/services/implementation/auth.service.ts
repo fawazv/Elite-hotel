@@ -114,7 +114,7 @@ export class AuthService implements IAuthService {
       return {
         success: true,
         message: 'OTP verified successfully!',
-        data: { checkUser, accessToken, refreshToken },
+        data: { user: checkUser, accessToken, refreshToken },
       }
     } catch (error) {
       throw error
