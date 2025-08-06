@@ -1,44 +1,40 @@
-import express from "express";
+import express from 'express'
 
-import validateRequest from "../middleware/validateRequest";
-import { signInSchema, signUpSchema } from "../validators/user.validator,";
-import { authController } from "../config/container";
-import authenticateToken from "../middleware/auth.middleware";
+import validateRequest from '../middleware/validateRequest'
+import { signInSchema, signUpSchema } from '../validators/user.validator,'
+import { authController } from '../config/container'
+import authenticateToken from '../middleware/auth.middleware'
 
-const authRoute = express.Router();
-authRoute.post("/signup", authController.signup.bind(authController));
+const authRoute = express.Router()
+authRoute.post('/signup', authController.signup.bind(authController))
+authRoute.post('/otp-signup', authController.verifyOtp.bind(authController))
+authRoute.post('/otp-resend', authController.resendOtp.bind(authController))
 authRoute.post(
-  "/otp-signup",
-  validateRequest(signUpSchema),
-  authController.verifyOtp.bind(authController)
-);
-authRoute.post("/otp-resend", authController.resendOtp.bind(authController));
-authRoute.post(
-  "/signin",
+  '/signin',
   validateRequest(signInSchema),
   authController.signin.bind(authController)
-);
+)
 authRoute.post(
-  "/google-signin",
+  '/google-signin',
   authController.googleLogin.bind(authController)
-);
+)
 authRoute.post(
-  "/forget-password",
+  '/forget-password',
   authController.forgetPassword.bind(authController)
-);
+)
 authRoute.post(
-  "/reset-password",
+  '/reset-password',
   authController.resetPassword.bind(authController)
-);
+)
 authRoute.get(
-  "/refresh-token",
+  '/refresh-token',
   authController.setNewAccessToken.bind(authController)
-);
+)
 authRoute.patch(
-  "/change-password",
+  '/change-password',
   authenticateToken,
   authController.changePassword.bind(authController)
-);
-authRoute.post("/logout", authController.logout.bind(authController));
+)
+authRoute.post('/logout', authController.logout.bind(authController))
 
-export default authRoute;
+export default authRoute

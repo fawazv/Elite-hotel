@@ -69,7 +69,7 @@ export default function Signup() {
           })
         )
 
-        navigate('/otp-signup', { state: { email, type: 'signup' } })
+        navigate('/auth/otp-verify', { state: { email, type: 'signup' } })
       } else {
         setError(response.message || 'Failed to create account')
       }
