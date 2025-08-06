@@ -37,18 +37,9 @@ export class AuthService implements IAuthService {
   ) {
     try {
       const existingEmail = await this.userRepository.findByEmail(email)
-      const existingPhone = await this.userRepository.findByPhoneNumber(
-        phoneNumber
-      )
 
       if (existingEmail && existingEmail.isVerified) {
         throw new CustomError('Email already exists', HttpStatus.ALREADYEXISTS)
-      }
-      if (existingPhone) {
-        throw new CustomError(
-          'Phone number already exists',
-          HttpStatus.ALREADYEXISTS
-        )
       }
 
       const hashedPassword = await hashPassword(password)
@@ -61,7 +52,7 @@ export class AuthService implements IAuthService {
         isVerified: false,
       }
 
-      if (!existingEmail && !existingPhone) {
+      if (!existingEmail) {
         await this.userRepository.create(userData)
       } else {
         await this.userRepository.updateByEmail(email, {
