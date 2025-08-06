@@ -9,6 +9,7 @@ import NotFound from '../pages/NotFound'
 import SearchResults from '@/components/sections/SearchResult/SearchResult'
 import Signup from '@/pages/Signup'
 import OTPVerification from '@/pages/OtpVerification'
+import Signin from '@/pages/Signin'
 
 // Lazy load components for better performance
 const Home = React.lazy(() => import('../pages/Home'))
@@ -43,7 +44,7 @@ const UserRoute: React.FC = () => {
 
         {/* Auth layout routes (without Header/Footer) */}
         <Route path="/auth" element={<AuthLayout />}>
-          <Route path="signin" element={<>signin</>} />
+          <Route path="signin" element={<Signin />} />
           <Route path="signup" element={<Signup />} />
           <Route path="otp-verify" element={<OTPVerification />} />
         </Route>

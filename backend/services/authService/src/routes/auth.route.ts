@@ -6,7 +6,11 @@ import { authController } from '../config/container'
 import authenticateToken from '../middleware/auth.middleware'
 
 const authRoute = express.Router()
-authRoute.post('/signup', authController.signup.bind(authController))
+authRoute.post(
+  '/signup',
+  validateRequest(signUpSchema),
+  authController.signup.bind(authController)
+)
 authRoute.post('/otp-signup', authController.verifyOtp.bind(authController))
 authRoute.post('/otp-resend', authController.resendOtp.bind(authController))
 authRoute.post(

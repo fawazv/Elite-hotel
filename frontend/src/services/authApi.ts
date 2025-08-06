@@ -33,7 +33,7 @@ export const otpVerify = async (email: string, otp: string, type: string) => {
     otp,
     type,
   })
-  return response
+  return response.data
 }
 
 export const resendOtp = async (email: string) => {

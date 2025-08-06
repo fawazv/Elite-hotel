@@ -208,15 +208,15 @@ export default function OTPVerification() {
 
       const response = await otpVerify(email, otpCode, type)
 
-      if (response.data.success) {
+      if (response.success) {
         if (type === 'signup') {
           const reduxData = { fullName, email, role, phoneNumber }
-          localStorage.setItem('accessToken', response.data.accessToken)
-          const id = response.data.checkUser._id
+          localStorage.setItem('accessToken', response.accessToken)
+          const id = response.data.user._id
 
           dispatch(
             login({
-              token: response.data.accessToken,
+              token: response.accessToken,
               user: { ...reduxData, id },
             })
           )

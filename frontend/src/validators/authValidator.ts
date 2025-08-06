@@ -56,14 +56,6 @@ export const signInSchema = z.object({
       /[^a-zA-Z0-9]/,
       'Password must contain at least one special character'
     ),
-
-  role: z
-    .enum(['receptionist', 'housekeeper'], {
-      message: 'Role must be one of [receptionist, housekeeper]',
-    })
-    .refine((val) => val !== undefined && val !== null, {
-      message: 'Role is a required field',
-    }),
 })
 
 // Type inference for TypeScript
