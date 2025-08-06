@@ -53,13 +53,13 @@ export default function Signin() {
       if (response.success) {
         const { fullName, phoneNumber, role } = response.data.user
         const reduxData = { fullName, email, role, phoneNumber }
-        localStorage.setItem('accessToken', response.accessToken)
+        localStorage.setItem('accessToken', response.data.accessToken)
         const id = response.data.user._id
 
         // Assuming the response contains user data
         dispatch(
           login({
-            token: response.accessToken,
+            token: response.data.accessToken,
             user: { ...reduxData, id },
           })
         )
