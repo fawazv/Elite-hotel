@@ -7,7 +7,7 @@ export const signInRequest = async (
   role: string
 ) => {
   const response = await api.post('/signin', { email, password, role })
-  return response
+  return response.data
 }
 
 export const signUpRequest = async (

@@ -50,23 +50,23 @@ export default function Signin() {
       const { email, password } = data
       const response = await signInRequest(email, password, role)
 
-      if (response.data.success) {
+      if (response.success) {
         const { fullName, phoneNumber, role } = response.data.user
         const reduxData = { fullName, email, role, phoneNumber }
-        localStorage.setItem('accessToken', response.data.accessToken)
+        localStorage.setItem('accessToken', response.accessToken)
         const id = response.data.user._id
 
         // Assuming the response contains user data
         dispatch(
           login({
-            token: response.data.accessToken,
+            token: response.accessToken,
             user: { ...reduxData, id },
           })
         )
-        toast.success('Login successful! Redirecting...')
+        toast.success(response.message || 'Signed in successfully')
         navigate('/')
       } else {
-        setError(response.data.message || 'Failed to sign in')
+        setError(response.message || 'Failed to sign in')
       }
     } catch (error) {
       console.error('Error during sign in:', error)

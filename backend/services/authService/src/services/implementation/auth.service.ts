@@ -162,7 +162,7 @@ export class AuthService implements IAuthService {
 
       return {
         success: true,
-        message: 'Sign in successfully completed!',
+        message: 'Signed in successfully',
         data: { user: checkUser, accessToken, refreshToken },
       }
     } catch (error) {}
