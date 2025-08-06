@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FcGoogle } from 'react-icons/fc'
 import { HiOutlineMail } from 'react-icons/hi'
 import { RiLockPasswordLine } from 'react-icons/ri'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import type { UserRole } from '@/types/index'
 import { useForm, type SubmitHandler } from 'react-hook-form'
@@ -122,7 +122,7 @@ export default function Signin() {
           </motion.div>
         </div>
         <img
-          src="/images/signin.avif"
+          src="/images/signin.jpeg"
           alt="Luxury Hotel"
           className="absolute inset-0 w-full h-full object-cover"
           loading="eager"
@@ -151,12 +151,15 @@ export default function Signin() {
               handleRoleChange(value as UserRole)
             }
           >
-            <TabsList className="grid w-full grid-cols-2 p-1 bg-gray-100 rounded-lg">
+            <TabsList className="grid w-full grid-cols-3 p-1 bg-gray-100 rounded-lg">
               <TabsTrigger value="receptionist" className="rounded-md">
                 Receptionist
               </TabsTrigger>
               <TabsTrigger value="housekeeper" className="rounded-md">
                 Housekeeper
+              </TabsTrigger>
+              <TabsTrigger value="admin" className="rounded-md">
+                Admin
               </TabsTrigger>
             </TabsList>
 
@@ -171,6 +174,13 @@ export default function Signin() {
               <p className="text-sm text-gray-500 mb-4">
                 Access your housekeeper dashboard to manage room assignments and
                 maintenance tasks.
+              </p>
+            </TabsContent>
+
+            <TabsContent value="admin">
+              <p className="text-sm text-gray-500 mb-4">
+                Access your admin dashboard to manage hotel operations, staff,
+                and system configurations.
               </p>
             </TabsContent>
           </Tabs>
@@ -290,12 +300,12 @@ export default function Signin() {
 
           <p className="text-center text-sm text-gray-500 mt-6">
             Don't have an account?{' '}
-            <a
-              href="/signup"
+            <Link
+              to="/auth/signup"
               className="text-[#8b4513] font-medium hover:underline"
             >
               Sign up
-            </a>
+            </Link>
           </p>
         </motion.div>
       </div>

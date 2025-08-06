@@ -84,12 +84,15 @@ const signInSchema = Joi.object({
     }),
 
   password: Joi.string()
-    .pattern(new RegExp('^[a-zA-Z0-9]{3,30}$'))
+    .pattern(
+      new RegExp(
+        '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$'
+      )
+    )
     .required()
     .messages({
       'string.pattern.base':
-        'Password should be alphanumeric and between 3 to 30 characters',
-      'any.required': 'Password is a required field',
+        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
     }),
 
   role: Joi.string()
