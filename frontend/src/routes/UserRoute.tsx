@@ -5,11 +5,11 @@ import LoadingSpinner from '../components/ui/LoadingSpinner'
 import MainLayout from '../layouts/MainLayout'
 import AuthLayout from '../layouts/AuthLayout'
 import SnapScrollLayout from '../layouts/SnapScrollLayout'
-import NotFound from '../pages/NotFound'
+
 import SearchResults from '@/components/sections/SearchResult/SearchResult'
-import Signup from '@/pages/Signup'
+
 import OTPVerification from '@/pages/OtpVerification'
-import Signin from '@/pages/Signin'
+import ProtectedRoute from '@/layouts/ProtectedRoute'
 
 // Lazy load components for better performance
 const Home = React.lazy(() => import('../pages/Home'))
@@ -17,10 +17,10 @@ const Home = React.lazy(() => import('../pages/Home'))
 // const Bookings = React.lazy(() => import('../pages/Bookings/Bookings'))
 // const About = React.lazy(() => import('../pages/About/About'))
 // const Contact = React.lazy(() => import('../pages/Contact/Contact'))
-// const SignIn = React.lazy(() => import('../pages/Auth/SignIn'))
-// const SignUp = React.lazy(() => import('../pages/Auth/SignUp'))
-// const Profile = React.lazy(() => import('../pages/Account/Profile'))
-// const NotFound = React.lazy(() => import('../pages/NotFound/NotFound'))
+const SignIn = React.lazy(() => import('../pages/Signin'))
+const SignUp = React.lazy(() => import('../pages/Signup'))
+const Profile = React.lazy(() => import('../pages/Profile'))
+const NotFound = React.lazy(() => import('../pages/NotFound'))
 
 const UserRoute: React.FC = () => {
   return (
@@ -37,15 +37,22 @@ const UserRoute: React.FC = () => {
           {/* <Route path="bookings" element={<Bookings />} /> */}
           {/* <Route path="about" element={<About />} /> */}
           {/* <Route path="contact" element={<Contact />} /> */}
-          {/* <Route path="account/profile" element={<Profile />} /> */}
+          <Route
+            path="account/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<NotFound />} />
           <Route path="/search-results" element={<SearchResults />} />
         </Route>
 
         {/* Auth layout routes (without Header/Footer) */}
         <Route path="/auth" element={<AuthLayout />}>
-          <Route path="signin" element={<Signin />} />
-          <Route path="signup" element={<Signup />} />
+          <Route path="signin" element={<SignIn />} />
+          <Route path="signup" element={<SignUp />} />
           <Route path="otp-verify" element={<OTPVerification />} />
         </Route>
       </Routes>

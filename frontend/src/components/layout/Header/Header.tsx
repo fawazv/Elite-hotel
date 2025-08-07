@@ -90,7 +90,7 @@ const Header: React.FC = () => {
     <header
       className={`
         fixed top-0 w-full z-50 transition-all duration-300
-        ${isScrolledState ? 'bg-white shadow-lg py-2' : 'bg-transparent py-4'}
+        ${isScrolledState ? 'bg-white shadow-lg py-4' : 'bg-transparent py-4'}
       `}
     >
       <div className="container mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-8">
