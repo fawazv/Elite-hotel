@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FcGoogle } from 'react-icons/fc'
-import { HiOutlineMail } from 'react-icons/hi'
+import { HiOutlineMail, HiArrowLeft } from 'react-icons/hi'
 import { RiLockPasswordLine } from 'react-icons/ri'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
@@ -33,6 +33,10 @@ export default function Signin() {
 
   const clearError = () => {
     if (error) setError('')
+  }
+
+  const handleGoBack = () => {
+    navigate(-1) // Go back to previous page
   }
 
   const {
@@ -93,6 +97,18 @@ export default function Signin() {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-white to-gray-50">
+      {/* Back Button - Positioned absolutely for both mobile and desktop */}
+      <motion.button
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3 }}
+        onClick={handleGoBack}
+        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-white md:text-gray-600 hover:text-gray-800 transition-colors bg-black/20 md:bg-white/80 backdrop-blur-sm rounded-full p-2 md:p-3"
+      >
+        <HiArrowLeft className="text-lg" />
+        <span className="text-sm font-medium hidden sm:inline">Back</span>
+      </motion.button>
+
       {/* Left Section - Image with overlay text */}
       <div className="hidden md:flex md:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-[#8b4513]/80 to-[#6d3510]/70 z-10 flex flex-col justify-center items-start p-12">
