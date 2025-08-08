@@ -83,8 +83,8 @@ export const resetPassword = async (
 
 export const passwordUpdate = async (data: object) => {
   try {
-    const response = await privateApi.patch('/user/change-password', data)
-    return response
+    const response = await privateApi.patch('/auth/change-password', data)
+    return response.data
   } catch (error) {
     return error
   }
