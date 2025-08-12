@@ -10,6 +10,7 @@ import SearchResults from '@/components/sections/SearchResult/SearchResult'
 
 import OTPVerification from '@/pages/OtpVerification'
 import ProtectedRoute from '@/layouts/ProtectedRoute'
+import Rooms from '@/pages/Rooms'
 
 // Lazy load components for better performance
 const Home = React.lazy(() => import('../pages/Home'))
@@ -33,7 +34,7 @@ const UserRoute: React.FC = () => {
 
         {/* Main layout routes (with Header/Footer, no snap scrolling) */}
         <Route path="/" element={<MainLayout />}>
-          {/* <Route path="rooms" element={<Rooms />} /> */}
+          <Route path="rooms" element={<Rooms />} />
           {/* <Route path="bookings" element={<Bookings />} /> */}
           {/* <Route path="about" element={<About />} /> */}
           {/* <Route path="contact" element={<Contact />} /> */}

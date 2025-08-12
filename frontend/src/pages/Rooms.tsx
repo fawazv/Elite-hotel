@@ -12,6 +12,7 @@ interface Room {
   size: string
   capacity: string
   rating?: number
+  available: boolean
 }
 
 interface SortOption {
@@ -51,7 +52,7 @@ interface RoomCardProps {
 
 interface BadgeProps {
   label: string
-  variant?: 'default' | 'primary' | 'secondary' | 'success'
+  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'unavailable'
 }
 
 interface StarRatingProps {
@@ -59,9 +60,8 @@ interface StarRatingProps {
   maxRating?: number
 }
 
-interface SearchResultsProps {
-  results?: Room[]
-  currentPage?: number
+interface RoomsBrowserProps {
+  rooms?: Room[]
 }
 
 // Badge Component
@@ -71,6 +71,7 @@ const Badge: React.FC<BadgeProps> = ({ label, variant = 'default' }) => {
     primary: 'bg-primary-100 text-primary-700',
     secondary: 'bg-green-100 text-green-700',
     success: 'bg-green-100 text-green-800',
+    unavailable: 'bg-red-100 text-red-700',
   }
 
   return (
@@ -117,6 +118,7 @@ const SortSelect: React.FC<SortSelectProps> = ({
     { value: 'price-asc', label: 'Price: Low to High' },
     { value: 'price-desc', label: 'Price: High to Low' },
     { value: 'rating-desc', label: 'Rating: High to Low' },
+    { value: 'availability', label: 'Available First' },
   ],
 }) => {
   return (
@@ -270,18 +272,26 @@ const RoomCard: React.FC<RoomCardProps> = ({
   }
 
   const handleBookRoom = () => {
-    if (onBookRoom) {
+    if (room.available && onBookRoom) {
       onBookRoom(room.id)
     }
   }
 
   return (
-    <div className="flex flex-col lg:flex-row border-2 rounded-xl overflow-hidden transition-all duration-300 bg-white border-gray-200 hover:shadow-xl hover:border-primary-500/30 hover:-translate-y-1">
+    <div
+      className={`flex flex-col lg:flex-row border-2 rounded-xl overflow-hidden transition-all duration-300 bg-white ${
+        room.available
+          ? 'border-gray-200 hover:shadow-xl hover:border-primary-500/30 hover:-translate-y-1'
+          : 'border-gray-300 opacity-75'
+      }`}
+    >
       <div className="relative w-full lg:w-80 h-64 lg:h-60 group overflow-hidden">
         <img
           src={room.image}
           alt={room.name}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          className={`w-full h-full object-cover transition-transform duration-700 ${
+            room.available ? 'group-hover:scale-110' : 'grayscale'
+          }`}
           onError={(e) => {
             const target = e.target as HTMLImageElement
             target.src =
@@ -290,14 +300,30 @@ const RoomCard: React.FC<RoomCardProps> = ({
         />
         <div className="absolute top-4 left-4 flex gap-2">
           <Badge label={room.type} variant="primary" />
-          <Badge label="Available" variant="success" />
+          <Badge
+            label={room.available ? 'Available' : 'Unavailable'}
+            variant={room.available ? 'success' : 'unavailable'}
+          />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        {!room.available && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <span className="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold">
+              Currently Unavailable
+            </span>
+          </div>
+        )}
+        {room.available && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        )}
       </div>
 
       <div className="flex-1 p-6 flex flex-col">
         <div className="flex flex-col lg:flex-row justify-between items-start mb-3">
-          <h3 className="text-xl font-bold mb-2 lg:mb-0 text-gray-800">
+          <h3
+            className={`text-xl font-bold mb-2 lg:mb-0 ${
+              room.available ? 'text-gray-800' : 'text-gray-500'
+            }`}
+          >
             {room.name}
           </h3>
           <StarRating rating={room.rating || 4.2} />
@@ -341,7 +367,13 @@ const RoomCard: React.FC<RoomCardProps> = ({
           </div>
         </div>
 
-        <p className="mb-4 leading-relaxed text-gray-600">{room.description}</p>
+        <p
+          className={`mb-4 leading-relaxed ${
+            room.available ? 'text-gray-600' : 'text-gray-400'
+          }`}
+        >
+          {room.description}
+        </p>
 
         <div className="flex flex-wrap gap-2 mb-6">
           {room.amenities.slice(0, 4).map((amenity, index) => (
@@ -357,7 +389,11 @@ const RoomCard: React.FC<RoomCardProps> = ({
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-auto pt-4 border-t border-gray-100">
           <div className="mb-3 sm:mb-0">
-            <span className="text-3xl font-bold text-primary-600">
+            <span
+              className={`text-3xl font-bold ${
+                room.available ? 'text-primary-600' : 'text-gray-400'
+              }`}
+            >
               ${room.price}
             </span>
             <span className="text-gray-600 text-sm font-medium"> / night</span>
@@ -372,9 +408,14 @@ const RoomCard: React.FC<RoomCardProps> = ({
             </button>
             <button
               onClick={handleBookRoom}
-              className="flex-1 sm:flex-none bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-all duration-200 focus:ring-4 focus:ring-primary-600/20 focus:outline-none transform hover:scale-105 shadow-lg hover:shadow-xl"
+              disabled={!room.available}
+              className={`flex-1 sm:flex-none px-6 py-3 rounded-lg font-semibold transition-all duration-200 focus:ring-4 focus:outline-none ${
+                room.available
+                  ? 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-600/20 transform hover:scale-105 shadow-lg hover:shadow-xl'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
             >
-              Book Now
+              {room.available ? 'Book Now' : 'Unavailable'}
             </button>
           </div>
         </div>
@@ -383,8 +424,8 @@ const RoomCard: React.FC<RoomCardProps> = ({
   )
 }
 
-// Demo data - only available rooms for search results
-const demoResults: Room[] = [
+// Demo data with availability
+const demoRooms: Room[] = [
   {
     id: 1,
     name: 'Ocean View Family Suite',
@@ -405,6 +446,22 @@ const demoResults: Room[] = [
     size: '60m²',
     capacity: '4-6 People',
     rating: 4.8,
+    available: true,
+  },
+  {
+    id: 2,
+    name: 'Cozy Single Retreat',
+    type: 'Standard',
+    price: 129,
+    image:
+      'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop',
+    description:
+      'Intimate single room with beautiful landscape views, designed for solo travelers who appreciate comfort and tranquility.',
+    amenities: ['Free WiFi', 'TV', 'Breakfast', 'Work Desk', 'Coffee Machine'],
+    size: '25m²',
+    capacity: '1 Person',
+    rating: 4.2,
+    available: false,
   },
   {
     id: 3,
@@ -426,6 +483,7 @@ const demoResults: Room[] = [
     size: '35m²',
     capacity: '2 People',
     rating: 4.6,
+    available: true,
   },
   {
     id: 4,
@@ -449,6 +507,30 @@ const demoResults: Room[] = [
     size: '65m²',
     capacity: '2-4 People',
     rating: 4.9,
+    available: true,
+  },
+  {
+    id: 5,
+    name: 'Junior Honeymoon Suite',
+    type: 'Premium',
+    price: 219,
+    image:
+      'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop',
+    description:
+      'Romantic junior suite with champagne service and luxury amenities, perfect for special occasions and romantic getaways.',
+    amenities: [
+      'Free WiFi',
+      'Romantic Setup',
+      'Breakfast',
+      'Mini Bar',
+      'Jacuzzi',
+      'Sitting Area',
+      'Champagne Service',
+    ],
+    size: '45m²',
+    capacity: '2-3 People',
+    rating: 4.7,
+    available: false,
   },
   {
     id: 6,
@@ -470,6 +552,7 @@ const demoResults: Room[] = [
     size: '40m²',
     capacity: '2-3 People',
     rating: 4.4,
+    available: true,
   },
   {
     id: 7,
@@ -490,61 +573,74 @@ const demoResults: Room[] = [
     size: '30m²',
     capacity: '1-2 People',
     rating: 4.3,
+    available: true,
   },
   {
-    id: 9,
-    name: 'Luxury City Suite',
+    id: 8,
+    name: 'Penthouse Suite',
     type: 'Luxury',
-    price: 399,
+    price: 499,
     image:
       'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=400&h=300&fit=crop',
     description:
-      'Premium luxury suite with stunning city views, marble bathroom, and exclusive amenities for the ultimate comfort experience.',
+      'Ultimate luxury experience with private terrace, panoramic views, and exclusive concierge service.',
     amenities: [
       'Free WiFi',
-      'City View',
+      'Private Terrace',
       'Concierge',
       'Mini Bar',
-      'Marble Bathroom',
+      'Jacuzzi',
       'Butler Service',
-      'Premium Bedding',
+      'City View',
       'Champagne Service',
     ],
-    size: '75m²',
-    capacity: '2-4 People',
+    size: '85m²',
+    capacity: '2-6 People',
     rating: 4.9,
+    available: false,
   },
 ]
 
-// Main SearchResults Component
-const SearchResults: React.FC<SearchResultsProps> = ({
-  results = demoResults,
-  currentPage = 1,
-}) => {
-  const [page, setPage] = useState<number>(currentPage)
+// Main RoomsBrowser Component
+const RoomsBrowser: React.FC<RoomsBrowserProps> = ({ rooms = demoRooms }) => {
+  const [page, setPage] = useState<number>(1)
   const [sortOption, setSortOption] = useState<string>('recommended')
   const [typeFilter, setTypeFilter] = useState<string>('all')
-  const [filteredResults, setFilteredResults] = useState<Room[]>([])
-  const [displayedResults, setDisplayedResults] = useState<Room[]>([])
+  const [availabilityFilter, setAvailabilityFilter] = useState<string>('all')
+  const [filteredRooms, setFilteredRooms] = useState<Room[]>([])
+  const [displayedRooms, setDisplayedRooms] = useState<Room[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
   const roomsPerPage = 6
 
   // Get unique room types for filter
-  const roomTypes = Array.from(new Set(results.map((room) => room.type)))
+  const roomTypes = Array.from(new Set(rooms.map((room) => room.type)))
   const typeFilterOptions = [
     { value: 'all', label: 'All Types' },
     ...roomTypes.map((type) => ({ value: type, label: type })),
   ]
 
-  // Apply sorting and filtering to results
+  const availabilityFilterOptions = [
+    { value: 'all', label: 'All Rooms' },
+    { value: 'available', label: 'Available Only' },
+    { value: 'unavailable', label: 'Unavailable Only' },
+  ]
+
+  // Apply sorting and filtering to rooms
   useEffect(() => {
     setIsLoading(true)
-    let filtered = [...results]
+    let filtered = [...rooms]
 
     // Apply type filter
     if (typeFilter !== 'all') {
       filtered = filtered.filter((room) => room.type === typeFilter)
+    }
+
+    // Apply availability filter
+    if (availabilityFilter === 'available') {
+      filtered = filtered.filter((room) => room.available)
+    } else if (availabilityFilter === 'unavailable') {
+      filtered = filtered.filter((room) => !room.available)
     }
 
     // Apply sorting
@@ -558,26 +654,37 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       case 'rating-desc':
         filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0))
         break
+      case 'availability':
+        filtered.sort((a, b) => (b.available ? 1 : 0) - (a.available ? 1 : 0))
+        break
       default:
-        // "recommended" - sort by rating
-        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0))
+        // "recommended" - available first, then by rating
+        filtered.sort((a, b) => {
+          if (a.available !== b.available) {
+            return b.available ? 1 : -1
+          }
+          return (b.rating || 0) - (a.rating || 0)
+        })
         break
     }
 
     setTimeout(() => {
-      setFilteredResults(filtered)
+      setFilteredRooms(filtered)
       setIsLoading(false)
     }, 300)
-  }, [results, sortOption, typeFilter])
+  }, [rooms, sortOption, typeFilter, availabilityFilter])
 
-  // Calculate displayed results based on current page
+  // Calculate displayed rooms based on current page
   useEffect(() => {
     const startIndex = (page - 1) * roomsPerPage
     const endIndex = startIndex + roomsPerPage
-    setDisplayedResults(filteredResults.slice(startIndex, endIndex))
-  }, [filteredResults, page])
+    setDisplayedRooms(filteredRooms.slice(startIndex, endIndex))
+  }, [filteredRooms, page])
 
-  const calculatedTotalPages = Math.ceil(filteredResults.length / roomsPerPage)
+  const calculatedTotalPages = Math.ceil(filteredRooms.length / roomsPerPage)
+  const availableRoomsCount = filteredRooms.filter(
+    (room) => room.available
+  ).length
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage)
@@ -596,10 +703,18 @@ const SearchResults: React.FC<SearchResultsProps> = ({
     setPage(1)
   }
 
+  const handleAvailabilityFilterChange = (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    setAvailabilityFilter(event.target.value)
+    setPage(1)
+  }
+
   const handleClearFilters = () => {
     setPage(1)
     setSortOption('recommended')
     setTypeFilter('all')
+    setAvailabilityFilter('all')
     scrollToTop()
   }
 
@@ -608,7 +723,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   }
 
   const handleBookRoom = (roomId: number) => {
-    const room = results.find((r) => r.id === roomId)
+    const room = rooms.find((r) => r.id === roomId)
     alert(`Booking ${room?.name} (Room ID: ${roomId})`)
   }
 
@@ -625,18 +740,20 @@ const SearchResults: React.FC<SearchResultsProps> = ({
           {/* Header */}
           <div className="text-center mb-10">
             <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              Search Results
+              Browse Our Rooms
             </h1>
             <p className="text-xl text-gray-600 mb-6">
-              Found {filteredResults.length} available rooms matching your
-              criteria
+              Discover the perfect accommodation for your stay
             </p>
             <div className="flex flex-wrap justify-center gap-4 text-sm">
               <span className="bg-primary-100 text-primary-800 px-4 py-2 rounded-full font-medium">
-                {filteredResults.length} Results Found
+                {filteredRooms.length} Total Rooms
               </span>
               <span className="bg-green-100 text-green-800 px-4 py-2 rounded-full font-medium">
-                All Available
+                {availableRoomsCount} Available
+              </span>
+              <span className="bg-red-100 text-red-800 px-4 py-2 rounded-full font-medium">
+                {filteredRooms.length - availableRoomsCount} Unavailable
               </span>
             </div>
           </div>
@@ -648,6 +765,12 @@ const SearchResults: React.FC<SearchResultsProps> = ({
               onChange={handleTypeFilterChange}
               options={typeFilterOptions}
               label="Room Type"
+            />
+            <FilterSelect
+              value={availabilityFilter}
+              onChange={handleAvailabilityFilterChange}
+              options={availabilityFilterOptions}
+              label="Availability"
             />
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-gray-700">
@@ -672,9 +795,9 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             </div>
           ) : (
             <>
-              {/* Results Grid */}
+              {/* Room Grid */}
               <div className="space-y-6">
-                {displayedResults.map((room) => (
+                {displayedRooms.map((room) => (
                   <RoomCard
                     key={room.id}
                     room={room}
@@ -685,7 +808,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
               </div>
 
               {/* No Results */}
-              {displayedResults.length === 0 && !isLoading && (
+              {displayedRooms.length === 0 && !isLoading && (
                 <div className="py-20 text-center">
                   <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
                     <svg
@@ -698,7 +821,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={1.5}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                       />
                     </svg>
                   </div>
@@ -728,13 +851,22 @@ const SearchResults: React.FC<SearchResultsProps> = ({
               )}
 
               {/* Bottom Summary */}
-              {displayedResults.length > 0 && (
+              {displayedRooms.length > 0 && (
                 <div className="mt-12 text-center pt-8 border-t border-gray-200">
                   <p className="text-gray-600 mb-4">
-                    Showing {displayedResults.length} of{' '}
-                    {filteredResults.length} available rooms
+                    Showing {displayedRooms.length} of {filteredRooms.length}{' '}
+                    rooms
+                    {availabilityFilter === 'all' &&
+                      ` (${availableRoomsCount} available)`}
                   </p>
                   <div className="flex flex-wrap justify-center gap-3">
+                    <button
+                      onClick={() => setAvailabilityFilter('available')}
+                      className="text-green-600 hover:text-green-700 font-medium transition-colors"
+                    >
+                      Show Available Only
+                    </button>
+                    <span className="text-gray-300">•</span>
                     <button
                       onClick={handleClearFilters}
                       className="text-primary-600 hover:text-primary-700 font-medium transition-colors"
@@ -759,4 +891,4 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   )
 }
 
-export default SearchResults
+export default RoomsBrowser
