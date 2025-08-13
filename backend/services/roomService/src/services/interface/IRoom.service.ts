@@ -1,11 +1,33 @@
-import { IRoom } from '../../interfaces/IRoom.interface'
+import { RoomDocument } from '../../models/room.model'
+
+export type ListQuery = {
+  page?: number
+  limit?: number
+  type?: string
+  minPrice?: number
+  maxPrice?: number
+  available?: boolean
+  sortBy?: 'price' | 'createdAt' | 'rating'
+  sortOrder?: 'asc' | 'desc'
+  search?: string // name contains
+}
 
 export interface IRoomService {
-  createRoom(payload: IRoom): Promise<any>
-  getRoomById(id: string): Promise<any>
-  getByNumericId(nid: number): Promise<any>
-  updateRoom(id: string, payload: Partial<IRoom>): Promise<any>
-  patchRoom(id: string, payload: Partial<IRoom>): Promise<any>
-  deleteRoom(id: string): Promise<any>
-  listRooms(filters: any): Promise<any>
+  createRoom(payload: Partial<RoomDocument>): Promise<RoomDocument>
+  getRoomById(id: string): Promise<RoomDocument | null>
+  listRooms(query: ListQuery): Promise<{
+    data: RoomDocument[]
+    total: number
+    page: number
+    limit: number
+  }>
+  updateRoom(
+    id: string,
+    payload: Partial<RoomDocument>
+  ): Promise<RoomDocument | null>
+  patchRoom(
+    id: string,
+    payload: Partial<RoomDocument>
+  ): Promise<RoomDocument | null>
+  deleteRoom(id: string): Promise<RoomDocument | null>
 }

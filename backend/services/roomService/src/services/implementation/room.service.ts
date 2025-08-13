@@ -1,77 +1,79 @@
-import { IRoomService } from '../interface/IRoom.service'
-import { IRoom } from '../../interfaces/IRoom.interface'
+import { IRoomService, ListQuery } from '../interface/IRoom.service'
 import { IRoomRepository } from '../../repository/interface/IRoom.repository'
+import CustomError from '../../utils/CustomError'
+import { HttpStatus } from '../../enums/http.status'
+import { RoomDocument } from '../../models/room.model'
 
 export class RoomService implements IRoomService {
-  private repository: IRoomRepository
-
-  constructor(repository: IRoomRepository) {
-    this.repository = repository
+  private roomRepository: IRoomRepository
+  constructor(roomRepository: IRoomRepository) {
+    this.roomRepository = roomRepository
   }
 
-  async createRoom(payload: IRoom) {
-    if (!payload.name) throw new Error('Name is required')
-    if (!payload.type) throw new Error('Type is required')
-    if (payload.price === undefined || payload.price <= 0)
-      throw new Error('Price must be a positive number')
-    const created = await this.repository.create(payload)
-    return created
+  async createRoom(payload: Partial<RoomDocument>) {
+    if (payload.number == null)
+      throw new CustomError('Room number required', HttpStatus.BAD_REQUEST)
+    const exists = await this.roomRepository.findByNumber(
+      payload.number as number
+    )
+    if (exists)
+      throw new CustomError('Room number already exists', HttpStatus.CONFLICT)
+    return this.roomRepository.create(payload)
   }
 
-  async getRoomById(id: string) {
-    const room = await this.repository.findById(id)
-    if (!room) throw new Error('Room not found')
-    return room
+  getRoomById(id: string) {
+    return this.roomRepository.findById(id)
   }
 
-  async getByNumericId(nid: number) {
-    const room = await this.repository.findByNumericId(nid)
-    if (!room) throw new Error('Room not found')
-    return room
+  async listRooms(query: ListQuery) {
+    const {
+      page = 1,
+      limit = 20,
+      type,
+      minPrice,
+      maxPrice,
+      available,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      search,
+    } = query
+
+    const filter: any = {}
+    if (type) filter.type = type
+    if (available !== undefined) filter.available = available
+    if (minPrice != null || maxPrice != null) {
+      filter.price = {}
+      if (minPrice != null) filter.price.$gte = minPrice
+      if (maxPrice != null) filter.price.$lte = maxPrice
+    }
+    if (search) filter.name = { $regex: search, $options: 'i' }
+
+    const skip = (page - 1) * limit
+    const sort: any = { [sortBy]: sortOrder === 'asc' ? 1 : -1 }
+
+    const [data, total] = await Promise.all([
+      this.roomRepository.findAll(filter, { skip, limit, sort }),
+      this.roomRepository.count(filter),
+    ])
+    return { data, total, page, limit }
   }
 
-  async updateRoom(id: string, payload: Partial<IRoom>) {
-    const updated = await this.repository.updateById(id, payload)
-    if (!updated) throw new Error('Room not found or update failed')
-    return updated
+  async updateRoom(id: string, payload: Partial<RoomDocument>) {
+    const existing = await this.roomRepository.findById(id)
+    if (!existing) throw new CustomError('Room not found', HttpStatus.NOT_FOUND)
+    // PUT (overwrite)
+    return this.roomRepository.update(id, payload)
   }
 
-  async patchRoom(id: string, payload: Partial<IRoom>) {
-    const allowed = [
-      'price',
-      'available',
-      'rating',
-      'description',
-      'amenities',
-      'name',
-      'image',
-    ]
-    const sanitized: Partial<IRoom> = {}
-    Object.keys(payload).forEach((k) => {
-      if (allowed.includes(k)) {
-        // @ts-ignore
-        sanitized[k] = (payload as any)[k]
-      }
-    })
-    const patched = await this.repository.patchById(id, sanitized)
-    if (!patched) throw new Error('Room not found or patch failed')
-    return patched
+  async patchRoom(id: string, payload: Partial<RoomDocument>) {
+    const existing = await this.roomRepository.findById(id)
+    if (!existing) throw new CustomError('Room not found', HttpStatus.NOT_FOUND)
+    return this.roomRepository.patch(id, payload)
   }
 
   async deleteRoom(id: string) {
-    const deleted = await this.repository.deleteById(id)
-    if (!deleted) throw new Error('Room not found or delete failed')
-    return deleted
-  }
-
-  async listRooms(filters: any) {
-    if (
-      filters.minPrice &&
-      filters.maxPrice &&
-      filters.minPrice > filters.maxPrice
-    ) {
-      throw new Error('minPrice cannot be greater than maxPrice')
-    }
-    return this.repository.list(filters)
+    const existing = await this.roomRepository.findById(id)
+    if (!existing) throw new CustomError('Room not found', HttpStatus.NOT_FOUND)
+    return this.roomRepository.delete(id)
   }
 }
