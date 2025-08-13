@@ -6,30 +6,39 @@ import {
   patchRoomSchema,
 } from '../validators/room.validator'
 import { roomController } from '../config/container'
+import authenticateToken from '../middleware/auth.middleware'
 
-const roomRoute = express.Router()
+const router = express.Router()
 
-roomRoute.get('/', roomController.list.bind(roomController))
-roomRoute.post(
+router.post(
   '/',
-  // validateRequest(createRoomSchema),
+  authenticateToken,
+  validateRequest(createRoomSchema),
   roomController.create.bind(roomController)
 )
-roomRoute.get(
-  '/numeric/:nid',
-  roomController.getByNumericId.bind(roomController)
-)
-roomRoute.get('/:id', roomController.getById.bind(roomController))
-roomRoute.put(
+
+router.get('/', roomController.list.bind(roomController))
+
+router.get('/:id', roomController.getById.bind(roomController))
+
+router.put(
   '/:id',
-  // validateRequest(updateRoomSchema),
+  authenticateToken,
+  validateRequest(updateRoomSchema),
   roomController.update.bind(roomController)
 )
-roomRoute.patch(
+
+router.patch(
   '/:id',
-  // validateRequest(patchRoomSchema),
+  authenticateToken,
+  validateRequest(patchRoomSchema),
   roomController.patch.bind(roomController)
 )
-roomRoute.delete('/:id', roomController.remove.bind(roomController))
 
-export default roomRoute
+router.delete(
+  '/:id',
+  authenticateToken,
+  roomController.remove.bind(roomController)
+)
+
+export default router
