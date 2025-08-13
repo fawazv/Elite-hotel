@@ -11,14 +11,6 @@ const app = express()
 
 dotenv.config()
 
-app.get('/health', (req, res) =>
-  res.json({ status: 'ok', service: 'room-service' })
-)
-
-connectMongodb().then(() => {
-  console.log('mongodb connected')
-})
-
 app.use(
   cors({
     origin: 'http://localhost:5173',
@@ -34,4 +26,8 @@ app.use('/', roomRoute)
 // global error handler
 app.use(errorHandler)
 
-app.listen(4003, () => console.log(`server running on http://localhost:4003`))
+const PORT = process.env.PORT || 4003
+
+connectMongodb().then(() => {
+  app.listen(PORT, () => console.log(`room-service running on ${PORT}`))
+})
