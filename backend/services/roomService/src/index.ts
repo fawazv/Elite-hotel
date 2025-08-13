@@ -1,15 +1,12 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-dotenv.config()
-
-import connectMongodb from './config/db.config'
 import roomRoute from './routes/room.route'
 import errorHandler from './middleware/errorHandler'
-
-const app = express()
+import connectMongoDB from './config/db.config'
 
 dotenv.config()
+const app = express()
 
 app.use(
   cors({
@@ -28,6 +25,16 @@ app.use(errorHandler)
 
 const PORT = process.env.PORT || 4003
 
-connectMongodb().then(() => {
-  app.listen(PORT, () => console.log(`room-service running on ${PORT}`))
-})
+async function startServer() {
+  try {
+    await connectMongoDB()
+    app.listen(PORT, () => {
+      console.log(`room-service running on ${PORT}`)
+    })
+  } catch (err) {
+    console.error('Failed to start server:', err)
+    process.exit(1) // Exit with failure code
+  }
+}
+
+startServer()

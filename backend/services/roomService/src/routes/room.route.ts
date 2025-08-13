@@ -21,23 +21,16 @@ router.get('/', roomController.list.bind(roomController))
 
 router.get('/:id', roomController.getById.bind(roomController))
 
-router.put(
-  '/:id',
-  authenticateToken,
-  validateRequest(updateRoomSchema),
-  roomController.update.bind(roomController)
-)
-
 router.patch(
   '/:id',
-  authenticateToken,
+  // authenticateToken,
   validateRequest(patchRoomSchema),
   roomController.patch.bind(roomController)
 )
 
 router.delete(
   '/:id',
-  authenticateToken,
+  // authenticateToken,
   roomController.remove.bind(roomController)
 )
 

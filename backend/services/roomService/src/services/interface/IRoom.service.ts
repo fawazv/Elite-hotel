@@ -21,10 +21,7 @@ export interface IRoomService {
     page: number
     limit: number
   }>
-  updateRoom(
-    id: string,
-    payload: Partial<RoomDocument>
-  ): Promise<RoomDocument | null>
+
   patchRoom(
     id: string,
     payload: Partial<RoomDocument>

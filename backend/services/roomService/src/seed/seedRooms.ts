@@ -1,6 +1,6 @@
 import dotenv from 'dotenv'
 dotenv.config()
-import connectMongodb from '../config/db.config'
+import connectMongoDB from '../config/db.config'
 import { Room } from '../models/room.model'
 
 const rooms = [
@@ -181,7 +181,7 @@ const rooms = [
 
 ;(async () => {
   try {
-    await connectMongodb()
+    await connectMongoDB()
     console.log('Seeding rooms...')
     await Room.deleteMany({})
     await Room.insertMany(rooms)

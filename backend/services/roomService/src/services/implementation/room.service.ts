@@ -58,13 +58,6 @@ export class RoomService implements IRoomService {
     return { data, total, page, limit }
   }
 
-  async updateRoom(id: string, payload: Partial<RoomDocument>) {
-    const existing = await this.roomRepository.findById(id)
-    if (!existing) throw new CustomError('Room not found', HttpStatus.NOT_FOUND)
-    // PUT (overwrite)
-    return this.roomRepository.update(id, payload)
-  }
-
   async patchRoom(id: string, payload: Partial<RoomDocument>) {
     const existing = await this.roomRepository.findById(id)
     if (!existing) throw new CustomError('Room not found', HttpStatus.NOT_FOUND)
