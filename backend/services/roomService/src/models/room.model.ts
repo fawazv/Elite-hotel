@@ -1,23 +1,29 @@
-import mongoose, { Schema } from 'mongoose'
-import { IRoomDocument } from '../interfaces/IRoom.interface'
+import { Schema, model, Document } from 'mongoose'
+import { IRoom } from '../typings/room.d'
 
-const RoomSchema = new Schema<IRoomDocument>(
+export interface RoomDocument extends IRoom, Document {}
+
+const RoomSchema = new Schema<RoomDocument>(
   {
-    roomId: { type: Number, index: true, unique: true, sparse: true },
-    name: { type: String, required: true },
-    type: { type: String, required: true },
-    price: { type: Number, required: true },
+    number: { type: Number, required: true, unique: true, index: true },
+    name: { type: String, required: true, trim: true },
+    type: {
+      type: String,
+      enum: ['Standard', 'Deluxe', 'Premium', 'Luxury'],
+      required: true,
+    },
+    price: { type: Number, required: true, min: 0 },
     image: { type: String },
     description: { type: String },
     amenities: { type: [String], default: [] },
     size: { type: String },
     capacity: { type: String },
-    rating: { type: Number, default: 0 },
+    rating: { type: Number, min: 0, max: 5 },
     available: { type: Boolean, default: true },
   },
   { timestamps: true }
 )
 
-RoomSchema.index({ name: 'text', description: 'text' })
+RoomSchema.index({ type: 1, price: 1, available: 1 })
 
-export const RoomModel = mongoose.model<IRoomDocument>('Room', RoomSchema)
+export const Room = model<RoomDocument>('Room', RoomSchema)
