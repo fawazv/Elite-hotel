@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "dev": " nodemon --exec ts-node src/index.ts",
+    "seed": "ts-node src/seed/seedRooms.ts"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +22,7 @@
     "morgan": "^1.10.1"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/dotenv": "^6.1.1",
     "@types/express": "^5.0.3",
     "@types/joi": "^17.2.2",

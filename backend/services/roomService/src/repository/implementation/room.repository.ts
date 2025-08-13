@@ -2,7 +2,7 @@ import { Model } from 'mongoose'
 import { RoomModel } from '../../models/room.model'
 import { CounterModel } from '../../models/counter.model'
 import { IRoom } from '../../interfaces/IRoom.interface'
-import { IRoomRepository } from '../../interfaces/IRoom.repository'
+import { IRoomRepository } from '../interface/IRoom.repository'
 
 export class RoomRepository implements IRoomRepository {
   private model: Model<any>
