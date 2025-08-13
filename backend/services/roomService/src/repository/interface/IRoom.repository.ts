@@ -1,11 +1,6 @@
-import { IRoom } from '../../interfaces/Iroom.interface'
+import { RoomDocument } from '../../models/room.model'
+import { IBaseRepository } from './IBase.repository'
 
-export interface IRoomRepository {
-  create(room: Partial<IRoom>): Promise<any>
-  findById(id: string): Promise<any>
-  findByNumericId(nid: number): Promise<any>
-  updateById(id: string, data: Partial<IRoom>): Promise<any>
-  patchById(id: string, data: Partial<IRoom>): Promise<any>
-  deleteById(id: string): Promise<any>
-  list(filter: any): Promise<any>
+export interface IRoomRepository extends IBaseRepository<RoomDocument> {
+  findByNumber(number: number): Promise<RoomDocument | null>
 }
