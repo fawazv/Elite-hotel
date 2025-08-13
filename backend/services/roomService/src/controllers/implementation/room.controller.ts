@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express'
+import { NextFunction, Request, Response } from 'express'
 import { IRoomController } from '../interface/IRoom.controller'
 import { IRoomService } from '../../services/interface/IRoom.service'
 import { successResponse } from '../../utils/response.handler'
@@ -6,17 +6,15 @@ import { HttpStatus } from '../../enums/http.status'
 
 export class RoomController implements IRoomController {
   private roomService: IRoomService
-
   constructor(roomService: IRoomService) {
     this.roomService = roomService
   }
 
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const payload = req.body
-      const created = await this.roomService.createRoom(payload)
+      const result = await this.roomService.createRoom(req.body)
       return successResponse(res, HttpStatus.CREATED, 'Room created', {
-        data: created,
+        data: result,
       })
     } catch (err) {
       next(err)
@@ -25,19 +23,34 @@ export class RoomController implements IRoomController {
 
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params
-      const room = await this.roomService.getRoomById(id)
+      const room = await this.roomService.getRoomById(req.params.id)
+      if (!room)
+        return successResponse(res, HttpStatus.NOT_FOUND, 'Room not found')
       return successResponse(res, HttpStatus.OK, 'Room fetched', { data: room })
     } catch (err) {
       next(err)
     }
   }
 
-  async getByNumericId(req: Request, res: Response, next: NextFunction) {
+  async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const nid = Number(req.params.nid)
-      const room = await this.roomService.getByNumericId(nid)
-      return successResponse(res, HttpStatus.OK, 'Room fetched', { data: room })
+      // normalize query types
+      const q = {
+        page: req.query.page ? Number(req.query.page) : undefined,
+        limit: req.query.limit ? Number(req.query.limit) : undefined,
+        type: req.query.type as string | undefined,
+        minPrice: req.query.minPrice ? Number(req.query.minPrice) : undefined,
+        maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined,
+        available:
+          req.query.available != null
+            ? req.query.available === 'true'
+            : undefined,
+        sortBy: (req.query.sortBy as any) || undefined,
+        sortOrder: (req.query.sortOrder as any) || undefined,
+        search: (req.query.search as string) || undefined,
+      }
+      const result = await this.roomService.listRooms(q)
+      return successResponse(res, HttpStatus.OK, 'Rooms fetched', result)
     } catch (err) {
       next(err)
     }
@@ -45,10 +58,9 @@ export class RoomController implements IRoomController {
 
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params
-      const updated = await this.roomService.updateRoom(id, req.body)
+      const result = await this.roomService.updateRoom(req.params.id, req.body)
       return successResponse(res, HttpStatus.OK, 'Room updated', {
-        data: updated,
+        data: result,
       })
     } catch (err) {
       next(err)
@@ -57,10 +69,9 @@ export class RoomController implements IRoomController {
 
   async patch(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params
-      const patched = await this.roomService.patchRoom(id, req.body)
+      const result = await this.roomService.patchRoom(req.params.id, req.body)
       return successResponse(res, HttpStatus.OK, 'Room patched', {
-        data: patched,
+        data: result,
       })
     } catch (err) {
       next(err)
@@ -69,29 +80,8 @@ export class RoomController implements IRoomController {
 
   async remove(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params
-      await this.roomService.deleteRoom(id)
-      return res.status(HttpStatus.NO_CONTENT).send()
-    } catch (err) {
-      next(err)
-    }
-  }
-
-  async list(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { type, minPrice, maxPrice, available, q, page, limit } = req.query
-      const filters = {
-        type: type as string | undefined,
-        minPrice: minPrice ? Number(minPrice) : undefined,
-        maxPrice: maxPrice ? Number(maxPrice) : undefined,
-        available:
-          typeof available !== 'undefined' ? available === 'true' : undefined,
-        q: q as string | undefined,
-        page: page ? Number(page) : 1,
-        limit: limit ? Number(limit) : 20,
-      }
-      const result = await this.roomService.listRooms(filters)
-      return successResponse(res, HttpStatus.OK, 'Rooms listed', result)
+      await this.roomService.deleteRoom(req.params.id)
+      return successResponse(res, HttpStatus.NO_CONTENT, 'Room deleted')
     } catch (err) {
       next(err)
     }
