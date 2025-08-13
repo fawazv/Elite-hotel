@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 
 // Type definitions
 interface Room {
-  id: number
+  number: number
   name: string
   type: string
   price: number
@@ -265,15 +265,15 @@ const RoomCard: React.FC<RoomCardProps> = ({
 }) => {
   const handleViewRoom = () => {
     if (onViewRoom) {
-      onViewRoom(room.id)
+      onViewRoom(room.number)
     } else {
-      console.log(`Viewing room ${room.id}: ${room.name}`)
+      console.log(`Viewing room ${room.number}: ${room.name}`)
     }
   }
 
   const handleBookRoom = () => {
     if (room.available && onBookRoom) {
-      onBookRoom(room.id)
+      onBookRoom(room.number)
     }
   }
 
@@ -427,7 +427,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
 // Demo data with availability
 const demoRooms: Room[] = [
   {
-    id: 1,
+    number: 1,
     name: 'Ocean View Family Suite',
     type: 'Premium',
     price: 249,
@@ -449,7 +449,7 @@ const demoRooms: Room[] = [
     available: true,
   },
   {
-    id: 2,
+    number: 2,
     name: 'Cozy Single Retreat',
     type: 'Standard',
     price: 129,
@@ -464,7 +464,7 @@ const demoRooms: Room[] = [
     available: false,
   },
   {
-    id: 3,
+    number: 3,
     name: 'Deluxe Garden Suite',
     type: 'Deluxe',
     price: 189,
@@ -486,7 +486,7 @@ const demoRooms: Room[] = [
     available: true,
   },
   {
-    id: 4,
+    number: 4,
     name: 'Executive Business Suite',
     type: 'Premium',
     price: 299,
@@ -510,7 +510,7 @@ const demoRooms: Room[] = [
     available: true,
   },
   {
-    id: 5,
+    number: 5,
     name: 'Junior Honeymoon Suite',
     type: 'Premium',
     price: 219,
@@ -533,7 +533,7 @@ const demoRooms: Room[] = [
     available: false,
   },
   {
-    id: 6,
+    number: 6,
     name: 'Mountain View Lodge',
     type: 'Deluxe',
     price: 169,
@@ -555,7 +555,7 @@ const demoRooms: Room[] = [
     available: true,
   },
   {
-    id: 7,
+    number: 7,
     name: 'Classic Business Room',
     type: 'Standard',
     price: 149,
@@ -576,7 +576,7 @@ const demoRooms: Room[] = [
     available: true,
   },
   {
-    id: 8,
+    number: 8,
     name: 'Penthouse Suite',
     type: 'Luxury',
     price: 499,
@@ -723,7 +723,7 @@ const RoomsBrowser: React.FC<RoomsBrowserProps> = ({ rooms = demoRooms }) => {
   }
 
   const handleBookRoom = (roomId: number) => {
-    const room = rooms.find((r) => r.id === roomId)
+    const room = rooms.find((r) => r.number === roomId)
     alert(`Booking ${room?.name} (Room ID: ${roomId})`)
   }
 
@@ -799,7 +799,7 @@ const RoomsBrowser: React.FC<RoomsBrowserProps> = ({ rooms = demoRooms }) => {
               <div className="space-y-6">
                 {displayedRooms.map((room) => (
                   <RoomCard
-                    key={room.id}
+                    key={room.number}
                     room={room}
                     onViewRoom={handleViewRoom}
                     onBookRoom={handleBookRoom}

@@ -6,7 +6,5 @@ export const successResponse = <T>(
   message: string,
   data?: T
 ) => {
-  return res
-    .status(statusCode)
-    .json({ success: true, message, ...(data || {}) })
+  res.status(statusCode).json({ success: true, message, ...data })
 }

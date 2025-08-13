@@ -12,7 +12,7 @@ const roomRoute = express.Router()
 roomRoute.get('/', roomController.list.bind(roomController))
 roomRoute.post(
   '/',
-  validateRequest(createRoomSchema),
+  // validateRequest(createRoomSchema),
   roomController.create.bind(roomController)
 )
 roomRoute.get(
@@ -22,12 +22,12 @@ roomRoute.get(
 roomRoute.get('/:id', roomController.getById.bind(roomController))
 roomRoute.put(
   '/:id',
-  validateRequest(updateRoomSchema),
+  // validateRequest(updateRoomSchema),
   roomController.update.bind(roomController)
 )
 roomRoute.patch(
   '/:id',
-  validateRequest(patchRoomSchema),
+  // validateRequest(patchRoomSchema),
   roomController.patch.bind(roomController)
 )
 roomRoute.delete('/:id', roomController.remove.bind(roomController))
