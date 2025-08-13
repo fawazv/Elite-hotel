@@ -1,16 +1,14 @@
-import { RoomController } from '../controllers/implementation/room.controller'
-import { RoomModel } from '../models/room.model'
 import { RoomRepository } from '../repository/implementation/room.repository'
 import { RoomService } from '../services/implementation/room.service'
+import { RoomController } from '../controllers/implementation/room.controller'
 
-// Repositories
-const roomRepository = new RoomRepository(RoomModel)
+// repositories
+const roomRepository = new RoomRepository()
 
-// Services
+// services
 const roomService = new RoomService(roomRepository)
-console.log('RoomService initialized:', !!roomService)
 
-// Controllers
+// controllers
 const roomController = new RoomController(roomService)
 
-export { roomRepository, roomService, roomController }
+export { roomController, roomService, roomRepository }

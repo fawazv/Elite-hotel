@@ -1,11 +1,11 @@
 import dotenv from 'dotenv'
 dotenv.config()
 import connectMongodb from '../config/db.config'
-import { RoomModel } from '../models/room.model'
+import { Room } from '../models/room.model'
 
 const rooms = [
   {
-    id: 1,
+    number: 1,
     name: 'Ocean View Family Suite',
     type: 'Premium',
     price: 249,
@@ -27,7 +27,7 @@ const rooms = [
     available: true,
   },
   {
-    id: 2,
+    number: 2,
     name: 'Cozy Single Retreat',
     type: 'Standard',
     price: 129,
@@ -42,7 +42,7 @@ const rooms = [
     available: false,
   },
   {
-    id: 3,
+    number: 3,
     name: 'Deluxe Garden Suite',
     type: 'Deluxe',
     price: 189,
@@ -64,7 +64,7 @@ const rooms = [
     available: true,
   },
   {
-    id: 4,
+    number: 4,
     name: 'Executive Business Suite',
     type: 'Premium',
     price: 299,
@@ -88,7 +88,7 @@ const rooms = [
     available: true,
   },
   {
-    id: 5,
+    number: 5,
     name: 'Junior Honeymoon Suite',
     type: 'Premium',
     price: 219,
@@ -111,7 +111,7 @@ const rooms = [
     available: false,
   },
   {
-    id: 6,
+    number: 6,
     name: 'Mountain View Lodge',
     type: 'Deluxe',
     price: 169,
@@ -133,7 +133,7 @@ const rooms = [
     available: true,
   },
   {
-    id: 7,
+    number: 7,
     name: 'Classic Business Room',
     type: 'Standard',
     price: 149,
@@ -154,7 +154,7 @@ const rooms = [
     available: true,
   },
   {
-    id: 8,
+    number: 8,
     name: 'Penthouse Suite',
     type: 'Luxury',
     price: 499,
@@ -183,8 +183,8 @@ const rooms = [
   try {
     await connectMongodb()
     console.log('Seeding rooms...')
-    await RoomModel.deleteMany({})
-    await RoomModel.insertMany(rooms)
+    await Room.deleteMany({})
+    await Room.insertMany(rooms)
     console.log('✅ Rooms seeded successfully')
     process.exit(0)
   } catch (err) {
