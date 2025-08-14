@@ -3,22 +3,60 @@ import { IRoomRepository } from '../../repository/interface/IRoom.repository'
 import CustomError from '../../utils/CustomError'
 import { HttpStatus } from '../../enums/http.status'
 import { RoomDocument } from '../../models/room.model'
+import { IMediaService } from '../interface/IMedia.service'
 
 export class RoomService implements IRoomService {
   private roomRepository: IRoomRepository
-  constructor(roomRepository: IRoomRepository) {
+  private mediaService: IMediaService
+
+  constructor(roomRepository: IRoomRepository, mediaService: IMediaService) {
     this.roomRepository = roomRepository
+    this.mediaService = mediaService
   }
 
-  async createRoom(payload: Partial<RoomDocument>) {
-    if (payload.number == null) {
-      throw new CustomError('Room number required', HttpStatus.BAD_REQUEST)
+  private coerceBody(payload: any): any {
+    // Handle amenities sent as stringified JSON or comma-separated
+    if (typeof payload.amenities === 'string') {
+      try {
+        const parsed = JSON.parse(payload.amenities)
+        if (Array.isArray(parsed)) payload.amenities = parsed
+      } catch {
+        payload.amenities = payload.amenities
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter(Boolean)
+      }
     }
+    if (payload.number) payload.number = Number(payload.number)
+    if (payload.price) payload.price = Number(payload.price)
+    if (payload.rating) payload.rating = Number(payload.rating)
+    if (payload.available != null)
+      payload.available = ['true', '1', true, 1].includes(payload.available)
+    return payload
+  }
+
+  async createRoom(payload: Partial<RoomDocument>, file?: Express.Multer.File) {
+    payload = this.coerceBody(payload)
+
+    if (payload.number == null)
+      throw new CustomError('Room number required', HttpStatus.BAD_REQUEST)
     const exists = await this.roomRepository.findByNumber(
       payload.number as number
     )
     if (exists)
       throw new CustomError('Room number already exists', HttpStatus.CONFLICT)
+
+    if (file) {
+      const uploaded = await this.mediaService.uploadImage(
+        file.buffer,
+        file.originalname
+      )
+      ;(payload as any).image = {
+        publicId: uploaded.publicId,
+        url: uploaded.url,
+      }
+    }
+
     return this.roomRepository.create(payload)
   }
 
@@ -59,15 +97,39 @@ export class RoomService implements IRoomService {
     return { data, total, page, limit }
   }
 
-  async patchRoom(id: string, payload: Partial<RoomDocument>) {
+  async patchRoom(
+    id: string,
+    payload: Partial<RoomDocument>,
+    file?: Express.Multer.File
+  ) {
+    payload = this.coerceBody(payload)
     const existing = await this.roomRepository.findById(id)
     if (!existing) throw new CustomError('Room not found', HttpStatus.NOT_FOUND)
+
+    if (file) {
+      if (existing.image?.publicId) {
+        await this.mediaService.deleteImage(existing.image.publicId)
+      }
+      const uploaded = await this.mediaService.uploadImage(
+        file.buffer,
+        file.originalname
+      )
+      ;(payload as any).image = {
+        publicId: uploaded.publicId,
+        url: uploaded.url,
+      }
+    }
+
     return this.roomRepository.patch(id, payload)
   }
 
-  async deleteRoom(id: string) {
+  async deleteRoom(id: string): Promise<void> {
     const existing = await this.roomRepository.findById(id)
     if (!existing) throw new CustomError('Room not found', HttpStatus.NOT_FOUND)
-    return this.roomRepository.delete(id)
+
+    if (existing.image?.publicId) {
+      await this.mediaService.deleteImage(existing.image.publicId)
+    }
+    await this.roomRepository.delete(id)
   }
 }

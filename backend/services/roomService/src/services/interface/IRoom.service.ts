@@ -9,22 +9,27 @@ export type ListQuery = {
   available?: boolean
   sortBy?: 'price' | 'createdAt' | 'rating'
   sortOrder?: 'asc' | 'desc'
-  search?: string // name contains
+  search?: string
 }
 
 export interface IRoomService {
-  createRoom(payload: Partial<RoomDocument>): Promise<RoomDocument>
+  createRoom(
+    payload: Partial<RoomDocument>,
+    file?: Express.Multer.File
+  ): Promise<RoomDocument>
   getRoomById(id: string): Promise<RoomDocument | null>
-  listRooms(query: ListQuery): Promise<{
+  listRooms(
+    query: ListQuery
+  ): Promise<{
     data: RoomDocument[]
     total: number
     page: number
     limit: number
   }>
-
   patchRoom(
     id: string,
-    payload: Partial<RoomDocument>
+    payload: Partial<RoomDocument>,
+    file?: Express.Multer.File
   ): Promise<RoomDocument | null>
-  deleteRoom(id: string): Promise<RoomDocument | null>
+  deleteRoom(id: string): Promise<void>
 }
