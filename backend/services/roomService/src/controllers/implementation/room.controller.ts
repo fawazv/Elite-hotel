@@ -3,7 +3,6 @@ import { IRoomController } from '../interface/IRoom.controller'
 import { IRoomService } from '../../services/interface/IRoom.service'
 import { successResponse } from '../../utils/response.handler'
 import { HttpStatus } from '../../enums/http.status'
-import CustomError from '../../utils/CustomError'
 
 export class RoomController implements IRoomController {
   private roomService: IRoomService
@@ -13,7 +12,8 @@ export class RoomController implements IRoomController {
 
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await this.roomService.createRoom(req.body)
+      const file = (req as any).file as Express.Multer.File | undefined
+      const result = await this.roomService.createRoom(req.body, file)
       return successResponse(res, HttpStatus.CREATED, 'Room created', {
         data: result,
       })
@@ -24,15 +24,9 @@ export class RoomController implements IRoomController {
 
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = req.params.id
-
-      if (!id) {
-        throw new CustomError('Room ID is required', HttpStatus.BAD_REQUEST)
-      }
-      const room = await this.roomService.getRoomById(id)
-      if (!room) {
-        throw new CustomError('Room not found', HttpStatus.NOT_FOUND)
-      }
+      const room = await this.roomService.getRoomById(req.params.id)
+      if (!room)
+        return successResponse(res, HttpStatus.NOT_FOUND, 'Room not found')
       return successResponse(res, HttpStatus.OK, 'Room fetched', { data: room })
     } catch (err) {
       next(err)
@@ -41,7 +35,6 @@ export class RoomController implements IRoomController {
 
   async list(req: Request, res: Response, next: NextFunction) {
     try {
-      // normalize query types
       const q = {
         page: req.query.page ? Number(req.query.page) : undefined,
         limit: req.query.limit ? Number(req.query.limit) : undefined,
@@ -65,11 +58,12 @@ export class RoomController implements IRoomController {
 
   async patch(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = req.params.id
-      if (!id) {
-        throw new CustomError('Room ID is required', HttpStatus.BAD_REQUEST)
-      }
-      const result = await this.roomService.patchRoom(id, req.body)
+      const file = (req as any).file as Express.Multer.File | undefined
+      const result = await this.roomService.patchRoom(
+        req.params.id,
+        req.body,
+        file
+      )
       return successResponse(res, HttpStatus.OK, 'Room patched', {
         data: result,
       })
@@ -80,9 +74,8 @@ export class RoomController implements IRoomController {
 
   async remove(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = req.params.id
-      await this.roomService.deleteRoom(id)
-      return successResponse(res, HttpStatus.OK, 'Room deleted')
+      await this.roomService.deleteRoom(req.params.id)
+      return successResponse(res, HttpStatus.NO_CONTENT, 'Room deleted')
     } catch (err) {
       next(err)
     }
