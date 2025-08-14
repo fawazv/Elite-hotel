@@ -1,33 +1,37 @@
 import Joi from 'joi'
 
 export const createRoomSchema = Joi.object({
-  number: Joi.number().integer().min(1).required(),
+  number: Joi.alternatives(Joi.number(), Joi.string()).required(),
   name: Joi.string().trim().min(2).max(100).required(),
   type: Joi.string()
     .valid('Standard', 'Deluxe', 'Premium', 'Luxury')
     .required(),
-  price: Joi.number().min(0).required(),
-  image: Joi.string().uri().optional(),
+  price: Joi.alternatives(Joi.number(), Joi.string()).required(),
   description: Joi.string().max(2000).optional(),
-  amenities: Joi.array().items(Joi.string().trim()).default([]),
+  amenities: Joi.alternatives(
+    Joi.array().items(Joi.string().trim()),
+    Joi.string() // JSON array or comma-separated
+  ).optional(),
   size: Joi.string().optional(),
   capacity: Joi.string().optional(),
-  rating: Joi.number().min(0).max(5).optional(),
-  available: Joi.boolean().default(true),
+  rating: Joi.alternatives(Joi.number(), Joi.string()).optional(),
+  available: Joi.alternatives(Joi.boolean(), Joi.string()).optional(),
 })
 
-export const updateRoomSchema = createRoomSchema // full overwrite (PUT)
+export const updateRoomSchema = createRoomSchema
 
 export const patchRoomSchema = Joi.object({
-  number: Joi.number().integer().min(1),
+  number: Joi.alternatives(Joi.number(), Joi.string()),
   name: Joi.string().trim().min(2).max(100),
   type: Joi.string().valid('Standard', 'Deluxe', 'Premium', 'Luxury'),
-  price: Joi.number().min(0),
-  image: Joi.string().uri(),
+  price: Joi.alternatives(Joi.number(), Joi.string()),
   description: Joi.string().max(2000),
-  amenities: Joi.array().items(Joi.string().trim()),
+  amenities: Joi.alternatives(
+    Joi.array().items(Joi.string().trim()),
+    Joi.string()
+  ),
   size: Joi.string(),
   capacity: Joi.string(),
-  rating: Joi.number().min(0).max(5),
-  available: Joi.boolean(),
+  rating: Joi.alternatives(Joi.number(), Joi.string()),
+  available: Joi.alternatives(Joi.boolean(), Joi.string()),
 }).min(1)
