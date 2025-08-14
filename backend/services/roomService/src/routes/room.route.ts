@@ -12,7 +12,7 @@ const router = express.Router()
 
 router.post(
   '/',
-  authenticateToken,
+  // authenticateToken,
   validateRequest(createRoomSchema),
   roomController.create.bind(roomController)
 )

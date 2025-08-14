@@ -11,8 +11,9 @@ export class RoomService implements IRoomService {
   }
 
   async createRoom(payload: Partial<RoomDocument>) {
-    if (payload.number == null)
+    if (payload.number == null) {
       throw new CustomError('Room number required', HttpStatus.BAD_REQUEST)
+    }
     const exists = await this.roomRepository.findByNumber(
       payload.number as number
     )

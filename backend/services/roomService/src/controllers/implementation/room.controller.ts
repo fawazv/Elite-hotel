@@ -80,8 +80,9 @@ export class RoomController implements IRoomController {
 
   async remove(req: Request, res: Response, next: NextFunction) {
     try {
-      await this.roomService.deleteRoom(req.params.id)
-      return successResponse(res, HttpStatus.NO_CONTENT, 'Room deleted')
+      const id = req.params.id
+      await this.roomService.deleteRoom(id)
+      return successResponse(res, HttpStatus.OK, 'Room deleted')
     } catch (err) {
       next(err)
     }
