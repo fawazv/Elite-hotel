@@ -3,6 +3,14 @@ import { IRoom } from '../typings/room.d'
 
 export interface RoomDocument extends IRoom, Document {}
 
+const ImageSchema = new Schema(
+  {
+    publicId: { type: String, required: true },
+    url: { type: String, required: true },
+  },
+  { _id: false }
+)
+
 const RoomSchema = new Schema<RoomDocument>(
   {
     number: { type: Number, required: true, unique: true, index: true },
@@ -13,7 +21,7 @@ const RoomSchema = new Schema<RoomDocument>(
       required: true,
     },
     price: { type: Number, required: true, min: 0 },
-    image: { type: String },
+    image: { type: ImageSchema, required: false },
     description: { type: String },
     amenities: { type: [String], default: [] },
     size: { type: String },
