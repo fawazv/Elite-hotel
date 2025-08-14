@@ -1,11 +1,16 @@
 export type RoomType = 'Standard' | 'Deluxe' | 'Premium' | 'Luxury'
 
+export interface IRoomImage {
+  publicId: string
+  url: string
+}
+
 export interface IRoom {
   number: number
   name: string
   type: RoomType
   price: number
-  image?: string
+  image?: IRoomImage // Cloudinary info
   description?: string
   amenities: string[]
   size?: string
