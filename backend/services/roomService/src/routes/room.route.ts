@@ -8,6 +8,7 @@ import {
 import { roomController } from '../config/container'
 import authenticateToken from '../middleware/auth.middleware'
 import { upload } from '../middleware/upload.middleware'
+import { authorizeRole } from '../middleware/authorizeRole'
 
 const router = express.Router()
 
@@ -17,7 +18,8 @@ const router = express.Router()
  */
 router.post(
   '/',
-  // authenticateToken,
+  authenticateToken,
+  authorizeRole(['Admin']),
   upload.single('image'),
   validateRequest(createRoomSchema),
   roomController.create.bind(roomController)
@@ -29,7 +31,8 @@ router.get('/:id', roomController.getById.bind(roomController))
 
 router.patch(
   '/:id',
-  // authenticateToken,
+  authenticateToken,
+  authorizeRole(['Admin']),
   upload.single('image'),
   validateRequest(patchRoomSchema),
   roomController.patch.bind(roomController)
@@ -37,7 +40,8 @@ router.patch(
 
 router.delete(
   '/:id',
-  // authenticateToken,
+  authenticateToken,
+  authorizeRole(['Admin']),
   roomController.remove.bind(roomController)
 )
 

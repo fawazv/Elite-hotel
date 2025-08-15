@@ -1,10 +1,7 @@
 import jwt, { JwtPayload } from 'jsonwebtoken'
-import { Request, Response, NextFunction } from 'express'
+import { Response, NextFunction } from 'express'
 import { User } from '../models/user.model'
-
-interface CustomeRequest extends Request {
-  user?: string | JwtPayload
-}
+import { CustomeRequest } from '../interfaces/CustomRequest'
 
 const authenticateToken = (
   req: CustomeRequest,

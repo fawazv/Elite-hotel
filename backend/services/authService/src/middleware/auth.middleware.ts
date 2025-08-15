@@ -1,9 +1,9 @@
-import jwt, { JwtPayload } from "jsonwebtoken";
-import { Request, Response, NextFunction } from "express";
-import { User } from "../models/user.model";
+import jwt, { JwtPayload } from 'jsonwebtoken'
+import { Request, Response, NextFunction } from 'express'
+import { User } from '../models/user.model'
 
 interface CustomeRequest extends Request {
-  user?: string | JwtPayload;
+  user?: string | JwtPayload
 }
 
 const authenticateToken = (
@@ -12,39 +12,39 @@ const authenticateToken = (
   next: NextFunction
 ) => {
   try {
-    const token = req.headers["authorization"];
+    const token = req.headers['authorization']
     if (!token) {
       return res
         .status(401)
-        .json({ message: "Access denied . No token provided" });
+        .json({ message: 'Access denied . No token provided' })
     }
-    const newToken = token?.split(" ")[1];
-    const secret = process.env.ACCESS_TOKEN_SECRET;
-    jwt.decode(newToken, { complete: true });
+    const newToken = token?.split(' ')[1]
+    const secret = process.env.ACCESS_TOKEN_SECRET
+    jwt.decode(newToken, { complete: true })
 
     if (!secret) {
-      throw new Error("Access token secret is not defined");
+      throw new Error('Access token secret is not defined')
     }
 
     jwt.verify(newToken, secret, async (err, user) => {
       if (err) {
-        return res.status(401).json({ message: "Invalid token" });
+        return res.status(401).json({ message: 'Invalid token' })
       }
-      req.user = user as JwtPayload;
-      const userId = req.user.id;
+      req.user = user as JwtPayload
+      const userId = req.user.id
       if (!userId) {
-        return res.status(401).json({ message: "Unauthorized" });
+        return res.status(401).json({ message: 'Unauthorized' })
       }
-      const userData = await User.findById(userId);
+      const userData = await User.findById(userId)
       if (!userData) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ message: 'User not found' })
       }
 
-      next();
-    });
+      next()
+    })
   } catch (error) {
-    console.error("Error founded in authenticate token", error);
+    console.error('Error founded in authenticate token', error)
   }
-};
+}
 
-export default authenticateToken;
+export default authenticateToken
