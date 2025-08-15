@@ -9,6 +9,15 @@ const validateRequest = (
 ) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const dataToValidate = req[source]
+
+    // Allow image-only updates in PATCH
+    if (
+      source === 'body' &&
+      (!dataToValidate || Object.keys(dataToValidate).length === 0)
+    ) {
+      if ((req as any).file) return next()
+    }
+
     const { error } = schema.validate(dataToValidate)
 
     if (error) {
