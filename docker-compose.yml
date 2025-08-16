@@ -3,8 +3,8 @@ services:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - '5672:5672'
+      - '15672:15672'
 
   gateway:
     image: fawaz482/elite-gateway:latest
@@ -12,10 +12,11 @@ services:
       - ./backend/api-gateway/.env
     container_name: api-gateway
     ports:
-      - "4000:4000"
+      - '4000:4000'
     depends_on:
       - rabbitmq
       - auth-service
+      - room-service
 
   auth-service:
     image: fawaz482/elite-auth:latest
@@ -23,6 +24,16 @@ services:
       - ./backend/services/authService/.env
     container_name: elite-auth
     ports:
-      - "4001:4001"
+      - '4001:4001'
+    depends_on:
+      - rabbitmq
+
+  room-service:
+    image: fawaz482/elite-room:latest
+    env_file:
+      - ./backend/services/roomService/.env
+    container_name: elite-room
+    ports:
+      - '4003:4003'
     depends_on:
       - rabbitmq
