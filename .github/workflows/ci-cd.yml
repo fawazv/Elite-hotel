@@ -28,7 +28,7 @@ jobs:
         run: |
           cd backend/services/authService
           npm ci
-          cd backend/services/roomService
+          cd ../roomService
           npm ci
           cd ../../api-gateway
           npm ci
