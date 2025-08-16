@@ -75,7 +75,6 @@ app.use(
 )
 
 const port = process.env.GATEWAY_PORT
-
 app.listen(port, () =>
   console.log(`server running on http://localhost:${port}`)
 )
