@@ -52,15 +52,8 @@ export class UserService implements IUserService {
     return { data, total, page, limit }
   }
 
-  async update(id: string, payload: Partial<IUser>): Promise<IUser | null> {
-    // Prevent password updates here; password change happens in AuthService
-    if ((payload as any).password) delete (payload as any).password
-    const updated = await this.userRepo.update(id, payload)
-    if (!updated) throw new CustomError('User not found', HttpStatus.NOT_FOUND)
-    return updated
-  }
-
   async patch(id: string, payload: Partial<IUser>): Promise<IUser | null> {
+    // Prevent password updates here; password change happens in AuthService
     if ((payload as any).password) delete (payload as any).password
     const patched = await this.userRepo.patch(id, payload)
     if (!patched) throw new CustomError('User not found', HttpStatus.NOT_FOUND)
@@ -95,7 +88,7 @@ export class UserService implements IUserService {
       file.originalname,
       process.env.CLOUDINARY_FOLDER || 'hotel/avatars'
     )
-    const updated = await this.userRepo.patch(id, {
+    const updated = await this.userRepo.update(id, {
       avatar: { publicId: uploaded.publicId, url: uploaded.url },
     })
     if (!updated)
@@ -111,7 +104,7 @@ export class UserService implements IUserService {
     if (!existing) throw new CustomError('User not found', HttpStatus.NOT_FOUND)
     if ((existing as any).avatar?.publicId) {
       await this.mediaService.deleteImage((existing as any).avatar.publicId)
-      await this.userRepo.patch(id, { avatar: null })
+      await this.userRepo.update(id, { avatar: null })
     }
   }
 }

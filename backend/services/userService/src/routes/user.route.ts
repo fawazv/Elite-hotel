@@ -6,6 +6,7 @@ import { userController } from '../config/container'
 import authenticateToken from '../middleware/auth.middleware'
 import { authorizeRole } from '../middleware/authorizeRole'
 import { upload } from '../middleware/upload.middleware' // reuse your multer middleware
+import { authorizeOwnerOrAdmin } from '../middleware/authorizeOwnerOrAdmin'
 
 const router = express.Router()
 
@@ -23,32 +24,28 @@ router.get(
   userController.getById.bind(userController)
 )
 
-// update/patch - admin or the user themself (we'll rely on authorizeRole for admin, for user-self check handle in controller/middleware)
+// patch - admin or the user themself can update.
 router.patch(
   '/:id',
   authenticateToken,
-  authorizeRole(['admin']),
+  authorizeOwnerOrAdmin(),
   validateRequest(patchUserSchema),
   userController.patch.bind(userController)
-)
-router.put(
-  '/:id',
-  authenticateToken,
-  authorizeRole(['admin']),
-  validateRequest(updateUserSchema),
-  userController.update.bind(userController)
 )
 
 // avatar: upload single file 'avatar'
 router.post(
   '/:id/avatar',
   authenticateToken,
+  authorizeOwnerOrAdmin(),
   upload.single('avatar'),
   userController.updateAvatar.bind(userController)
 )
+
 router.delete(
   '/:id/avatar',
   authenticateToken,
+  authorizeOwnerOrAdmin(),
   userController.removeAvatar.bind(userController)
 )
 

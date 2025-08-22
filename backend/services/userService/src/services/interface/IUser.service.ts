@@ -16,7 +16,6 @@ export interface IUserService {
     search?: string
     role?: string
   }): Promise<IPaginatedUsers>
-  update(id: string, payload: Partial<IUser>): Promise<IUser | null>
   patch(id: string, payload: Partial<IUser>): Promise<IUser | null>
   delete(id: string): Promise<void>
   updateAvatar(

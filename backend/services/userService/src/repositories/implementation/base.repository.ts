@@ -22,6 +22,9 @@ class BaseRepository<T extends Document> implements IBaseRepository<T> {
   async delete(id: string): Promise<T | null> {
     return this.model.findByIdAndDelete(id)
   }
+  async count(filter: any = {}): Promise<number> {
+    return this.model.countDocuments(filter).exec()
+  }
 }
 
 export default BaseRepository

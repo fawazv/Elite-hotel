@@ -37,17 +37,6 @@ export class UserController implements IUserController {
     }
   }
 
-  async update(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await this.userService.update(req.params.id, req.body)
-      return successResponse(res, HttpStatus.OK, 'User updated', {
-        data: result,
-      })
-    } catch (err) {
-      next(err)
-    }
-  }
-
   async patch(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await this.userService.patch(req.params.id, req.body)
@@ -62,7 +51,7 @@ export class UserController implements IUserController {
   async remove(req: Request, res: Response, next: NextFunction) {
     try {
       await this.userService.delete(req.params.id)
-      return successResponse(res, HttpStatus.NO_CONTENT, 'User deleted')
+      return successResponse(res, HttpStatus.OK, 'User deleted')
     } catch (err) {
       next(err)
     }
