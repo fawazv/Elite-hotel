@@ -1,5 +1,5 @@
 // src/repository/implementation/guest.repository.ts
-import { BaseRepository } from './base.repository'
+import BaseRepository from './base.repository'
 import { IGuestRepository } from '../interface/IGuest.repository'
 import { Guest, GuestDocument } from '../../models/guest.model'
 
@@ -12,11 +12,11 @@ export class GuestRepository
   }
 
   findByEmail(email: string) {
-    return this.model.findOne({ email }).exec()
+    return Guest.findOne({ email }).exec()
   }
 
   findByPhone(phoneNumber: string) {
-    return this.model.findOne({ phoneNumber }).exec()
+    return Guest.findOne({ phoneNumber }).exec()
   }
 
   findByEmailOrPhone(email?: string, phoneNumber?: string) {
@@ -24,6 +24,6 @@ export class GuestRepository
     if (email) or.push({ email })
     if (phoneNumber) or.push({ phoneNumber })
     if (!or.length) return Promise.resolve(null)
-    return this.model.findOne({ $or: or }).exec()
+    return Guest.findOne({ $or: or }).exec()
   }
 }

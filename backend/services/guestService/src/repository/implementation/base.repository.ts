@@ -10,8 +10,8 @@ class BaseRepository<T extends Document> implements IBaseRepository<T> {
   async create(data: Partial<T>): Promise<T> {
     return this.model.create(data)
   }
-  async findAll(): Promise<T[]> {
-    return this.model.find()
+  async findAll(filter: any = {}, options: any = {}): Promise<T[]> {
+    return this.model.find(filter, null, options).exec() as Promise<T[]>
   }
   async findById(id: string): Promise<T | null> {
     return this.model.findById(id)

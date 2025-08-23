@@ -99,7 +99,7 @@ export class GuestService implements IGuestService {
 
   async patch(id: string, payload: Partial<GuestDocument>) {
     payload = this.coerce(payload)
-    const patched = await this.guestRepo.patch(id, payload)
+    const patched = await this.guestRepo.update(id, payload)
     if (!patched) throw new CustomError('Guest not found', HttpStatus.NOT_FOUND)
     return patched
   }
@@ -128,7 +128,7 @@ export class GuestService implements IGuestService {
       file.originalname,
       process.env.CLOUDINARY_FOLDER || 'hotel/guests/idproofs'
     )
-    await this.guestRepo.patch(id, {
+    await this.guestRepo.update(id, {
       idProof: {
         ...(existing.idProof || {}),
         image: { publicId: uploaded.publicId, url: uploaded.url },
@@ -143,7 +143,7 @@ export class GuestService implements IGuestService {
       throw new CustomError('Guest not found', HttpStatus.NOT_FOUND)
     if (existing.idProof?.image?.publicId) {
       await this.media.deleteImage(existing.idProof.image.publicId)
-      await this.guestRepo.patch(id, {
+      await this.guestRepo.update(id, {
         idProof: { ...(existing.idProof || {}), image: null },
       } as any)
     }
