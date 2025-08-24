@@ -1,3 +1,5 @@
+import { Types } from 'mongoose'
+
 // src/interfaces/IReservation.ts
 export type ReservationStatus =
   | 'PendingPayment'
@@ -9,8 +11,8 @@ export type ReservationStatus =
 
 export default interface IReservation {
   code: string // human-friendly locator, e.g. RSV-20250823-AB12
-  guestId: string
-  roomId: string
+  guestId: Types.ObjectId | string
+  roomId: Types.ObjectId | string
   checkIn: Date
   checkOut: Date
   nights: number
@@ -35,7 +37,7 @@ export default interface IReservation {
   holdExpiresAt?: Date // optional: for payment hold/expiry logic
 
   // audit
-  createdBy?: string // userId of receptionist/admin for front desk bookings
+  createdBy?: Types.ObjectId | string // userId of receptionist/admin for front desk bookings
   cancelledAt?: Date
   checkedInAt?: Date
   checkedOutAt?: Date

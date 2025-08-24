@@ -1,52 +1,81 @@
 // src/models/reservation.model.ts
-import mongoose, { Schema, Document } from 'mongoose'
+import { Schema, model, Document, Types } from 'mongoose'
+import IReservation, { ReservationStatus } from '../interfaces/IReservation'
 
-const GuestSnapshot = new Schema(
-  {
-    guestId: { type: Schema.Types.ObjectId, ref: 'Guest' },
-    fullName: String,
-    email: String,
-    phoneNumber: String,
-  },
-  { _id: false }
-)
-
-export interface ReservationDocument extends Document {
-  guest: any
-  roomId: mongoose.Types.ObjectId
-  checkIn: Date
-  checkOut: Date
-  status: 'booked' | 'checked_in' | 'checked_out' | 'cancelled'
-  totalAmount: number
-  paymentStatus: 'pending' | 'paid' | 'failed'
-  createdBy?: mongoose.Types.ObjectId
-}
+export interface ReservationDocument extends IReservation, Document {}
 
 const ReservationSchema = new Schema<ReservationDocument>(
   {
-    guest: GuestSnapshot,
-    roomId: { type: Schema.Types.ObjectId, required: true, index: true },
-    checkIn: { type: Date, required: true },
-    checkOut: { type: Date, required: true },
+    code: { type: String, required: true, unique: true, index: true },
+    guestId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Guest',
+      required: true,
+      index: true,
+    },
+    roomId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Room',
+      required: true,
+      index: true,
+    },
+    checkIn: { type: Date, required: true, index: true },
+    checkOut: { type: Date, required: true, index: true },
+    nights: { type: Number, required: true, min: 1 },
+    adults: { type: Number, required: true, min: 1 },
+    children: { type: Number, default: 0, min: 0 },
     status: {
       type: String,
-      enum: ['booked', 'checked_in', 'checked_out', 'cancelled'],
-      default: 'booked',
+      enum: [
+        'PendingPayment',
+        'Confirmed',
+        'Cancelled',
+        'CheckedIn',
+        'CheckedOut',
+        'NoShow',
+      ],
+      default: 'PendingPayment',
+      index: true,
     },
-    totalAmount: { type: Number, required: true },
-    paymentStatus: {
+    source: {
       type: String,
-      enum: ['pending', 'paid', 'failed'],
-      default: 'pending',
+      enum: ['Online', 'FrontDesk', 'OTA'],
+      default: 'FrontDesk',
     },
-    createdBy: { type: Schema.Types.ObjectId },
+    notes: { type: String, maxlength: 5000 },
+
+    currency: { type: String, required: true, default: 'INR' },
+    baseRate: { type: Number, required: true, min: 0 },
+    taxes: { type: Number, required: true, min: 0 },
+    fees: { type: Number, required: true, min: 0 },
+    totalAmount: { type: Number, required: true, min: 0 },
+
+    requiresPrepayment: { type: Boolean, default: false },
+    paymentProvider: {
+      type: String,
+      enum: ['Stripe', 'Razorpay'],
+      required: false,
+    },
+    paymentIntentId: { type: String },
+    paymentCaptured: { type: Boolean, default: false },
+    holdExpiresAt: { type: Date },
+
+    createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    cancelledAt: { type: Date },
+    checkedInAt: { type: Date },
+    checkedOutAt: { type: Date },
   },
   { timestamps: true }
 )
 
-ReservationSchema.index({ roomId: 1, checkIn: 1, checkOut: 1 })
+// Query helper: overlapping date ranges
+// overlap if (existing.checkIn < req.checkOut) && (existing.checkOut > req.checkIn)
+ReservationSchema.index(
+  { roomId: 1, checkIn: 1, checkOut: 1, status: 1 },
+  { name: 'room_date_overlap' }
+)
 
-export const Reservation = mongoose.model<ReservationDocument>(
+export const Reservation = model<ReservationDocument>(
   'Reservation',
   ReservationSchema
 )
