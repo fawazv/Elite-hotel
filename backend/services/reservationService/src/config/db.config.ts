@@ -8,7 +8,7 @@ const connectMongoDB = async () => {
       return
     }
     await mongoose.connect(connectionString)
-    console.log('MongoDB connected (room-service)')
+    console.log('MongoDB connected (reservation-service)')
   } catch (error) {
     console.error('failed to connect database', error)
   }
