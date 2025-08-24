@@ -24,7 +24,7 @@ router.post(
 router.post(
   '/',
   authenticateToken,
-  authorizeRole(['Admin', 'Receptionist']), // if online guest booking, you can relax this or move to a different public route
+  authorizeRole(['admin', 'receptionist']), // if online guest booking, you can relax this or move to a different public route
   validateRequest(createReservationSchema),
   reservationController.create.bind(reservationController)
 )
@@ -33,20 +33,20 @@ router.post(
 router.get(
   '/',
   authenticateToken,
-  authorizeRole(['Admin', 'Receptionist']),
+  authorizeRole(['admin', 'receptionist']),
   validateRequest(listReservationSchema),
   reservationController.list.bind(reservationController)
 )
 router.get(
   '/:id',
   authenticateToken,
-  authorizeRole(['Admin', 'Receptionist']),
+  authorizeRole(['admin', 'receptionist']),
   reservationController.getById.bind(reservationController)
 )
 router.get(
   '/code/:code',
   authenticateToken,
-  authorizeRole(['Admin', 'Receptionist']),
+  authorizeRole(['admin', 'receptionist']),
   reservationController.getByCode.bind(reservationController)
 )
 
@@ -54,7 +54,7 @@ router.get(
 router.patch(
   '/:id',
   authenticateToken,
-  authorizeRole(['Admin', 'Receptionist']),
+  authorizeRole(['admin', 'receptionist']),
   validateRequest(patchReservationSchema),
   reservationController.patch.bind(reservationController)
 )
@@ -63,25 +63,25 @@ router.patch(
 router.post(
   '/:id/confirm',
   authenticateToken,
-  authorizeRole(['Admin', 'Receptionist']),
+  authorizeRole(['admin', 'receptionist']),
   reservationController.confirm.bind(reservationController)
 )
 router.post(
   '/:id/cancel',
   authenticateToken,
-  authorizeRole(['Admin', 'Receptionist']),
+  authorizeRole(['admin', 'receptionist']),
   reservationController.cancel.bind(reservationController)
 )
 router.post(
   '/:id/check-in',
   authenticateToken,
-  authorizeRole(['Admin', 'Receptionist']),
+  authorizeRole(['admin', 'receptionist']),
   reservationController.checkIn.bind(reservationController)
 )
 router.post(
   '/:id/check-out',
   authenticateToken,
-  authorizeRole(['Admin', 'Receptionist']),
+  authorizeRole(['admin', 'receptionist']),
   reservationController.checkOut.bind(reservationController)
 )
 
