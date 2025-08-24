@@ -18,7 +18,7 @@ const router = express.Router()
 router.post(
   '/',
   authenticateToken,
-  authorizeRole(['Admin', 'Receptionist']),
+  authorizeRole(['admin', 'receptionist']),
   upload.single('idProofImage'),
   validateRequest(createGuestSchema),
   guestController.create.bind(guestController)
@@ -28,30 +28,22 @@ router.post(
 router.get(
   '/',
   authenticateToken,
-  authorizeRole(['Admin', 'Receptionist']),
+  authorizeRole(['admin', 'receptionist']),
   guestController.list.bind(guestController)
 )
 
 router.get(
   '/:id',
   authenticateToken,
-  authorizeRole(['Admin', 'Receptionist']),
+  authorizeRole(['admin', 'receptionist']),
   guestController.getById.bind(guestController)
 )
 
-// Update / Patch
-router.put(
-  '/:id',
-  authenticateToken,
-  authorizeRole(['Admin', 'Receptionist']),
-  validateRequest(updateGuestSchema),
-  guestController.update.bind(guestController)
-)
-
+// Patch
 router.patch(
   '/:id',
   authenticateToken,
-  authorizeRole(['Admin', 'Receptionist']),
+  authorizeRole(['admin', 'receptionist']),
   validateRequest(patchGuestSchema),
   guestController.patch.bind(guestController)
 )
@@ -60,7 +52,7 @@ router.patch(
 router.delete(
   '/:id',
   authenticateToken,
-  authorizeRole(['Admin']),
+  authorizeRole(['admin']),
   guestController.remove.bind(guestController)
 )
 
@@ -68,7 +60,7 @@ router.delete(
 router.post(
   '/:id/id-proof',
   authenticateToken,
-  authorizeRole(['Admin', 'Receptionist']),
+  authorizeRole(['admin', 'receptionist']),
   upload.single('image'),
   guestController.updateIdProofImage.bind(guestController)
 )
@@ -76,7 +68,7 @@ router.post(
 router.delete(
   '/:id/id-proof',
   authenticateToken,
-  authorizeRole(['Admin', 'Receptionist']),
+  authorizeRole(['admin', 'receptionist']),
   guestController.removeIdProofImage.bind(guestController)
 )
 
@@ -84,7 +76,7 @@ router.delete(
 router.post(
   '/ensure',
   authenticateToken,
-  authorizeRole(['Admin', 'Receptionist']),
+  authorizeRole(['admin', 'receptionist']),
   validateRequest(ensureGuestSchema),
   guestController.ensureForBooking.bind(guestController)
 )

@@ -20,10 +20,6 @@ export interface IGuestService {
     page: number
     limit: number
   }>
-  update(
-    id: string,
-    payload: Partial<GuestDocument>
-  ): Promise<GuestDocument | null>
   patch(
     id: string,
     payload: Partial<GuestDocument>

@@ -54,17 +54,6 @@ export class GuestController implements IGuestController {
     }
   }
 
-  async update(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await this.guestService.update(req.params.id, req.body)
-      return successResponse(res, HttpStatus.OK, 'Guest updated', {
-        data: result,
-      })
-    } catch (err) {
-      next(err)
-    }
-  }
-
   async patch(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await this.guestService.patch(req.params.id, req.body)
@@ -79,7 +68,7 @@ export class GuestController implements IGuestController {
   async remove(req: Request, res: Response, next: NextFunction) {
     try {
       await this.guestService.delete(req.params.id)
-      return successResponse(res, HttpStatus.NO_CONTENT, 'Guest deleted')
+      return successResponse(res, HttpStatus.OK, 'Guest deleted')
     } catch (err) {
       next(err)
     }

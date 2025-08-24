@@ -90,13 +90,6 @@ export class GuestService implements IGuestService {
     return { data, total, page, limit }
   }
 
-  async update(id: string, payload: Partial<GuestDocument>) {
-    payload = this.coerce(payload)
-    const updated = await this.guestRepo.update(id, payload)
-    if (!updated) throw new CustomError('Guest not found', HttpStatus.NOT_FOUND)
-    return updated
-  }
-
   async patch(id: string, payload: Partial<GuestDocument>) {
     payload = this.coerce(payload)
     const patched = await this.guestRepo.update(id, payload)
@@ -129,9 +122,9 @@ export class GuestService implements IGuestService {
       process.env.CLOUDINARY_FOLDER || 'hotel/guests/idproofs'
     )
     await this.guestRepo.update(id, {
-      idProof: {
-        ...(existing.idProof || {}),
-        image: { publicId: uploaded.publicId, url: uploaded.url },
+      'idProof.image': {
+        publicId: uploaded.publicId,
+        url: uploaded.url,
       },
     } as any)
     return uploaded
@@ -144,7 +137,7 @@ export class GuestService implements IGuestService {
     if (existing.idProof?.image?.publicId) {
       await this.media.deleteImage(existing.idProof.image.publicId)
       await this.guestRepo.update(id, {
-        idProof: { ...(existing.idProof || {}), image: null },
+        'idProof.image': null,
       } as any)
     }
   }
