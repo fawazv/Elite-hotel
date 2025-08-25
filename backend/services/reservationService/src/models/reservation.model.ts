@@ -15,6 +15,10 @@ const ReservationSchema = new Schema<ReservationDocument>(
       required: true,
       index: true,
     },
+    guestContact: {
+      email: { type: String, index: true },
+      phoneNumber: { type: String, index: true },
+    },
     roomId: {
       type: Schema.Types.ObjectId,
       ref: 'Room',

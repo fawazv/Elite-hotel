@@ -12,6 +12,10 @@ export type ReservationStatus =
 export default interface IReservation {
   code: string // human-friendly locator, e.g. RSV-20250823-AB12
   guestId: Types.ObjectId | string
+  guestContact: {
+    email: { type: String }
+    phoneNumber: { type: String }
+  }
   roomId: Types.ObjectId | string
   checkIn: Date
   checkOut: Date
