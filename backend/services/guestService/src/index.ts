@@ -1,16 +1,15 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import connectMongodb from './config/db.config'
 import guestRoute from './routes/guest.route'
 import errorHandler from './middleware/errorHandler'
 import helmet from 'helmet'
 import morgan from 'morgan'
-import connectMongoDB from './config/db.config'
-import { initGuestRpcServer } from './rpc/guest.rpc.server'
 import { initTopology } from './config/rabbitmq.config'
+import { initGuestRpcServer } from './rpc/guest.rpc.server'
 
 const app = express()
-
 dotenv.config()
 
 app.use(express.json())
@@ -30,30 +29,28 @@ app.use('/', guestRoute)
 // global error handler
 app.use(errorHandler)
 
-async function startServer() {
+async function bootstrap() {
   try {
-    // 1. Connect to Mongo
-    await connectMongoDB()
+    // connect DB
+    await connectMongodb()
+    console.log('✅ MongoDB connected')
 
-    // 2. Init RabbitMQ Topology
+    // setup RabbitMQ topology (exchanges/queues)
     await initTopology()
     console.log('✅ RabbitMQ topology initialized')
 
-    // 3. Start Guest RPC Server
+    // start Guest RPC server
     await initGuestRpcServer()
+    console.log('✅ Guest RPC server listening on guest.service.rpc')
 
-    // 4. Start Express HTTP API
-    const app = express()
-    app.use(express.json())
-    app.use('/guests', guestRoute)
-
+    // start Express server
     app.listen(4004, () =>
-      console.log(`server running on http://localhost:4004`)
+      console.log(`🚀 GuestService running at http://localhost:4004`)
     )
   } catch (err) {
-    console.error('❌ Failed to start GuestService', err)
+    console.error('❌ Failed to start GuestService:', err)
     process.exit(1)
   }
 }
 
-startServer()
+bootstrap()
