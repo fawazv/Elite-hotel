@@ -29,28 +29,19 @@ app.use('/', guestRoute)
 // global error handler
 app.use(errorHandler)
 
-async function bootstrap() {
-  try {
-    // setup RabbitMQ topology (exchanges/queues)
-    await initTopology()
-    console.log('✅ RabbitMQ topology initialized')
+// setup RabbitMQ topology (exchanges/queues)
+initTopology()
+console.log('✅ RabbitMQ topology initialized')
 
-    // start Guest RPC server
-    await initGuestRpcServer()
-    console.log('✅ Guest RPC server listening on guest.service.rpc')
+// start Guest RPC server
+initGuestRpcServer()
+console.log('✅ Guest RPC server listening on guest.service.rpc')
 
-    // connect DB
-    await connectMongodb()
-    console.log('✅ MongoDB connected')
+// connect DB
+connectMongodb()
+console.log('✅ MongoDB connected')
 
-    // start Express server
-    app.listen(4004, () =>
-      console.log(`🚀 GuestService running at http://localhost:4004`)
-    )
-  } catch (err) {
-    console.error('❌ Failed to start GuestService:', err)
-    process.exit(1)
-  }
-}
-
-bootstrap()
+// start Express server
+app.listen(4004, () =>
+  console.log(`🚀 GuestService running at http://localhost:4004`)
+)
