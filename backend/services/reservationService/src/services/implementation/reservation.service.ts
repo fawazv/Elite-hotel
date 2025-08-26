@@ -12,6 +12,8 @@ import CustomError from '../../utils/CustomError'
 import { HttpStatus } from '../../enums/http.status'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
+import { GuestRpcClient } from '../adapters/guestRpcClient.adapter'
+import { getRabbitChannel } from '../../config/rabbitmq.config'
 dayjs.extend(utc)
 
 function generateCode(): string {
@@ -24,15 +26,20 @@ export class ReservationService implements IReservationService {
   private repo: IReservationRepository
   private roomLookup: IRoomLookupService
   private payments: IPaymentOrchestrator
+  private guestRpc: GuestRpcClient
+  private channelP: Promise<any>
 
   constructor(
     repo: IReservationRepository,
     roomLookup: IRoomLookupService,
-    payments: IPaymentOrchestrator
+    payments: IPaymentOrchestrator,
+    guestRpcClient?: GuestRpcClient
   ) {
     this.repo = repo
     this.roomLookup = roomLookup
     this.payments = payments
+    this.guestRpc = guestRpcClient || new GuestRpcClient()
+    this.channelP = getRabbitChannel()
   }
 
   private normalizeDates(input: { checkIn: any; checkOut: any }) {
@@ -167,6 +174,51 @@ export class ReservationService implements IReservationService {
       paymentClientSecret = pay.clientSecret // Stripe
       paymentOrder = pay.extra // Razorpay order payload
     }
+
+    // 1) Fetch guest contact once via RPC
+    try {
+      const contact = await this.guestRpc.getContactDetails(
+        doc.guestId.toString()
+      )
+      if (contact) {
+        await this.repo.update(doc._id.toString(), {
+          guestContact: {
+            email: contact.email,
+            phoneNumber: contact.phoneNumber,
+          },
+        } as any)
+        doc.guestContact = {
+          email: contact.email,
+          phoneNumber: contact.phoneNumber,
+        } as any
+      }
+    } catch (err) {
+      console.warn('Guest RPC failed', err)
+    }
+
+    // 2) Publish reservation.created event
+    const ch = await this.channelP
+    const eventPayload = {
+      event: 'reservation.created',
+      data: {
+        reservationId: doc._id.toString(),
+        code: doc.code,
+        guestId: doc.guestId,
+        guestContact: doc.guestContact ? { ...doc.guestContact } : null,
+        roomId: doc.roomId,
+        checkIn: doc.checkIn,
+        checkOut: doc.checkOut,
+        totalAmount: doc.totalAmount,
+        currency: doc.currency,
+      },
+      createdAt: new Date().toISOString(),
+    }
+    ch.publish(
+      'reservations.events',
+      'reservation.created',
+      Buffer.from(JSON.stringify(eventPayload)),
+      { persistent: true }
+    )
 
     // return document plus any client secret/order details for frontend
     return Object.assign(doc.toObject(), {
@@ -305,6 +357,28 @@ export class ReservationService implements IReservationService {
       cancelledAt: new Date(),
       notes: reason ? `${r.notes || ''}\n[cancel]: ${reason}`.trim() : r.notes,
     } as any)
+
+    if (updated) {
+      const ch = await this.channelP
+      const eventPayload = {
+        event: 'reservation.cancelled',
+        data: {
+          reservationId: updated._id.toString(),
+          code: updated.code,
+          guestId: updated.guestId,
+          roomId: updated.roomId,
+          cancelledAt: updated.cancelledAt,
+          reason,
+        },
+        createdAt: new Date().toISOString(),
+      }
+      ch.publish(
+        'reservations.events',
+        'reservation.cancelled',
+        Buffer.from(JSON.stringify(eventPayload)),
+        { persistent: true }
+      )
+    }
     return updated!
   }
 
