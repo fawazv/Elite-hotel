@@ -31,10 +31,6 @@ app.use(errorHandler)
 
 async function bootstrap() {
   try {
-    // connect DB
-    await connectMongodb()
-    console.log('✅ MongoDB connected')
-
     // setup RabbitMQ topology (exchanges/queues)
     await initTopology()
     console.log('✅ RabbitMQ topology initialized')
@@ -42,6 +38,10 @@ async function bootstrap() {
     // start Guest RPC server
     await initGuestRpcServer()
     console.log('✅ Guest RPC server listening on guest.service.rpc')
+
+    // connect DB
+    await connectMongodb()
+    console.log('✅ MongoDB connected')
 
     // start Express server
     app.listen(4004, () =>
