@@ -48,6 +48,14 @@ jobs:
         run: |
           docker build -t fawaz482/elite-user:latest ./backend/services/userService
           docker push fawaz482/elite-user:latest
+      - name: Build & Push Guest Service
+        run: |
+          docker build -t fawaz482/elite-guest:latest ./backend/services/guestService
+          docker push fawaz482/elite-guest:latest
+      - name: Build & Push Reservation Service
+        run: |
+          docker build -t fawaz482/elite-reservation:latest ./backend/services/reservationService
+          docker push fawaz482/elite-reservation:latest
       - name: Build & Push API Gateway
         run: |
           docker build -t fawaz482/elite-gateway:latest ./backend/api-gateway

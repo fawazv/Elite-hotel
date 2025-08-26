@@ -49,6 +49,8 @@ const targets = {
   auth: process.env.AUTH_API_BASE_URL,
   user: process.env.USER_API_BASE_URL,
   room: process.env.ROOM_API_BASE_URL,
+  guest: process.env.GUEST_API_BASE_URL,
+  reservation: process.env.RESERVATION_API_BASE_URL,
 }
 
 // Configure a proxy middleware for each route.
@@ -70,6 +72,20 @@ app.use(
   '/room',
   createProxyMiddleware({
     target: targets.room,
+    changeOrigin: true,
+  })
+)
+app.use(
+  '/guest',
+  createProxyMiddleware({
+    target: targets.guest,
+    changeOrigin: true,
+  })
+)
+app.use(
+  '/reservation',
+  createProxyMiddleware({
+    target: targets.reservation,
     changeOrigin: true,
   })
 )
