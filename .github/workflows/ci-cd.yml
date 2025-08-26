@@ -30,6 +30,8 @@ jobs:
           npm ci
           cd ../roomService
           npm ci
+          cd ../userService
+          npm ci
           cd ../../api-gateway
           npm ci
           npm run build
@@ -42,6 +44,10 @@ jobs:
         run: |
           docker build -t fawaz482/elite-room:latest ./backend/services/roomService
           docker push fawaz482/elite-room:latest
+      - name: Build & Push User Service
+        run: |
+          docker build -t fawaz482/elite-user:latest ./backend/services/userService
+          docker push fawaz482/elite-user:latest
       - name: Build & Push API Gateway
         run: |
           docker build -t fawaz482/elite-gateway:latest ./backend/api-gateway
