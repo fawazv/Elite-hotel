@@ -64,7 +64,7 @@ services:
   reservation-service:
     image: fawaz482/elite-reservation:latest
     env_file:
-      - ./backend/services/reservationtService/.env
+      - ./backend/services/reservationService/.env
     container_name: elite-reservation
     ports:
       - '4005:4005'

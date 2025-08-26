@@ -6,10 +6,9 @@ import { rabbitmqConnect } from './config/rabbitmq'
 import authRoute from './routes/auth.route'
 import connectMongodb from './config/db.config'
 import cookieParser from 'cookie-parser'
+dotenv.config()
 
 const app = express()
-
-dotenv.config()
 
 rabbitmqConnect().then(() => {
   console.log('rabbitmq connected')

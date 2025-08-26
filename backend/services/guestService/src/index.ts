@@ -1,6 +1,7 @@
+import dotenv from 'dotenv'
+dotenv.config()
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
 import connectMongodb from './config/db.config'
 import guestRoute from './routes/guest.route'
 import errorHandler from './middleware/errorHandler'
@@ -10,7 +11,6 @@ import { initTopology } from './config/rabbitmq.config'
 import { initGuestRpcServer } from './rpc/guest.rpc.server'
 
 const app = express()
-dotenv.config()
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
