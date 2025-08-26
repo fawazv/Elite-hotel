@@ -17,6 +17,9 @@ services:
       - rabbitmq
       - auth-service
       - room-service
+      - user-service
+      - guest-service
+      - reservation-service
 
   auth-service:
     image: fawaz482/elite-auth:latest
@@ -35,5 +38,35 @@ services:
     container_name: elite-room
     ports:
       - '4003:4003'
+    depends_on:
+      - rabbitmq
+
+  user-service:
+    image: fawaz482/elite-user:latest
+    env_file:
+      - ./backend/services/userService/.env
+    container_name: elite-user
+    ports:
+      - '4002:4002'
+    depends_on:
+      - rabbitmq
+
+  guest-service:
+    image: fawaz482/elite-guest:latest
+    env_file:
+      - ./backend/services/guestService/.env
+    container_name: elite-guest
+    ports:
+      - '4004:4004'
+    depends_on:
+      - rabbitmq
+
+  reservation-service:
+    image: fawaz482/elite-reservation:latest
+    env_file:
+      - ./backend/services/reservationtService/.env
+    container_name: elite-reservation
+    ports:
+      - '4005:4005'
     depends_on:
       - rabbitmq

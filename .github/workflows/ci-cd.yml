@@ -32,6 +32,12 @@ jobs:
           npm ci
           cd ../userService
           npm ci
+          cd ../guestService
+          npm ci
+          cd ../reservationService
+          npm ci
+          cd ../notificationService
+          npm ci
           cd ../../api-gateway
           npm ci
           npm run build
@@ -56,6 +62,10 @@ jobs:
         run: |
           docker build -t fawaz482/elite-reservation:latest ./backend/services/reservationService
           docker push fawaz482/elite-reservation:latest
+      - name: Build & Push Notification Service
+        run: |
+          docker build -t fawaz482/elite-notification:latest ./backend/services/notificationService
+          docker push fawaz482/elite-notification:latest
       - name: Build & Push API Gateway
         run: |
           docker build -t fawaz482/elite-gateway:latest ./backend/api-gateway
