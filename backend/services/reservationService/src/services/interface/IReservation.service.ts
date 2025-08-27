@@ -26,7 +26,8 @@ export type CreateReservationInput = {
 
 export interface IRoomLookupService {
   ensureRoomExists(
-    roomId: string
+    roomId: string,
+    jwtToken: string
   ): Promise<{ id: string; price: number; available?: boolean }>
 }
 
@@ -47,7 +48,10 @@ export interface IPaymentOrchestrator {
 }
 
 export interface IReservationService {
-  quote(input: QuoteRequest): Promise<{
+  quote(
+    input: QuoteRequest,
+    jwtToken?: string
+  ): Promise<{
     baseRate: number
     taxes: number
     fees: number
@@ -56,7 +60,8 @@ export interface IReservationService {
   }>
   create(
     input: CreateReservationInput,
-    createdBy?: string
+    createdBy?: string,
+    jwtToken?: string
   ): Promise<
     ReservationDocument & { paymentClientSecret?: string; paymentOrder?: any }
   >

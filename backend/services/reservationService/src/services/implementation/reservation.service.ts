@@ -14,6 +14,7 @@ import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import { GuestRpcClient } from '../adapters/guestRpcClient.adapter'
 import { getRabbitChannel } from '../../config/rabbitmq.config'
+import { jwt } from 'twilio'
 dayjs.extend(utc)
 
 function generateCode(): string {
@@ -53,7 +54,7 @@ export class ReservationService implements IReservationService {
     return nights
   }
 
-  async quote(input: QuoteRequest) {
+  async quote(input: QuoteRequest, jwtToken?: string) {
     const { roomId } = input
     const { checkIn, checkOut } = this.normalizeDates(input)
     if (!(checkIn < checkOut))
@@ -67,7 +68,7 @@ export class ReservationService implements IReservationService {
       throw new CustomError('Minimum 1 night', HttpStatus.BAD_REQUEST)
 
     // Fetch current base price from RoomService
-    const room = await this.roomLookup.ensureRoomExists(roomId)
+    const room = await this.roomLookup.ensureRoomExists(roomId, jwtToken!)
     const baseRate = room.price
 
     // Simple pricing: flat baseRate * nights; taxes (12%), fees (2%) — adjust as needed or inject a pricing engine
@@ -80,7 +81,11 @@ export class ReservationService implements IReservationService {
     return { baseRate, taxes, fees, total, currency }
   }
 
-  async create(input: CreateReservationInput, createdBy?: string) {
+  async create(
+    input: CreateReservationInput,
+    createdBy?: string,
+    jwtToken?: string
+  ) {
     const { checkIn, checkOut } = this.normalizeDates(input)
     if (!(checkIn < checkOut))
       throw new CustomError(
@@ -97,7 +102,7 @@ export class ReservationService implements IReservationService {
       throw new CustomError('roomId required', HttpStatus.BAD_REQUEST)
 
     // Room must exist; (optional) you can check room.available for simple hard-blocks
-    const room = await this.roomLookup.ensureRoomExists(input.roomId)
+    const room = await this.roomLookup.ensureRoomExists(input.roomId, jwtToken!)
     if (room.available === false) {
       throw new CustomError('Room is not available', HttpStatus.CONFLICT)
     }

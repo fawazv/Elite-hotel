@@ -12,16 +12,20 @@ export class ReservationController implements IReservationController {
     this.svc = svc
   }
 
-  async quote(req: Request, res: Response, next: NextFunction) {
+  async quote(req: CustomeRequest, res: Response, next: NextFunction) {
     try {
-      const result = await this.svc.quote({
-        roomId: req.body.roomId,
-        checkIn: req.body.checkIn,
-        checkOut: req.body.checkOut,
-        adults: req.body.adults,
-        children: req.body.children,
-        currency: req.body.currency,
-      })
+      const jwtToken = (req.headers.authorization || '').replace('Bearer ', '')
+      const result = await this.svc.quote(
+        {
+          roomId: req.body.roomId,
+          checkIn: req.body.checkIn,
+          checkOut: req.body.checkOut,
+          adults: req.body.adults,
+          children: req.body.children,
+          currency: req.body.currency,
+        },
+        jwtToken
+      )
       return successResponse(res, HttpStatus.OK, 'Quote calculated', {
         data: result,
       })
@@ -33,7 +37,9 @@ export class ReservationController implements IReservationController {
   async create(req: CustomeRequest, res: Response, next: NextFunction) {
     try {
       const createdBy = (req.user as any)?.id
-      const result = await this.svc.create(req.body, createdBy)
+      const jwtToken = (req.headers.authorization || '').replace('Bearer ', '')
+
+      const result = await this.svc.create(req.body, createdBy, jwtToken)
       return successResponse(res, HttpStatus.CREATED, 'Reservation created', {
         data: result,
       })
