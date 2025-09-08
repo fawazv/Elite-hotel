@@ -2,6 +2,7 @@
 import mongoose, { Schema, Document } from 'mongoose'
 
 export interface PaymentDoc extends Document {
+  _id: string
   reservationId: string
   guestId: string
   amount: number
