@@ -61,8 +61,15 @@ export async function getRabbitChannel(): Promise<Channel> {
 export async function initTopology(): Promise<void> {
   const ch = await getRabbitChannel()
 
+  // Payment events exchange
+  await ch.assertExchange('payments.events', 'topic', { durable: true })
+
   // Event exchange for reservation lifecycle events
   await ch.assertExchange('reservations.events', 'topic', { durable: true })
+
+  // Payments queue (consumers pick up messages here)
+  await ch.assertQueue('payments.queue', { durable: true })
+  await ch.bindQueue('payments.queue', 'payments.events', 'payment.*')
 
   // Notifications queue (consumers pick up messages here)
   await ch.assertQueue('notifications.queue', { durable: true })
@@ -70,6 +77,14 @@ export async function initTopology(): Promise<void> {
     'notifications.queue',
     'reservations.events',
     'reservation.*'
+  )
+
+  // payment’s consumer queue for reservation events
+  await ch.assertQueue('reservations.queue.forPayments', { durable: true })
+  await ch.bindQueue(
+    'reservations.queue.forPayments',
+    'reservations.events',
+    'reservation.created'
   )
 
   // Delayed / scheduled notification queue
