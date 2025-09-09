@@ -1,7 +1,7 @@
 // src/controllers/payment.controller.ts
 import { Request, Response, NextFunction } from 'express'
-import { PaymentService } from '../services/implementation/payment.service'
-import { IPaymentController } from './interface/IPayment.controller'
+import { PaymentService } from '../../services/implementation/payment.service'
+import { IPaymentController } from '../interface/IPayment.controller'
 
 export class PaymentController implements IPaymentController {
   constructor(private svc: PaymentService) {}
