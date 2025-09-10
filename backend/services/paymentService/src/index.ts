@@ -6,8 +6,15 @@ import cors from 'cors'
 import paymentRoutes from './routes/payment.route'
 import { startReservationConsumer } from './consumers/reservation.consumer'
 import { initTopology } from './config/rabbitmq.config'
+import webhookRoutes from './routes/webhook.routes'
 
 const app = express()
+
+// Stripe needs raw body for signature verification
+app.use(
+  '/payments/webhook/stripe',
+  express.raw({ type: 'application/json' }) // raw buffer
+)
 
 // Middlewares
 app.use(express.json())
@@ -22,6 +29,7 @@ app.use(
 
 // Routes
 app.use('/api/payments', paymentRoutes)
+app.use('/payments/webhook', webhookRoutes)
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'PaymentService' })
