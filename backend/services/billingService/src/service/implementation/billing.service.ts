@@ -3,6 +3,7 @@ import { BillingRepository } from '../../repository/implementation/billing.repos
 import { getRabbitChannel } from '../../config/rabbitmq.config'
 import { BillingDoc } from '../../models/billing.model'
 import { IBillingService } from '../interface/IBilling.service'
+import { getGuestContact } from '../../rpc/guest.rpc.client'
 
 export class BillingService implements IBillingService {
   private repo: BillingRepository
@@ -24,10 +25,13 @@ export class BillingService implements IBillingService {
   }
 
   async handlePaymentInitiated(evt: any): Promise<BillingDoc> {
+    const guestContact = await getGuestContact(evt.guestId)
+
     const billing = await this.repo.create({
       paymentId: evt.paymentId,
       reservationId: evt.reservationId,
       guestId: evt.guestId,
+      guestContact: guestContact || undefined,
       amount: evt.amount,
       currency: evt.currency,
       status: 'pending',
@@ -40,6 +44,7 @@ export class BillingService implements IBillingService {
         },
       ],
     })
+
     await this.publishEvent('billing.invoice.created', billing)
     return billing
   }

@@ -5,6 +5,10 @@ export interface BillingDoc extends Document {
   paymentId: string
   reservationId: string
   guestId: string
+  guestContact?: {
+    email?: string
+    phoneNumber?: string
+  }
   amount: number
   currency: string
   status: 'pending' | 'paid' | 'refunded' | 'failed'
@@ -23,6 +27,10 @@ const BillingSchema = new Schema<BillingDoc>(
     paymentId: { type: String, required: true, index: true },
     reservationId: { type: String, required: true },
     guestId: { type: String, required: true },
+    guestContact: {
+      email: String,
+      phoneNumber: String,
+    },
     amount: { type: Number, required: true },
     currency: { type: String, required: true },
     status: {
