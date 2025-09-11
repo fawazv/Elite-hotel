@@ -13,65 +13,70 @@ export class BillingService implements IBillingService {
     this.channelP = getRabbitChannel()
   }
 
-  async generateInvoice(input: {
-    reservationId: string
-    guestId: string
-    items: { description: string; amount: number }[]
-    currency: string
-  }): Promise<BillingDoc> {
-    const total = input.items.reduce((sum, i) => sum + i.amount, 0)
-    const invoice = await this.repo.create({
-      reservationId: input.reservationId,
-      guestId: input.guestId,
-      amount: total,
-      currency: input.currency,
-      status: 'pending',
-      items: input.items,
-      payments: [],
-      refunds: [],
-    })
-
-    await this.publishEvent('invoice.generated', invoice)
-    return invoice
-  }
-
-  async markPaid(
-    invoiceId: string,
-    paymentId: string,
-    amount: number
-  ): Promise<BillingDoc | null> {
-    const invoice = await this.repo.update(invoiceId, {
-      $push: { payments: { paymentId, amount } },
-      status: 'paid',
-    } as any)
-
-    if (invoice) await this.publishEvent('invoice.paid', invoice)
-    return invoice
-  }
-
-  async applyRefund(
-    invoiceId: string,
-    paymentId: string,
-    amount: number
-  ): Promise<BillingDoc | null> {
-    const invoice = await this.repo.update(invoiceId, {
-      $push: { refunds: { paymentId, amount } },
-      status: 'refunded',
-    } as any)
-
-    if (invoice) await this.publishEvent('invoice.refunded', invoice)
-    return invoice
-  }
-
   private async publishEvent(event: string, data: any) {
     const ch = await this.channelP
     ch.publish(
       'billing.events',
       event,
-      Buffer.from(
-        JSON.stringify({ event, data, createdAt: new Date().toISOString() })
-      ),
+      Buffer.from(JSON.stringify({ event, data, createdAt: new Date() })),
       { persistent: true }
     )
+  }
+
+  async handlePaymentInitiated(evt: any): Promise<BillingDoc> {
+    const billing = await this.repo.create({
+      paymentId: evt.paymentId,
+      reservationId: evt.reservationId,
+      guestId: evt.guestId,
+      amount: evt.amount,
+      currency: evt.currency,
+      status: 'pending',
+      ledger: [
+        {
+          type: 'initiated',
+          amount: evt.amount,
+          note: 'Payment initiated',
+          createdAt: new Date(),
+        },
+      ],
+    })
+    await this.publishEvent('billing.invoice.created', billing)
+    return billing
+  }
+
+  async handlePaymentSucceeded(evt: any): Promise<BillingDoc | null> {
+    const updated = await this.repo.updateStatus(evt.paymentId, 'paid', {
+      type: 'payment',
+      amount: evt.amount,
+      note: 'Payment succeeded',
+    })
+    if (updated) {
+      await this.publishEvent('billing.invoice.paid', updated)
+    }
+    return updated
+  }
+
+  async handlePaymentRefunded(evt: any): Promise<BillingDoc | null> {
+    const updated = await this.repo.updateStatus(evt.paymentId, 'refunded', {
+      type: 'refund',
+      amount: evt.amount,
+      note: 'Payment refunded',
+    })
+    if (updated) {
+      await this.publishEvent('billing.invoice.refunded', updated)
+    }
+    return updated
+  }
+
+  async handlePaymentFailed(evt: any): Promise<BillingDoc | null> {
+    const updated = await this.repo.updateStatus(evt.paymentId, 'failed', {
+      type: 'failure',
+      amount: evt.amount,
+      note: 'Payment failed',
+    })
+    if (updated) {
+      await this.publishEvent('billing.invoice.failed', updated)
+    }
+    return updated
   }
 }
