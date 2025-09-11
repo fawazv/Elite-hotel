@@ -21,11 +21,13 @@ export class EmailService {
     subject,
     text,
     html,
+    attachments,
   }: {
     to: string
     subject: string
     text?: string
     html?: string
+    attachments?: { filename: string; content: Buffer }[]
   }) {
     if (!to) return
     const info = await this.transporter.sendMail({
@@ -34,6 +36,7 @@ export class EmailService {
       subject,
       text,
       html,
+      attachments,
     })
     return info
   }

@@ -89,7 +89,8 @@ export async function initTopology(): Promise<void> {
   exchanges.push(
     { name: 'reservations.events', type: 'topic', options: { durable: true } },
     { name: 'billing.events', type: 'topic', options: { durable: true } },
-    { name: 'notifications.dlx', type: 'direct', options: { durable: true } }
+    { name: 'notifications.dlx', type: 'direct', options: { durable: true } },
+    { name: 'notifications.retry', type: 'direct', options: { durable: true } } // ✅ retry exchange
   )
 
   // Register queues
@@ -101,6 +102,16 @@ export async function initTopology(): Promise<void> {
         durable: true,
         arguments: {
           'x-dead-letter-exchange': 'reservations.events',
+          'x-dead-letter-routing-key': 'reservation.notification',
+        },
+      },
+    },
+    {
+      name: 'notifications.retry.queue', // ✅ retry queue
+      options: {
+        durable: true,
+        arguments: {
+          'x-dead-letter-exchange': 'reservations.events', // back to main exchange
           'x-dead-letter-routing-key': 'reservation.notification',
         },
       },
@@ -118,6 +129,11 @@ export async function initTopology(): Promise<void> {
       queue: 'notifications.queue',
       exchange: 'billing.events',
       pattern: 'billing.*',
+    },
+    {
+      queue: 'notifications.retry.queue',
+      exchange: 'notifications.retry', // bind retry queue to retry exchange
+      pattern: 'retry',
     }
   )
 

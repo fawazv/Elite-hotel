@@ -4,6 +4,10 @@ import { getRabbitChannel, initTopology } from '../config/rabbitmq.config'
 import { EmailService } from './email.service'
 import { SmsService } from './sms.service'
 import dayjs from 'dayjs'
+import {
+  handleInvoiceCreated,
+  handleInvoiceRefunded,
+} from './notification.billing'
 
 const EMAIL = new EmailService()
 const SMS = new SmsService()
@@ -28,7 +32,12 @@ export async function startNotificationConsumer() {
         } else if (evt.event === 'reservation.notification') {
           // TTL-based delayed notification — handle reminder
           await handleReminder(evt.data)
+        } else if (evt.event === 'billing.invoice.created') {
+          await handleInvoiceCreated(evt.data)
+        } else if (evt.event === 'billing.invoice.refunded') {
+          await handleInvoiceRefunded(evt.data)
         }
+
         ch.ack(msg)
       } catch (err) {
         console.error('Notification handler error', err)
