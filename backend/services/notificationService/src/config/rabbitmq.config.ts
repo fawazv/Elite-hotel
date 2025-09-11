@@ -5,6 +5,11 @@ const RABBIT_URL = process.env.RABBITMQ_URL || 'amqp://localhost:5672'
 let connection: Connection | null = null
 let channel: Channel | null = null
 
+// Track topology to auto-reapply
+const exchanges: { name: string; type: string; options?: any }[] = []
+const queues: { name: string; options?: any }[] = []
+const bindings: { queue: string; exchange: string; pattern: string }[] = []
+
 export async function getRabbitConnection(): Promise<Connection> {
   while (!connection) {
     try {
@@ -45,6 +50,9 @@ export async function getRabbitChannel(): Promise<Channel> {
         console.warn('⚠️ RabbitMQ channel closed, retrying...')
         channel = null
       })
+
+      // 🌀 Re-apply topology every time channel is created
+      await applyTopology(channel)
     } catch (err) {
       console.error('❌ Failed to create RabbitMQ channel:', err)
       console.log('⏳ Retrying in 5 seconds...')
@@ -55,30 +63,65 @@ export async function getRabbitChannel(): Promise<Channel> {
 }
 
 /**
+ * Save and apply exchanges, queues, and bindings
+ */
+async function applyTopology(ch: Channel) {
+  // Declare exchanges
+  for (const ex of exchanges) {
+    await ch.assertExchange(ex.name, ex.type, ex.options)
+  }
+  // Declare queues
+  for (const q of queues) {
+    await ch.assertQueue(q.name, q.options)
+  }
+  // Apply bindings
+  for (const b of bindings) {
+    await ch.bindQueue(b.queue, b.exchange, b.pattern)
+  }
+}
+
+/**
  * Initialize top-level topology used across services.
  * Call once at service startup.
  */
 export async function initTopology(): Promise<void> {
-  const ch = await getRabbitChannel()
-
-  // Event exchange for reservation lifecycle events
-  await ch.assertExchange('reservations.events', 'topic', { durable: true })
-
-  // Notifications queue (consumers pick up messages here)
-  await ch.assertQueue('notifications.queue', { durable: true })
-  await ch.bindQueue(
-    'notifications.queue',
-    'reservations.events',
-    'reservation.*'
+  // Register exchanges
+  exchanges.push(
+    { name: 'reservations.events', type: 'topic', options: { durable: true } },
+    { name: 'billing.events', type: 'topic', options: { durable: true } },
+    { name: 'notifications.dlx', type: 'direct', options: { durable: true } }
   )
 
-  // Delayed / scheduled notification queue
-  await ch.assertExchange('notifications.dlx', 'direct', { durable: true })
-  await ch.assertQueue('notifications.delayed', {
-    durable: true,
-    arguments: {
-      'x-dead-letter-exchange': 'reservations.events',
-      'x-dead-letter-routing-key': 'reservation.notification',
+  // Register queues
+  queues.push(
+    { name: 'notifications.queue', options: { durable: true } },
+    {
+      name: 'notifications.delayed',
+      options: {
+        durable: true,
+        arguments: {
+          'x-dead-letter-exchange': 'reservations.events',
+          'x-dead-letter-routing-key': 'reservation.notification',
+        },
+      },
+    }
+  )
+
+  // Register bindings
+  bindings.push(
+    {
+      queue: 'notifications.queue',
+      exchange: 'reservations.events',
+      pattern: 'reservation.*',
     },
-  })
+    {
+      queue: 'notifications.queue',
+      exchange: 'billing.events',
+      pattern: 'billing.*',
+    }
+  )
+
+  // Apply immediately to current channel
+  const ch = await getRabbitChannel()
+  await applyTopology(ch)
 }
