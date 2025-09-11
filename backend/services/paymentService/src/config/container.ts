@@ -5,6 +5,6 @@ import { PaymentController } from '../controllers/implementation/payment.control
 import { WebhookController } from '../controllers/implementation/webhook.controller'
 
 const paymentRepository = new PaymentRepository()
-const paymentService = new PaymentService(paymentRepository)
+export const paymentService = new PaymentService(paymentRepository)
 export const paymentController = new PaymentController(paymentService)
 export const webhookController = new WebhookController(paymentService)

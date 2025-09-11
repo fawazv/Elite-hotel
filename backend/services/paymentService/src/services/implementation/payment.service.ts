@@ -24,6 +24,83 @@ export class PaymentService implements IPaymentService {
     })
   }
 
+  // 💸 Refund method with partial refund support
+  async refundPayment(
+    paymentId: string,
+    refundPercentage: number = 1.0
+  ): Promise<PaymentDoc | null> {
+    const payment = await this.repo.findById(paymentId)
+    if (!payment) throw new Error('Payment not found')
+
+    // 🔒 Idempotency: skip if already refunded
+    if (payment.refunded || payment.status === 'refunded') {
+      console.log(`Payment ${paymentId} already refunded, skipping.`)
+      return payment
+    }
+
+    if (payment.status !== 'succeeded') {
+      throw new Error('Only succeeded payments can be refunded')
+    }
+
+    const refundAmount = Math.floor(payment.amount * refundPercentage)
+
+    let providerResponse: any
+    let refundTxId: string = ''
+
+    if (payment.provider === 'stripe') {
+      providerResponse = await this.stripe.refunds.create({
+        payment_intent: payment.metadata?.stripeId,
+        amount: refundAmount * 100,
+      })
+      refundTxId = providerResponse.id
+    } else if (payment.provider === 'razorpay') {
+      providerResponse = await this.razorpay.payments.refund(
+        payment.metadata?.razorpayPaymentId,
+        {
+          amount: refundAmount * 100,
+        }
+      )
+      refundTxId = providerResponse.id
+    }
+
+    const updated = await this.repo.updateStatus(paymentId, 'refunded', {
+      refundAmount,
+      refundPercentage,
+      providerResponse,
+      refunded: true,
+      refundTxId,
+    })
+
+    if (updated) {
+      await this.publishEvent('payment.refunded', {
+        paymentId: updated._id.toString(),
+        reservationId: updated.reservationId,
+        guestId: updated.guestId,
+        refundAmount,
+        refundPercentage,
+        provider: updated.provider,
+        refundTxId,
+      })
+    }
+
+    return updated
+  }
+
+  async handleReservationCancelled(
+    reservationId: string,
+    refundPercentage: number = 0.8
+  ) {
+    const payments = await this.repo.findByReservation(reservationId)
+
+    if (payments && Array.isArray(payments)) {
+      for (const p of payments) {
+        if (p.status === 'succeeded' && !p.refunded) {
+          await this.refundPayment(p._id.toString(), refundPercentage)
+        }
+      }
+    }
+  }
+
   async initiatePayment(input: {
     reservationId: string
     guestId: string

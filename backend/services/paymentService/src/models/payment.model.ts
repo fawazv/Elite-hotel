@@ -1,5 +1,5 @@
 // src/models/payment.model.ts
-import mongoose, { Schema, Document } from 'mongoose'
+import mongoose, { Document, Schema } from 'mongoose'
 
 export interface PaymentDoc extends Document {
   _id: string
@@ -8,27 +8,27 @@ export interface PaymentDoc extends Document {
   amount: number
   currency: string
   provider: 'stripe' | 'razorpay'
-  providerPaymentId?: string
   status: 'initiated' | 'succeeded' | 'failed' | 'refunded'
-  metadata?: Record<string, any>
-  createdAt: Date
-  updatedAt: Date
+  metadata?: any
+  refunded?: boolean
+  refundTxId?: string
 }
 
 const PaymentSchema = new Schema<PaymentDoc>(
   {
-    reservationId: { type: String, required: true, index: true },
-    guestId: { type: String, required: true, index: true },
+    reservationId: { type: String, required: true },
+    guestId: { type: String, required: true },
     amount: { type: Number, required: true },
-    currency: { type: String, required: true, default: 'INR' },
+    currency: { type: String, required: true },
     provider: { type: String, enum: ['stripe', 'razorpay'], required: true },
-    providerPaymentId: { type: String },
     status: {
       type: String,
       enum: ['initiated', 'succeeded', 'failed', 'refunded'],
-      default: 'initiated',
+      required: true,
     },
-    metadata: { type: Object },
+    metadata: { type: Schema.Types.Mixed },
+    refunded: { type: Boolean, default: false },
+    refundTxId: { type: String },
   },
   { timestamps: true }
 )

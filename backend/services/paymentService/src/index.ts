@@ -7,6 +7,8 @@ import paymentRoutes from './routes/payment.route'
 import { startReservationConsumer } from './consumers/reservation.consumer'
 import { initTopology } from './config/rabbitmq.config'
 import webhookRoutes from './routes/webhook.routes'
+import { startPaymentConsumer } from './consumers/payment.consumer'
+import { paymentService } from './config/container'
 
 const app = express()
 
@@ -46,7 +48,7 @@ async function start() {
 
     // Consumers
     startReservationConsumer()
-    console.log('🎧 Reservation consumer started (PaymentService)')
+    startPaymentConsumer(paymentService)
 
     // Server
     app.listen(4006, () => {
