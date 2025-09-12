@@ -400,6 +400,28 @@ export class ReservationService implements IReservationService {
       status: 'CheckedIn',
       checkedInAt: new Date(),
     } as any)
+
+    // Publish RabbitMQ event
+    if (updated) {
+      const ch = await this.channelP
+      const eventPayload = {
+        event: 'reservation.checkedIn',
+        data: {
+          reservationId: updated._id.toString(),
+          code: updated.code,
+          guestId: updated.guestId,
+          roomId: updated.roomId,
+          checkedInAt: updated.checkedInAt,
+        },
+        createdAt: new Date().toISOString(),
+      }
+      ch.publish(
+        'reservations.events',
+        'reservation.checkedOut',
+        Buffer.from(JSON.stringify(eventPayload)),
+        { persistent: true }
+      )
+    }
     return updated!
   }
 
@@ -416,6 +438,28 @@ export class ReservationService implements IReservationService {
       status: 'CheckedOut',
       checkedOutAt: new Date(),
     } as any)
+
+    // Publish RabbitMQ event
+    if (updated) {
+      const ch = await this.channelP
+      const eventPayload = {
+        event: 'reservation.checkedOut',
+        data: {
+          reservationId: updated._id.toString(),
+          code: updated.code,
+          guestId: updated.guestId,
+          roomId: updated.roomId,
+          checkedOutAt: updated.checkedOutAt,
+        },
+        createdAt: new Date().toISOString(),
+      }
+      ch.publish(
+        'reservations.events',
+        'reservation.checkedIn',
+        Buffer.from(JSON.stringify(eventPayload)),
+        { persistent: true }
+      )
+    }
     return updated!
   }
 }
