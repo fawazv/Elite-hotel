@@ -89,6 +89,7 @@ export async function initTopology(): Promise<void> {
   exchanges.push(
     { name: 'reservations.events', type: 'topic', options: { durable: true } },
     { name: 'billing.events', type: 'topic', options: { durable: true } },
+    { name: 'housekeeping.events', type: 'topic', options: { durable: true } },
     { name: 'notifications.dlx', type: 'direct', options: { durable: true } },
     { name: 'notifications.retry', type: 'direct', options: { durable: true } } // ✅ retry exchange
   )
@@ -129,6 +130,11 @@ export async function initTopology(): Promise<void> {
       queue: 'notifications.queue',
       exchange: 'billing.events',
       pattern: 'billing.*',
+    },
+    {
+      queue: 'notifications.queue',
+      exchange: 'housekeeping.events',
+      pattern: 'housekeeping.*',
     },
     {
       queue: 'notifications.retry.queue',
