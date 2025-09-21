@@ -8,8 +8,14 @@ export class HousekeepingRepository {
   async create(
     data: Partial<HousekeepingTaskDoc>
   ): Promise<HousekeepingTaskDoc> {
-    const item = new HousekeepingModel(data)
-    return item.save()
+    if (data.idempotencyKey) {
+      const existing = await HousekeepingModel.findOne({
+        idempotencyKey: data.idempotencyKey,
+      })
+      if (existing) return existing
+    }
+    const task = new HousekeepingModel(data)
+    return task.save()
   }
 
   async findById(id: string): Promise<HousekeepingTaskDoc | null> {

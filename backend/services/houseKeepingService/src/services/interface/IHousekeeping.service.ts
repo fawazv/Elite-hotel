@@ -8,6 +8,7 @@ export interface AssignTaskPayload {
   reservationId?: string
   assignedTo: string
   notes?: string
+  idempotencyKey?: string
 }
 
 /**

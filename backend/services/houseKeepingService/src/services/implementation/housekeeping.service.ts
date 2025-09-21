@@ -23,6 +23,7 @@ export class HousekeepingService implements IHousekeepingService {
       reservationId: payload.reservationId,
       assignedTo: payload.assignedTo,
       notes: payload.notes,
+      idempotencyKey: payload.idempotencyKey,
       status: 'pending',
     })
 

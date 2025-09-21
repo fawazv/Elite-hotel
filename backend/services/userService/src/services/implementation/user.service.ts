@@ -107,4 +107,12 @@ export class UserService implements IUserService {
       await this.userRepo.update(id, { avatar: null })
     }
   }
+
+  async getUserContact(
+    userId: string
+  ): Promise<{ email: string; phoneNumber: string }> {
+    const user = await this.userRepo.findByIdLean(userId)
+    if (!user) throw new CustomError('User not found', HttpStatus.NOT_FOUND)
+    return { email: user.email, phoneNumber: user.phoneNumber }
+  }
 }

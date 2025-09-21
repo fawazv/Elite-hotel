@@ -6,6 +6,7 @@ export interface HousekeepingTaskDoc extends Document {
   assignedTo?: string
   status: 'pending' | 'in-progress' | 'completed'
   notes?: string
+  idempotencyKey?: string // for deduplication
   createdAt: Date
   updatedAt: Date
 }
@@ -21,6 +22,7 @@ const HousekeepingSchema = new Schema<HousekeepingTaskDoc>(
       default: 'pending',
     },
     notes: { type: String },
+    idempotencyKey: { type: String, index: { unique: true, sparse: true } },
   },
   { timestamps: true }
 )
