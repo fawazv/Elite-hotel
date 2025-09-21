@@ -3,8 +3,10 @@ import { createContainer } from '../config/container'
 import validateRequest from '../middleware/validateRequest'
 import { assignTaskSchema } from '../dto/assignTask.dto'
 import { completeTaskSchema } from '../dto/completeTask.dto'
-import { authenticateToken } from '../middleware/auth.middleware'
+import authenticateToken from '../middleware/auth.middleware'
 import { authorizeRole } from '../middleware/authorizeRole'
+import { reassignTaskSchema } from '../dto/reassignTask.dto'
+import { listTasksSchema } from '../dto/listTasks.dto'
 
 export default function routes(container = createContainer()) {
   const router = Router()
@@ -19,6 +21,14 @@ export default function routes(container = createContainer()) {
     ctrl.assignTask
   )
 
+  router.patch(
+    '/tasks/:id/reassign',
+    authenticateToken,
+    authorizeRole(['admin', 'receptionist']),
+    validateRequest(reassignTaskSchema),
+    ctrl.reassignTask
+  )
+
   // complete -> Housekeeper only
   router.post(
     '/tasks/:id/complete',
@@ -26,6 +36,22 @@ export default function routes(container = createContainer()) {
     authorizeRole(['housekeeper']),
     validateRequest(completeTaskSchema),
     ctrl.completeTask
+  )
+
+  // list -> any authenticated staff (with filtering)
+  router.get(
+    '/tasks',
+    authenticateToken,
+    (req, res, next) => {
+      // validate query against Joi schema
+      const { error } = listTasksSchema.validate(req.query, {
+        abortEarly: false,
+        allowUnknown: false,
+      })
+      if (error) return next(error)
+      next()
+    },
+    ctrl.listTasks
   )
 
   // get -> any authenticated staff

@@ -2,6 +2,7 @@ import {
   IHousekeepingService,
   AssignTaskPayload,
 } from '../interface/IHousekeeping.service'
+import dayjs from 'dayjs'
 import { HousekeepingRepository } from '../../repository/housekeeping.repository'
 import { RabbitPublisher } from '../../config/rabbit.publisher'
 import { HousekeepingTaskDoc } from '../../models/housekeeping.model'
@@ -67,5 +68,70 @@ export class HousekeepingService implements IHousekeepingService {
 
   async getTask(taskId: string): Promise<HousekeepingTaskDoc | null> {
     return this.repo.findById(taskId)
+  }
+
+  async listTasks(query: {
+    page?: number
+    limit?: number
+    roomId?: string
+    reservationId?: string
+    assignedTo?: string
+    status?: 'pending' | 'in-progress' | 'completed'
+    dateFrom?: string | Date
+    dateTo?: string | Date
+    sortBy?: 'createdAt' | 'updatedAt' | 'status'
+    sortOrder?: 'asc' | 'desc'
+  }) {
+    const page = query.page && query.page > 0 ? query.page : 1
+    const limit = query.limit && query.limit > 0 ? query.limit : 20
+    const skip = (page - 1) * limit
+
+    const filter: any = {}
+    if (query.roomId) filter.roomId = query.roomId
+    if (query.reservationId) filter.reservationId = query.reservationId
+    if (query.assignedTo) filter.assignedTo = query.assignedTo
+    if (query.status) filter.status = query.status
+    if (query.dateFrom || query.dateTo) {
+      filter.createdAt = {}
+      if (query.dateFrom)
+        filter.createdAt.$gte = dayjs(query.dateFrom).startOf('day').toDate()
+      if (query.dateTo)
+        filter.createdAt.$lte = dayjs(query.dateTo).endOf('day').toDate()
+    }
+
+    const sortField = (query.sortBy || 'createdAt') as string
+    const sortOrder = query.sortOrder === 'asc' ? 1 : -1
+    const sort = { [sortField]: sortOrder }
+
+    const { data, total } = await this.repo.findAndCount(filter, {
+      skip,
+      limit,
+      sort,
+    })
+    return { data, total, page, limit }
+  }
+
+  /**
+   * Reassign a task to another staff member.
+   * Only publishes an assigned event (so notifications go out).
+   */
+  async reassignTask(taskId: string, assignedTo: string, notes?: string) {
+    const existing = await this.repo.findById(taskId)
+    if (!existing) throw new NotFoundError('Task not found')
+
+    const updated = await this.repo.reassignTask(taskId, assignedTo, notes)
+    if (updated) {
+      await this.publisher.publish(
+        'housekeeping.events',
+        'housekeeping.task.assigned',
+        {
+          event: 'housekeeping.task.assigned',
+          data: updated,
+          createdAt: new Date().toISOString(),
+          meta: { reason: 'reassigned' },
+        }
+      )
+    }
+    return updated
   }
 }

@@ -1,27 +1,47 @@
-import { Request, Response, NextFunction } from 'express'
-import jwt from 'jsonwebtoken'
-import { AppError } from '../errors/AppError'
+import jwt, { JwtPayload } from 'jsonwebtoken'
+import { Response, NextFunction } from 'express'
+import { User } from '../models/user.model'
+import { CustomeRequest } from '../interfaces/CustomRequest'
 
-export interface AuthRequest extends Request {
-  user?: any
-}
-
-export function authenticateToken(
-  req: AuthRequest,
+const authenticateToken = (
+  req: CustomeRequest,
   res: Response,
   next: NextFunction
-) {
-  const auth = req.headers['authorization']
-  if (!auth) return next(new AppError('No token provided', 401))
-  const token = (auth as string).split(' ')[1]
-  if (!token) return next(new AppError('Malformed token', 401))
-
+) => {
   try {
-    const secret = process.env.ACCESS_TOKEN_SECRET || 'changeme'
-    const payload = jwt.verify(token, secret)
-    req.user = payload
-    next()
-  } catch (err) {
-    next(new AppError('Invalid token', 401))
+    const token = req.headers['authorization']
+    if (!token) {
+      return res
+        .status(401)
+        .json({ message: 'Access denied . No token provided' })
+    }
+    const newToken = token?.split(' ')[1]
+    const secret = process.env.ACCESS_TOKEN_SECRET
+    jwt.decode(newToken, { complete: true })
+
+    if (!secret) {
+      throw new Error('Access token secret is not defined')
+    }
+
+    jwt.verify(newToken, secret, async (err, user) => {
+      if (err) {
+        return res.status(401).json({ message: 'Invalid token' })
+      }
+      req.user = user as JwtPayload
+      const userId = req.user.id
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' })
+      }
+      const userData = await User.findById(userId)
+      if (!userData) {
+        return res.status(404).json({ message: 'User not found' })
+      }
+
+      next()
+    })
+  } catch (error) {
+    console.error('Error founded in authenticate token', error)
   }
 }
+
+export default authenticateToken
