@@ -1,19 +1,20 @@
+import dotenv from 'dotenv'
+dotenv.config()
+
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
 import connectMongodb from './config/db.config'
 import userRoute from './routes/user.route'
 import errorHandler from './middleware/errorHandler'
 import helmet from 'helmet'
 import morgan from 'morgan'
+import { initRabbitMQ } from './config/rabbitmq.config'
+import { initUserRpcConsumer } from './consumers/user.rpc.consumer'
 
 const app = express()
 
-dotenv.config()
-
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-
 app.use(helmet())
 app.use(
   cors({
@@ -28,6 +29,25 @@ app.use('/', userRoute)
 // global error handler
 app.use(errorHandler)
 
-connectMongodb().then(() => {
-  app.listen(4002, () => console.log(`server running on http://localhost:4002`))
-})
+// Main function to start the application
+async function start() {
+  try {
+    // Connect to MongoDB
+    await connectMongodb()
+
+    // Initialize RabbitMQ and RPC consumer
+    await initRabbitMQ()
+    await initUserRpcConsumer()
+
+    // Start the Express server
+    app.listen(4002, () => {
+      console.log('UserService running on http://localhost:4002')
+    })
+  } catch (err) {
+    console.error('Failed to start the server:', err)
+    process.exit(1)
+  }
+}
+
+// Call the start function
+start()
