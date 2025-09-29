@@ -1,5 +1,5 @@
 import { HousekeepingRepository } from '../repository/housekeeping.repository'
-import { HousekeepingService } from '../services/housekeeping.service'
+import { HousekeepingService } from '../services/implementation/housekeeping.service'
 import { HousekeepingController } from '../controllers/housekeeping.controller'
 import { RabbitPublisher } from './rabbit.publisher'
 
