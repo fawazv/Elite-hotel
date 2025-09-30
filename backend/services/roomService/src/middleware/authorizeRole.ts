@@ -9,7 +9,7 @@ export const authorizeRole = (roles: string[]) => {
     if (!userRole || !roles.includes(userRole)) {
       throw new CustomError(
         'You do not have permission to perform this action',
-        HttpStatus.UNAUTHORIZED
+        HttpStatus.FORBIDDEN
       )
     }
     next()

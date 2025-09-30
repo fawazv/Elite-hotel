@@ -39,7 +39,6 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
       .findByIdAndUpdate(id, data, {
         new: true,
         runValidators: true,
-        overwrite: true,
       })
       .exec()
   }

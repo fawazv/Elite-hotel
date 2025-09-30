@@ -5,7 +5,7 @@ import { IPaymentOrchestrator } from '../interface/IReservation.service'
 export class PaymentOrchestratorAdapter implements IPaymentOrchestrator {
   private baseUrl: string
   constructor(
-    baseUrl = process.env.PAYMENT_SERVICE_URL || 'http://localhost:4010'
+    baseUrl = process.env.PAYMENT_SERVICE_URL || 'http://localhost:4003'
   ) {
     this.baseUrl = baseUrl
   }

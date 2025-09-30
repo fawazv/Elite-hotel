@@ -6,7 +6,7 @@ import { GuestRepository } from '../repository/implementation/guest.repository'
 export async function initGuestRpcServer() {
   const ch = await getRabbitChannel()
   // ensure queue exists
-  await ch.assertQueue('guest.service.rpc', { durable: false })
+  await ch.assertQueue('guest.service.rpc', { durable: true })
 
   const repo = new GuestRepository()
 

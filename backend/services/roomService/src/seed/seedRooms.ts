@@ -9,8 +9,10 @@ const rooms = [
     name: 'Ocean View Family Suite',
     type: 'Premium',
     price: 249,
-    image:
-      'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=400&h=300&fit=crop',
+    image: {
+      publicId: 'ocean-view-family-suite-1', // Placeholder publicId
+      url: 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=400&h=300&fit=crop',
+    },
     description:
       'Spacious family suite with breathtaking ocean views, perfect for families seeking luxury and comfort with premium amenities.',
     amenities: [
@@ -31,8 +33,10 @@ const rooms = [
     name: 'Cozy Single Retreat',
     type: 'Standard',
     price: 129,
-    image:
-      'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop',
+    image: {
+      publicId: 'cozy-single-retreat-2', // Placeholder publicId
+      url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop',
+    },
     description:
       'Intimate single room with beautiful landscape views, designed for solo travelers who appreciate comfort and tranquility.',
     amenities: ['Free WiFi', 'TV', 'Breakfast', 'Work Desk', 'Coffee Machine'],
@@ -46,8 +50,10 @@ const rooms = [
     name: 'Deluxe Garden Suite',
     type: 'Deluxe',
     price: 189,
-    image:
-      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop',
+    image: {
+      publicId: 'deluxe-garden-suite-3', // Placeholder publicId
+      url: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop',
+    },
     description:
       'Elegant room with private garden access and premium furnishings, offering a perfect blend of luxury and nature.',
     amenities: [
@@ -68,8 +74,10 @@ const rooms = [
     name: 'Executive Business Suite',
     type: 'Premium',
     price: 299,
-    image:
-      'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=400&h=300&fit=crop',
+    image: {
+      publicId: 'executive-business-suite-4', // Placeholder publicId
+      url: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=400&h=300&fit=crop',
+    },
     description:
       'Our finest accommodation with panoramic city views, separate living area, and exclusive executive amenities for discerning guests.',
     amenities: [
@@ -92,8 +100,10 @@ const rooms = [
     name: 'Junior Honeymoon Suite',
     type: 'Premium',
     price: 219,
-    image:
-      'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop',
+    image: {
+      publicId: 'junior-honeymoon-suite-5', // Placeholder publicId
+      url: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop',
+    },
     description:
       'Romantic junior suite with champagne service and luxury amenities, perfect for special occasions and romantic getaways.',
     amenities: [
@@ -115,8 +125,10 @@ const rooms = [
     name: 'Mountain View Lodge',
     type: 'Deluxe',
     price: 169,
-    image:
-      'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop',
+    image: {
+      publicId: 'mountain-view-lodge-6', // Placeholder publicId
+      url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop',
+    },
     description:
       'Rustic yet elegant room with stunning mountain vistas and cozy fireplace, ideal for nature enthusiasts.',
     amenities: [
@@ -137,8 +149,10 @@ const rooms = [
     name: 'Classic Business Room',
     type: 'Standard',
     price: 149,
-    image:
-      'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop',
+    image: {
+      publicId: 'classic-business-room-7', // Placeholder publicId
+      url: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop',
+    },
     description:
       'Professional and comfortable room designed for business travelers with modern amenities and work-friendly setup.',
     amenities: [
@@ -158,8 +172,10 @@ const rooms = [
     name: 'Penthouse Suite',
     type: 'Luxury',
     price: 499,
-    image:
-      'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=400&h=300&fit=crop',
+    image: {
+      publicId: 'penthouse-suite-8', // Placeholder publicId
+      url: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=400&h=300&fit=crop',
+    },
     description:
       'Ultimate luxury experience with private terrace, panoramic views, and exclusive concierge service.',
     amenities: [
