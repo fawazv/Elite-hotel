@@ -6,6 +6,8 @@ import roomRoute from './routes/room.route'
 import errorHandler from './middleware/errorHandler'
 import helmet from 'helmet'
 import morgan from 'morgan'
+import { initRoomTopology } from './config/rabbitmq.config'
+import { startReservationSubscriber } from './subscribers/reservation.subscriber'
 
 const app = express()
 
@@ -28,6 +30,24 @@ app.use('/', roomRoute)
 // global error handler
 app.use(errorHandler)
 
-connectMongodb().then(() => {
-  app.listen(4003, () => console.log(`server running on http://localhost:4003`))
-})
+async function start() {
+  try {
+    // 1. init RabbitMQ topology (exchanges, queues, bindings)
+    await initRoomTopology()
+
+    // 3. connect MongoDB
+    await connectMongodb()
+
+    await startReservationSubscriber()
+
+    // 4. start express server
+    app.listen(4003, () =>
+      console.log(`server running on http://localhost:4003`)
+    )
+  } catch (error) {
+    console.error('Service startup failed:', error)
+    process.exit(1) // crash if startup dependencies not ready
+  }
+}
+
+start()
