@@ -38,13 +38,15 @@ export class RoomService implements IRoomService {
   async createRoom(payload: Partial<RoomDocument>, file?: Express.Multer.File) {
     payload = this.coerceBody(payload)
 
-    if (payload.number == null)
+    if (payload.number == null) {
       throw new CustomError('Room number required', HttpStatus.BAD_REQUEST)
+    }
     const exists = await this.roomRepository.findByNumber(
       payload.number as number
     )
-    if (exists)
+    if (exists) {
       throw new CustomError('Room number already exists', HttpStatus.CONFLICT)
+    }
 
     if (file) {
       const uploaded = await this.mediaService.uploadImage(

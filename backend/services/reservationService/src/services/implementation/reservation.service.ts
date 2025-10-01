@@ -101,9 +101,9 @@ export class ReservationService implements IReservationService {
     if (!input.roomId)
       throw new CustomError('roomId required', HttpStatus.BAD_REQUEST)
 
-    // Room must exist; (optional) you can check room.available for simple hard-blocks
+    // Room must exist
     const room = await this.roomLookup.ensureRoomExists(input.roomId, jwtToken!)
-    if (room.available === false) {
+    if (!room) {
       throw new CustomError('Room is not available', HttpStatus.CONFLICT)
     }
 
@@ -412,12 +412,13 @@ export class ReservationService implements IReservationService {
           guestId: updated.guestId,
           roomId: updated.roomId,
           checkedInAt: updated.checkedInAt,
+          occupied: true, // helps RoomService decide
         },
         createdAt: new Date().toISOString(),
       }
       ch.publish(
         'reservations.events',
-        'reservation.checkedOut',
+        'reservation.checkedIn',
         Buffer.from(JSON.stringify(eventPayload)),
         { persistent: true }
       )
@@ -450,12 +451,13 @@ export class ReservationService implements IReservationService {
           guestId: updated.guestId,
           roomId: updated.roomId,
           checkedOutAt: updated.checkedOutAt,
+          occupied: false, // helps RoomService decide
         },
         createdAt: new Date().toISOString(),
       }
       ch.publish(
         'reservations.events',
-        'reservation.checkedIn',
+        'reservation.checkedOut',
         Buffer.from(JSON.stringify(eventPayload)),
         { persistent: true }
       )
