@@ -14,18 +14,14 @@ export class ReservationController implements IReservationController {
 
   async quote(req: CustomeRequest, res: Response, next: NextFunction) {
     try {
-      const jwtToken = (req.headers.authorization || '').replace('Bearer ', '')
-      const result = await this.svc.quote(
-        {
-          roomId: req.body.roomId,
-          checkIn: req.body.checkIn,
-          checkOut: req.body.checkOut,
-          adults: req.body.adults,
-          children: req.body.children,
-          currency: req.body.currency,
-        },
-        jwtToken
-      )
+      const { roomId, checkIn, checkOut, currency, promoCode } = req.body
+      const result = await this.svc.quote({
+        roomId,
+        checkIn,
+        checkOut,
+        currency,
+        promoCode,
+      })
       return successResponse(res, HttpStatus.OK, 'Quote calculated', {
         data: result,
       })
@@ -40,6 +36,18 @@ export class ReservationController implements IReservationController {
       const jwtToken = (req.headers.authorization || '').replace('Bearer ', '')
 
       const result = await this.svc.create(req.body, createdBy, jwtToken)
+      return successResponse(res, HttpStatus.CREATED, 'Reservation created', {
+        data: result,
+      })
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  // For guest (online) bookings
+  async createPublic(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await this.svc.createPublic(req.body)
       return successResponse(res, HttpStatus.CREATED, 'Reservation created', {
         data: result,
       })

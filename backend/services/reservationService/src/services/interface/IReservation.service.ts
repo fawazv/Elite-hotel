@@ -5,9 +5,10 @@ export type QuoteRequest = {
   roomId: string
   checkIn: Date
   checkOut: Date
-  adults: number
+  adults?: number
   children?: number
   currency?: string
+  promoCode?: string
 }
 
 export type CreateReservationInput = {
@@ -26,8 +27,7 @@ export type CreateReservationInput = {
 
 export interface IRoomLookupService {
   ensureRoomExists(
-    roomId: string,
-    jwtToken: string
+    roomId: string
   ): Promise<{ id: string; price: number; available?: boolean }>
 }
 
@@ -62,6 +62,11 @@ export interface IReservationService {
     input: CreateReservationInput,
     createdBy?: string,
     jwtToken?: string
+  ): Promise<
+    ReservationDocument & { paymentClientSecret?: string; paymentOrder?: any }
+  >
+  createPublic(
+    input: CreateReservationInput
   ): Promise<
     ReservationDocument & { paymentClientSecret?: string; paymentOrder?: any }
   >

@@ -29,6 +29,13 @@ router.post(
   reservationController.create.bind(reservationController)
 )
 
+// For guests (Online Booking)
+router.post(
+  '/public',
+  validateRequest(createReservationSchema),
+  reservationController.createPublic.bind(reservationController)
+)
+
 // List / Get
 router.get(
   '/',

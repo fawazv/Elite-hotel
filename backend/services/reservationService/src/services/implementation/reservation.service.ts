@@ -14,7 +14,7 @@ import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import { GuestRpcClient } from '../adapters/guestRpcClient.adapter'
 import { getRabbitChannel } from '../../config/rabbitmq.config'
-import { jwt } from 'twilio'
+import { IPricingEngine } from '../interface/IPricingEngine'
 dayjs.extend(utc)
 
 function generateCode(): string {
@@ -26,6 +26,7 @@ function generateCode(): string {
 export class ReservationService implements IReservationService {
   private repo: IReservationRepository
   private roomLookup: IRoomLookupService
+  private pricingEngine: IPricingEngine
   private payments: IPaymentOrchestrator
   private guestRpc: GuestRpcClient
   private channelP: Promise<any>
@@ -33,11 +34,13 @@ export class ReservationService implements IReservationService {
   constructor(
     repo: IReservationRepository,
     roomLookup: IRoomLookupService,
+    pricingEngine: IPricingEngine,
     payments: IPaymentOrchestrator,
     guestRpcClient?: GuestRpcClient
   ) {
     this.repo = repo
     this.roomLookup = roomLookup
+    this.pricingEngine = pricingEngine
     this.payments = payments
     this.guestRpc = guestRpcClient || new GuestRpcClient()
     this.channelP = getRabbitChannel()
@@ -55,7 +58,7 @@ export class ReservationService implements IReservationService {
   }
 
   async quote(input: QuoteRequest, jwtToken?: string) {
-    const { roomId } = input
+    const { roomId, currency, promoCode } = input
     const { checkIn, checkOut } = this.normalizeDates(input)
     if (!(checkIn < checkOut))
       throw new CustomError(
@@ -68,24 +71,23 @@ export class ReservationService implements IReservationService {
       throw new CustomError('Minimum 1 night', HttpStatus.BAD_REQUEST)
 
     // Fetch current base price from RoomService
-    const room = await this.roomLookup.ensureRoomExists(roomId, jwtToken!)
+    const room = await this.roomLookup.ensureRoomExists(roomId)
     const baseRate = room.price
 
-    // Simple pricing: flat baseRate * nights; taxes (12%), fees (2%) — adjust as needed or inject a pricing engine
-    const currency = input.currency || 'INR'
-    const subtotal = baseRate * nights
-    const taxes = Math.round(subtotal * 0.12)
-    const fees = Math.round(subtotal * 0.02)
-    const total = subtotal + taxes + fees
+    // Delegate pricing calculation to the pricing engine
+    const quote = await this.pricingEngine.calculate({
+      roomId,
+      checkIn,
+      checkOut,
+      baseRate,
+      currency,
+      promoCode,
+    })
 
-    return { baseRate, taxes, fees, total, currency }
+    return quote
   }
 
-  async create(
-    input: CreateReservationInput,
-    createdBy?: string,
-    jwtToken?: string
-  ) {
+  async create(input: CreateReservationInput, createdBy?: string) {
     const { checkIn, checkOut } = this.normalizeDates(input)
     if (!(checkIn < checkOut))
       throw new CustomError(
@@ -102,8 +104,11 @@ export class ReservationService implements IReservationService {
       throw new CustomError('roomId required', HttpStatus.BAD_REQUEST)
 
     // Room must exist
-    const room = await this.roomLookup.ensureRoomExists(input.roomId, jwtToken!)
+    const room = await this.roomLookup.ensureRoomExists(input.roomId)
     if (!room) {
+      throw new CustomError('Room not found', HttpStatus.NOT_FOUND)
+    }
+    if (!room.available) {
       throw new CustomError('Room is not available', HttpStatus.CONFLICT)
     }
 
@@ -230,6 +235,149 @@ export class ReservationService implements IReservationService {
       paymentClientSecret,
       paymentOrder,
     })
+  }
+
+  async createPublic(input: CreateReservationInput) {
+    const { checkIn, checkOut } = this.normalizeDates(input)
+    if (!(checkIn < checkOut))
+      throw new CustomError(
+        'checkOut must be after checkIn',
+        HttpStatus.BAD_REQUEST
+      )
+
+    const nights = this.diffNights(checkIn, checkOut)
+    if (nights < 1)
+      throw new CustomError('Minimum 1 night', HttpStatus.BAD_REQUEST)
+    if (!input.guestId)
+      throw new CustomError('guestId required', HttpStatus.BAD_REQUEST)
+    if (!input.roomId)
+      throw new CustomError('roomId required', HttpStatus.BAD_REQUEST)
+
+    // Ensure room exists
+    const room = await this.roomLookup.ensureRoomExists(input.roomId)
+    if (!room) {
+      throw new CustomError('Room not found', HttpStatus.NOT_FOUND)
+    }
+    if (!room.available) {
+      throw new CustomError('Room is not available', HttpStatus.CONFLICT)
+    }
+
+    // Check overlap
+    const overlaps = await this.repo.findOverlaps({
+      roomId: input.roomId,
+      checkIn,
+      checkOut,
+      includeStatuses: ['PendingPayment', 'Confirmed', 'CheckedIn'],
+    })
+    if (overlaps.length)
+      throw new CustomError(
+        'Room not available for selected dates',
+        HttpStatus.CONFLICT
+      )
+
+    const quote = await this.quote({
+      roomId: input.roomId,
+      checkIn,
+      checkOut,
+      adults: input.adults,
+      children: input.children,
+      currency: input.currency,
+    })
+
+    const code = generateCode()
+    const doc = await this.repo.create({
+      code,
+      guestId: input.guestId,
+      roomId: input.roomId,
+      checkIn,
+      checkOut,
+      nights,
+      adults: input.adults,
+      children: input.children || 0,
+      status: input.requiresPrepayment ? 'PendingPayment' : 'Confirmed',
+      source: 'Online', // ✅ Always 'Online' for guest bookings
+      notes: input.notes,
+      currency: quote.currency,
+      baseRate: quote.baseRate,
+      taxes: quote.taxes,
+      fees: quote.fees,
+      totalAmount: quote.total,
+      requiresPrepayment: !!input.requiresPrepayment,
+      paymentProvider: input.paymentProvider,
+      createdBy: null, // ✅ no staff user
+      holdExpiresAt: input.requiresPrepayment
+        ? dayjs().utc().add(30, 'minute').toDate()
+        : undefined,
+    } as any)
+
+    // Payment (Stripe / Razorpay)
+    let paymentClientSecret: string | undefined
+    let paymentOrder: any | undefined
+    if (input.requiresPrepayment && input.paymentProvider) {
+      const pay = await this.payments.createPaymentIntent({
+        provider: input.paymentProvider,
+        amount: doc.totalAmount,
+        currency: doc.currency,
+        reservationCode: doc.code,
+        customer: { guestId: doc.guestId.toString() },
+        metadata: { reservationId: doc._id.toString() },
+      })
+
+      await this.repo.update(doc._id.toString(), {
+        paymentProvider: pay.provider,
+        paymentIntentId: pay.id,
+      } as any)
+
+      paymentClientSecret = pay.clientSecret
+      paymentOrder = pay.extra
+    }
+
+    // Optionally fetch guest contact
+    try {
+      const contact = await this.guestRpc.getContactDetails(
+        doc.guestId.toString()
+      )
+      if (contact) {
+        await this.repo.update(doc._id.toString(), {
+          guestContact: {
+            email: contact.email,
+            phoneNumber: contact.phoneNumber,
+          },
+        } as any)
+        doc.guestContact = {
+          email: contact.email,
+          phoneNumber: contact.phoneNumber,
+        } as any
+      }
+    } catch (err) {
+      console.warn('Guest RPC failed', err)
+    }
+
+    // Publish event for Room Service, etc.
+    const ch = await this.channelP
+    const eventPayload = {
+      event: 'reservation.created',
+      data: {
+        reservationId: doc._id.toString(),
+        code: doc.code,
+        guestId: doc.guestId,
+        guestContact: doc.guestContact || null,
+        roomId: doc.roomId,
+        checkIn: doc.checkIn,
+        checkOut: doc.checkOut,
+        totalAmount: doc.totalAmount,
+        currency: doc.currency,
+      },
+      createdAt: new Date().toISOString(),
+    }
+    ch.publish(
+      'reservations.events',
+      'reservation.created',
+      Buffer.from(JSON.stringify(eventPayload)),
+      { persistent: true }
+    )
+
+    return Object.assign(doc.toObject(), { paymentClientSecret, paymentOrder })
   }
 
   getById(id: string) {
