@@ -51,7 +51,7 @@ export class GuestService implements IGuestService {
       const uploaded = await this.media.uploadImage(
         idProofImage.buffer,
         idProofImage.originalname,
-        process.env.CLOUDINARY_FOLDER || 'hotel/guests/idproofs'
+        process.env.AWS_S3_FOLDER || 'hotel/guests/'
       )
       payload.idProof = {
         ...(payload.idProof || {}),
@@ -119,7 +119,7 @@ export class GuestService implements IGuestService {
     const uploaded = await this.media.uploadImage(
       file.buffer,
       file.originalname,
-      process.env.CLOUDINARY_FOLDER || 'hotel/guests/idproofs'
+      process.env.AWS_S3_FOLDER || 'hotel/guests/'
     )
     await this.guestRepo.update(id, {
       'idProof.image': {

@@ -86,7 +86,7 @@ export class UserService implements IUserService {
     const uploaded = await this.mediaService.uploadImage(
       file.buffer,
       file.originalname,
-      process.env.CLOUDINARY_FOLDER || 'hotel/avatars'
+      process.env.AWS_S3_FOLDER || 'user/avatars'
     )
     const updated = await this.userRepo.update(id, {
       avatar: { publicId: uploaded.publicId, url: uploaded.url },
