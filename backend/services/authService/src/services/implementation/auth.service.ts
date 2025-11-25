@@ -4,7 +4,7 @@ import { OtpRepository } from '../../repository/implementation/otp.repository'
 import IUserRepository from '../../repository/interface/IUser.repository'
 import CustomError from '../../utils/CustomError'
 import { sentOTPEmail } from '../../utils/email.util'
-import { hashPassword, randomPassword } from '../../utils/hash.util'
+import { hashPassword, generateRandomPassword } from '../../utils/hash.util'
 import { generateOtp } from '../../utils/otp.util'
 import {
   generateAccessToken,
@@ -79,7 +79,7 @@ export class AuthService implements IAuthService {
       }
 
       if (checkUser && checkUser.isVerified && type !== 'forgetPassword') {
-        throw new CustomError('User alsready exits', HttpStatus.ALREADYEXISTS)
+        throw new CustomError('User already exists', HttpStatus.ALREADYEXISTS)
       }
 
       const getOtp = await this.otpRepository.findOtpByEmail(email)
@@ -139,7 +139,7 @@ export class AuthService implements IAuthService {
       }
 
       if (checkUser.isVerified === false) {
-        throw new CustomError('User not verifed!', HttpStatus.UNAUTHORIZED)
+        throw new CustomError('User not verified!', HttpStatus.UNAUTHORIZED)
       }
 
       const passwordCheck = await bcrypt.compare(password, checkUser.password)
@@ -200,7 +200,7 @@ export class AuthService implements IAuthService {
         }
       }
 
-      const password = randomPassword
+      const password = generateRandomPassword()
 
       const hashedPassword = await hashPassword(password)
       userData = await this.userRepository.create({
@@ -260,7 +260,7 @@ export class AuthService implements IAuthService {
   ) {
     try {
       if (password !== confirmPassword) {
-        return { success: false, message: 'Password do not match' }
+        throw new CustomError('Passwords do not match', HttpStatus.BAD_REQUEST)
       }
       const hashedPassword = await hashPassword(password)
 
@@ -289,17 +289,17 @@ export class AuthService implements IAuthService {
       )
 
       if (!checkPassword) {
-        return { success: false, message: 'wrong password' }
+        throw new CustomError('Wrong password', HttpStatus.UNAUTHORIZED)
       }
       if (newPassword !== confirmPassword) {
-        return { success: false, message: 'password do not match' }
+        throw new CustomError('Passwords do not match', HttpStatus.BAD_REQUEST)
       }
       const hashedPassword = await hashPassword(newPassword)
       const updatePassword = await this.userRepository.update(id, {
         password: hashedPassword,
       })
       if (!updatePassword) {
-        return { success: false, message: 'not updated' }
+        throw new CustomError('Password update failed', HttpStatus.INTERNAL_SERVER_ERROR)
       }
       return { success: true, message: 'updated' }
     } catch (error) {
