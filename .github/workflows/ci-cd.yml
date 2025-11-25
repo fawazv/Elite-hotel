@@ -9,130 +9,64 @@ on:
     branches:
       - main
 
-# Define common setup steps as a reusable block (template)
 jobs:
-  # The setup job runs first and its output can be used by other jobs
-  setup:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    outputs:
-      docker_creds_set: ${{ steps.login.outputs.status }}
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-      
-      - name: Log in to Docker
-        id: login
-        run: |
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          # Set output status to indicate success
-          echo "status=true" >> $GITHUB_OUTPUT 
-      
-      # Install dependencies for ALL services here. While still a bit monolithic,
-      # it avoids repeating 'npm ci' 7 times in 7 different jobs.
-      - name: Install Dependencies
-        run: |
-          npm_dirs=(
-            ./backend/services/authService
-            ./backend/services/roomService
-            ./backend/services/userService
-            ./backend/services/guestService
-            ./backend/services/reservationService
-            ./backend/services/notificationService
-            ./backend/api-gateway
-          )
-          for dir in "${npm_dirs[@]}"; do
-            (cd "$dir" && npm ci)
-          done
-          (cd ./backend/api-gateway && npm run build) # Run build for gateway as well
 
----
-
-  # Template Job for an individual service build/push
-  build-service-template:
-    needs: setup # Ensure setup runs first
-    runs-on: ubuntu-latest
-    # This job will ONLY run if the PUSH or PR includes changes in files 
-    # under the specified path.
-    if: |
-      github.event_name == 'push' || 
-      github.event_name == 'pull_request' 
-
-    steps:
-      - uses: actions/checkout@v4
-      # Re-login to Docker (necessary if you don't share runners/secrets across jobs)
       - name: Log in to Docker
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      # Use the 'paths-filter' action to easily check for file changes
-      - uses: dorny/paths-filter@v3
-        id: changes
-        with:
-          filters: |
-            auth:
-              - 'backend/services/authService/**'
-            room:
-              - 'backend/services/roomService/**'
-            user:
-              - 'backend/services/userService/**'
-            guest:
-              - 'backend/services/guestService/**'
-            reservation:
-              - 'backend/services/reservationService/**'
-            notification:
-              - 'backend/services/notificationService/**'
-            gateway:
-              - 'backend/api-gateway/**'
-
-      # --- Conditional Build and Push Jobs ---
-
-      - name: Build & Push Auth Service (Only if changed)
-        if: steps.changes.outputs.auth == 'true'
+      - name: Install Dependencies and Build Each Service
         run: |
-          echo "Auth Service files changed. Building and pushing."
+          cd backend/services/authService
+          npm ci
+          cd ../roomService
+          npm ci
+          cd ../userService
+          npm ci
+          cd ../guestService
+          npm ci
+          cd ../reservationService
+          npm ci
+          cd ../notificationService
+          npm ci
+          cd ../../api-gateway
+          npm ci
+          npm run build
+
+      - name: Build & Push Auth Service
+        run: |
           docker build -t fawaz482/elite-auth:latest ./backend/services/authService
           docker push fawaz482/elite-auth:latest
-
-      - name: Build & Push Room Service (Only if changed)
-        if: steps.changes.outputs.room == 'true'
+      - name: Build & Push Room Service
         run: |
-          echo "Room Service files changed. Building and pushing."
           docker build -t fawaz482/elite-room:latest ./backend/services/roomService
           docker push fawaz482/elite-room:latest
-
-      - name: Build & Push User Service (Only if changed)
-        if: steps.changes.outputs.user == 'true'
+      - name: Build & Push User Service
         run: |
-          echo "User Service files changed. Building and pushing."
           docker build -t fawaz482/elite-user:latest ./backend/services/userService
           docker push fawaz482/elite-user:latest
-
-      - name: Build & Push Guest Service (Only if changed)
-        if: steps.changes.outputs.guest == 'true'
+      - name: Build & Push Guest Service
         run: |
-          echo "Guest Service files changed. Building and pushing."
           docker build -t fawaz482/elite-guest:latest ./backend/services/guestService
           docker push fawaz482/elite-guest:latest
-
-      - name: Build & Push Reservation Service (Only if changed)
-        if: steps.changes.outputs.reservation == 'true'
+      - name: Build & Push Reservation Service
         run: |
-          echo "Reservation Service files changed. Building and pushing."
           docker build -t fawaz482/elite-reservation:latest ./backend/services/reservationService
           docker push fawaz482/elite-reservation:latest
-
-      - name: Build & Push Notification Service (Only if changed)
-        if: steps.changes.outputs.notification == 'true'
+      - name: Build & Push Notification Service
         run: |
-          echo "Notification Service files changed. Building and pushing."
           docker build -t fawaz482/elite-notification:latest ./backend/services/notificationService
           docker push fawaz482/elite-notification:latest
-
-      - name: Build & Push API Gateway (Only if changed)
-        if: steps.changes.outputs.gateway == 'true'
+      - name: Build & Push API Gateway
         run: |
-          echo "API Gateway files changed. Building and pushing."
           docker build -t fawaz482/elite-gateway:latest ./backend/api-gateway
           docker push fawaz482/elite-gateway:latest
