@@ -7,6 +7,7 @@ import { createStream } from 'rotating-file-stream'
 import path from 'path'
 import cookieParser from 'cookie-parser'
 import compression from 'compression'
+import hpp from 'hpp'
 import {
   generalLimiter,
   authLimiter,
@@ -60,6 +61,9 @@ app.use(sanitizeInput)
 // Security: Validate request size
 app.use(validateRequestSize)
 
+// Security: HTTP Parameter Pollution protection
+app.use(hpp())
+
 // Performance: Response compression
 app.use(
   compression({
@@ -111,6 +115,7 @@ const targets = {
   room: process.env.ROOM_API_BASE_URL,
   guest: process.env.GUEST_API_BASE_URL,
   reservation: process.env.RESERVATION_API_BASE_URL,
+  housekeeping: process.env.HOUSEKEEPING_API_BASE_URL,
 }
 
 // Proxy configuration with timeout
@@ -199,6 +204,17 @@ app.use(
   writeLimiter,
   createProxyMiddleware({
     target: targets.reservation,
+    ...proxyConfig,
+  })
+)
+
+// Housekeeping routes with read/write limiting
+app.use(
+  '/housekeeping',
+  readLimiter,
+  writeLimiter,
+  createProxyMiddleware({
+    target: targets.housekeeping,
     ...proxyConfig,
   })
 )
