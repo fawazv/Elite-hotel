@@ -1,5 +1,6 @@
 // src/config/rabbitmq.config.ts
 import amqplib, { Connection, Channel } from 'amqplib'
+import logger from '../utils/logger.service'
 
 const RABBIT_URL = process.env.RABBITMQ_URL || 'amqp://localhost:5672'
 let connection: Connection | null = null
@@ -9,20 +10,20 @@ export async function getRabbitConnection(): Promise<Connection> {
   while (!connection) {
     try {
       connection = await amqplib.connect(RABBIT_URL)
-      console.log('✅ Connected to RabbitMQ')
+      logger.info('✅ Connected to RabbitMQ')
 
-      connection.on('error', (err) => {
-        console.error('❌ RabbitMQ connection error', err)
+      connection.on('error', (err: Error) => {
+        logger.error('❌ RabbitMQ connection error', { error: err })
         connection = null
       })
 
       connection.on('close', () => {
-        console.warn('⚠️ RabbitMQ connection closed, retrying...')
+        logger.warn('⚠️ RabbitMQ connection closed, retrying...')
         connection = null
       })
     } catch (err) {
-      console.error('❌ Failed to connect to RabbitMQ:', err)
-      console.log('⏳ Retrying in 5 seconds...')
+      logger.error('❌ Failed to connect to RabbitMQ', { error: err })
+      logger.info('⏳ Retrying in 5 seconds...')
       await new Promise((resolve) => setTimeout(resolve, 5000))
     }
   }
@@ -34,20 +35,20 @@ export async function getRabbitChannel(): Promise<Channel> {
     try {
       const conn = await getRabbitConnection()
       channel = await conn.createChannel()
-      console.log('✅ RabbitMQ channel created')
+      logger.info('✅ RabbitMQ channel created')
 
-      channel.on('error', (err) => {
-        console.error('❌ RabbitMQ channel error', err)
+      channel.on('error', (err: Error) => {
+        logger.error('❌ RabbitMQ channel error', { error: err })
         channel = null
       })
 
       channel.on('close', () => {
-        console.warn('⚠️ RabbitMQ channel closed, retrying...')
+        logger.warn('⚠️ RabbitMQ channel closed, retrying...')
         channel = null
       })
     } catch (err) {
-      console.error('❌ Failed to create RabbitMQ channel:', err)
-      console.log('⏳ Retrying in 5 seconds...')
+      logger.error('❌ Failed to create RabbitMQ channel', { error: err })
+      logger.info('⏳ Retrying in 5 seconds...')
       await new Promise((resolve) => setTimeout(resolve, 5000))
     }
   }

@@ -2,45 +2,90 @@ import jwt, { JwtPayload } from 'jsonwebtoken'
 import { Response, NextFunction } from 'express'
 import { User } from '../models/user.model'
 import { CustomeRequest } from '../interfaces/CustomRequest'
+import NodeCache from 'node-cache'
+import logger from '../utils/logger.service'
 
-const authenticateToken = (
+// Cache user data for 10 minutes to avoid DB lookups on every request
+const userCache = new NodeCache({ stdTTL: 600, checkperiod: 120 })
+
+const authenticateToken = async (
   req: CustomeRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const token = req.headers['authorization']
-    if (!token) {
-      return res
-        .status(401)
-        .json({ message: 'Access denied . No token provided' })
+    const authHeader = req.headers['authorization']
+    
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Access denied. No token provided' 
+      })
     }
-    const newToken = token?.split(' ')[1]
+
+    const token = authHeader.split(' ')[1]
     const secret = process.env.ACCESS_TOKEN_SECRET
-    jwt.decode(newToken, { complete: true })
-
+    
     if (!secret) {
-      throw new Error('Access token secret is not defined')
+      logger.error('ACCESS_TOKEN_SECRET is not configured')
+      return res.status(500).json({ 
+        success: false,
+        message: 'Server configuration error' 
+      })
     }
 
-    jwt.verify(newToken, secret, async (err, user) => {
-      if (err) {
-        return res.status(401).json({ message: 'Invalid token' })
-      }
-      req.user = user as JwtPayload
-      const userId = req.user.id
-      if (!userId) {
-        return res.status(401).json({ message: 'Unauthorized' })
-      }
-      const userData = await User.findById(userId)
-      if (!userData) {
-        return res.status(404).json({ message: 'User not found' })
-      }
+    // ✅ Use synchronous verify (no callback hell)
+    const decoded = jwt.verify(token, secret) as JwtPayload
+    
+    const userId = decoded.id
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Invalid token payload' 
+      })
+    }
 
-      next()
-    })
+    // ✅ Check cache first to avoid DB lookup
+    let userData = userCache.get<any>(userId)
+    
+    if (!userData) {
+      userData = await User.findById(userId)
+        .lean()
+        .select('_id email role')
+        .exec()
+      
+      if (!userData) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'User not found' 
+        })
+      }
+      
+      // Cache the user data
+      userCache.set(userId, userData)
+      logger.debug('User data cached', { userId })
+    }
+
+    req.user = { id: userId, ...decoded }
+    next()
+    
   } catch (error) {
-    console.error('Error founded in authenticate token', error)
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Invalid token' 
+      })
+    }
+    
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Token expired' 
+      })
+    }
+    
+    logger.error('Authentication error', { error })
+    next(error) // Pass to global error handler
   }
 }
 

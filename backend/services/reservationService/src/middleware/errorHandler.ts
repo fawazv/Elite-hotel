@@ -1,28 +1,39 @@
 import { Request, Response, NextFunction } from 'express'
-
-interface CustomError extends Error {
-  statusCode?: number
-}
+import CustomError from '../utils/CustomError'
+import { HttpStatus } from '../enums/http.status'
+import logger from '../utils/logger.service'
 
 const errorHandler = (
-  err: CustomError,
+  err: CustomError | Error,
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  console.log(
-    'Error in auth middleware',
-    err,
-    'error.message )))) ',
-    err.message
-  )
+  // Log error with correlation ID if available
+  logger.error('Error Handler', {
+    error: err.message,
+    stack: err.stack,
+    correlationId: (req as any).correlationId,
+    path: req.path,
+    method: req.method,
+  })
 
-  const statusCode = err.statusCode || 500
-  const message = err.message || 'Internal server error'
+  if (err instanceof CustomError) {
+    return res.status(err.statusCode).json({
+      success: false,
+      message: err.message,
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    })
+  }
 
-  res.status(statusCode).json({
+  // Handle unexpected errors
+  return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
     success: false,
-    message,
+    message: 'Internal server error',
+    ...(process.env.NODE_ENV === 'development' && {
+      error: err.message,
+      stack: err.stack,
+    }),
   })
 }
 

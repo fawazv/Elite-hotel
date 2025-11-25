@@ -2,44 +2,127 @@ import dotenv from 'dotenv'
 dotenv.config()
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
+import rateLimit from 'express-rate-limit'
+import mongoSanitize from 'express-mongo-sanitize'
 import connectMongodb from './config/db.config'
 import reservationRoute from './routes/reservation.route'
 import errorHandler from './middleware/errorHandler'
 import { initTopology } from './config/rabbitmq.config'
+import requestLogger from './middleware/request-logger.middleware'
+import sanitizeInputs from './middleware/sanitization.middleware'
+import logger from './utils/logger.service'
 
 const app = express()
 
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+// Security middleware (BEFORE body parsing)
+app.use(helmet())
+app.use(mongoSanitize()) // Prevent NoSQL injection
+app.use(requestLogger) // Log all requests with correlation IDs
+
+// Rate limiting for public endpoints (more restrictive)
+const publicLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per 15 minutes
+  message: 'Too many booking requests from this IP, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
+// General rate limiting
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per 15 minutes
+  message: 'Too many requests from this IP, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }))
+app.use(express.urlencoded({ extended: true, limit: '10mb' }))
+
+// XSS sanitization (AFTER body parsing)
+app.use(sanitizeInputs)
+
+// CORS configuration
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
+  'http://localhost:5173',
+]
 
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true)
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error('Not allowed by CORS'))
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID'],
   })
 )
 
+// Apply public rate limiter to public booking endpoints
+app.use('/public', publicLimiter)
+app.use('/quote', publicLimiter)
+
+// Apply general rate limiter to all other routes
+app.use(generalLimiter)
+
+// Routes
 app.use('/', reservationRoute)
 
-// global error handler
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    service: 'ReservationService',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  }
+
+  res.status(200).json(health)
+})
+
+// Global error handler (MUST BE LAST)
 app.use(errorHandler)
 
 async function start() {
   try {
-    // 1. init RabbitMQ topology (exchanges, queues, bindings)
+    //1. init RabbitMQ topology (exchanges, queues, bindings)
     await initTopology()
+    logger.info('✅ RabbitMQ topology initialized')
 
-    // 3. connect MongoDB
+    // 2. connect MongoDB
     await connectMongodb()
+    logger.info('✅ MongoDB connected')
 
-    // 4. start express server
-    app.listen(4005, () =>
-      console.log(`server running on http://localhost:4005`)
-    )
+    // 3. start express server
+    const PORT = process.env.PORT || 4005
+    app.listen(PORT, () => {
+      logger.info(`🚀 ReservationService running on port ${PORT}`)
+    })
   } catch (error) {
-    console.error('Service startup failed:', error)
+    logger.error('❌ Service startup failed', { error })
     process.exit(1) // crash if startup dependencies not ready
   }
 }
+
+// Handle uncaught errors
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception', { error })
+  process.exit(1)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection', { reason, promise })
+  process.exit(1)
+})
 
 start()
