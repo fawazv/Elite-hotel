@@ -32,6 +32,10 @@ const RoomSchema = new Schema<RoomDocument>(
   { timestamps: true }
 )
 
+// Compound index for common query patterns
 RoomSchema.index({ type: 1, price: 1, available: 1 })
+
+// Text index for search functionality
+RoomSchema.index({ name: 'text', description: 'text' })
 
 export const Room = model<RoomDocument>('Room', RoomSchema)

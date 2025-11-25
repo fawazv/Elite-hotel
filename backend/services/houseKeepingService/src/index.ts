@@ -3,12 +3,15 @@ dotenv.config()
 
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
+import compression from 'compression'
 import housekeepingRoutes from './routes/housekeeping.routes'
 import { initRabbitTopology } from './config/rabbitmq.config'
 import { startHousekeepingConsumer } from './consumers/housekeeping.consumer'
 import { createContainer } from './config/container'
 import errorHandler from './errors/errorHandler'
 import connectMongoDB from './config/db.config'
+
 
 async function start() {
   // DI container
@@ -23,8 +26,20 @@ async function start() {
 
   // Express
   const app = express()
-  app.use(express.json())
-  app.use(express.urlencoded({ extended: true }))
+
+  // Security: Helmet for security headers
+  app.use(helmet())
+
+  // Performance: Response compression
+  app.use(
+    compression({
+      level: 6, // Balance between compression ratio and CPU usage
+      threshold: 1024, // Only compress responses larger than 1KB
+    })
+  )
+
+  app.use(express.json({ limit: '100kb' }))
+  app.use(express.urlencoded({ extended: true, limit: '100kb' }))
 
   app.use(
     cors({

@@ -4,6 +4,7 @@ import CustomError from '../../utils/CustomError'
 import { HttpStatus } from '../../enums/http.status'
 import { RoomDocument } from '../../models/room.model'
 import { IMediaService } from '../interface/IMedia.service'
+import { cacheService } from '../../utils/cache.service'
 
 export class RoomService implements IRoomService {
   private roomRepository: IRoomRepository
@@ -59,11 +60,24 @@ export class RoomService implements IRoomService {
       }
     }
 
-    return this.roomRepository.create(payload)
+    const newRoom = await this.roomRepository.create(payload)
+    // Invalidate list caches when a new room is created
+    cacheService.invalidateRoomCaches()
+    return newRoom
   }
 
-  getRoomById(id: string) {
-    return this.roomRepository.findById(id)
+  async getRoomById(id: string) {
+    const cacheKey = `room:${id}`
+    const cached = cacheService.get<RoomDocument>(cacheKey)
+    if (cached) {
+      return cached
+    }
+
+    const room = await this.roomRepository.findById(id)
+    if (room) {
+      cacheService.set(cacheKey, room)
+    }
+    return room
   }
 
   async listRooms(query: ListQuery) {
@@ -87,16 +101,28 @@ export class RoomService implements IRoomService {
       if (minPrice != null) filter.price.$gte = minPrice
       if (maxPrice != null) filter.price.$lte = maxPrice
     }
-    if (search) filter.name = { $regex: search, $options: 'i' }
+    // Use text search for better performance when search query exists
+    if (search) {
+      filter.$text = { $search: search }
+    }
 
     const skip = (page - 1) * limit
     const sort: any = { [sortBy]: sortOrder === 'asc' ? 1 : -1 }
+
+    // Create cache key based on query parameters
+    const cacheKey = `rooms:${JSON.stringify({ page, limit, type, minPrice, maxPrice, available, sortBy, sortOrder, search })}`
+    const cached = cacheService.get<{ data: RoomDocument[]; total: number; page: number; limit: number }>(cacheKey)
+    if (cached) {
+      return cached
+    }
 
     const [data, total] = await Promise.all([
       this.roomRepository.findAll(filter, { skip, limit, sort }),
       this.roomRepository.count(filter),
     ])
-    return { data, total, page, limit }
+    const result = { data, total, page, limit }
+    cacheService.set(cacheKey, result, 180) // Cache for 3 minutes (shorter than default)
+    return result
   }
 
   async patchRoom(
@@ -122,7 +148,11 @@ export class RoomService implements IRoomService {
       }
     }
 
-    return this.roomRepository.patch(id, payload)
+    const updated = await this.roomRepository.patch(id, payload)
+    // Invalidate caches for this room and all list caches
+    cacheService.del(`room:${id}`)
+    cacheService.invalidateRoomCaches()
+    return updated
   }
 
   async deleteRoom(id: string): Promise<void> {
@@ -133,5 +163,8 @@ export class RoomService implements IRoomService {
       await this.mediaService.deleteImage(existing.image.publicId)
     }
     await this.roomRepository.delete(id)
+    // Invalidate caches for this room and all list caches
+    cacheService.del(`room:${id}`)
+    cacheService.invalidateRoomCaches()
   }
 }
