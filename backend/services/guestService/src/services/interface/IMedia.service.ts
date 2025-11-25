@@ -10,4 +10,5 @@ export interface IMediaService {
     folder?: string
   ): Promise<IUploadResult>
   deleteImage(publicId: string): Promise<void>
+  getSignedUrl?(key: string, expiresIn?: number): Promise<string> // Optional: for signed URLs
 }

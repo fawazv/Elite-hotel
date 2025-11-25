@@ -1,32 +1,42 @@
 import { IMediaService, IUploadResult } from '../interface/IMedia.service'
-import cloudinary from '../../config/cloudinary.config'
-import streamifier from 'streamifier'
+import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import s3Client, { S3_BUCKET } from '../../config/s3.config'
+import { v4 as uuidv4 } from 'uuid'
 
 export class MediaService implements IMediaService {
-  uploadImage(
+  async uploadImage(
     buffer: Buffer,
     filename?: string,
-    folder: string = process.env.CLOUDINARY_FOLDER || 'hotel/rooms'
+    folder: string = process.env.AWS_S3_FOLDER || 'user/avatars'
   ): Promise<IUploadResult> {
-    return new Promise((resolve, reject) => {
-      const upload = cloudinary.uploader.upload_stream(
-        {
-          folder,
-          use_filename: !!filename,
-          unique_filename: true,
-          resource_type: 'image',
-          overwrite: false,
-        },
-        (error, result) => {
-          if (error || !result) return reject(error)
-          resolve({ publicId: result.public_id, url: result.secure_url })
-        }
-      )
-      streamifier.createReadStream(buffer).pipe(upload)
+    // Generate unique key for S3
+    const timestamp = Date.now()
+    const uniqueId = uuidv4()
+    const sanitizedFilename = filename || 'avatar.jpg'
+    const key = `${folder}/${timestamp}-${uniqueId}-${sanitizedFilename}`
+
+    // Upload to S3
+    const command = new PutObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: key,
+      Body: buffer,
+      ContentType: 'image/jpeg', // Could be made dynamic based on file type
     })
+
+    await s3Client.send(command)
+
+    // Construct the S3 URL
+    const url = `https://${S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`
+
+    return { publicId: key, url }
   }
 
   async deleteImage(publicId: string): Promise<void> {
-    await cloudinary.uploader.destroy(publicId, { resource_type: 'image' })
+    const command = new DeleteObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: publicId,
+    })
+
+    await s3Client.send(command)
   }
 }
