@@ -519,6 +519,7 @@ export class ReservationService implements IReservationService {
           reservationId: updated._id.toString(),
           code: updated.code,
           guestId: updated.guestId,
+          guestContact: updated.guestContact || null,
           roomId: updated.roomId,
           cancelledAt: updated.cancelledAt,
           reason,

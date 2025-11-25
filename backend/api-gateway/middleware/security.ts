@@ -52,7 +52,7 @@ export const validateRequestSize = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): void => {
   const contentLength = req.headers['content-length']
 
   if (contentLength) {
@@ -60,14 +60,15 @@ export const validateRequestSize = (
     const maxSize = req.path.includes('upload') ? 10 : 0.1 // 10MB for uploads, 100KB for others
 
     if (sizeInMB > maxSize) {
-      return res.status(413).json({
+      res.status(413).json({
         success: false,
         message: `Request payload too large. Maximum allowed: ${maxSize}MB`,
       })
+      return
     }
   }
 
-  next()
+  return next()
 }
 
 /**
@@ -77,7 +78,7 @@ export const logSecurityHeaders = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): void => {
   if (process.env.NODE_ENV === 'development') {
     res.on('finish', () => {
       console.log(`[Security Headers] ${req.method} ${req.path}`, {

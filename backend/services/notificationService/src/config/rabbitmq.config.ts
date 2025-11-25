@@ -133,6 +133,11 @@ export async function initTopology(): Promise<void> {
     },
     {
       queue: 'notifications.queue',
+      exchange: 'payments.events',
+      pattern: 'payment.*',
+    },
+    {
+      queue: 'notifications.queue',
       exchange: 'housekeeping.events',
       pattern: 'housekeeping.*',
     },

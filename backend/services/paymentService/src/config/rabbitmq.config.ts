@@ -79,12 +79,17 @@ export async function initTopology(): Promise<void> {
     'reservation.*'
   )
 
-  // payment’s consumer queue for reservation events
+  // payment's consumer queue for reservation events
   await ch.assertQueue('reservations.queue.forPayments', { durable: true })
   await ch.bindQueue(
     'reservations.queue.forPayments',
     'reservations.events',
     'reservation.created'
+  )
+  await ch.bindQueue(
+    'reservations.queue.forPayments',
+    'reservations.events',
+    'reservation.cancelled'
   )
 
   // Delayed / scheduled notification queue

@@ -36,6 +36,10 @@ export async function startNotificationConsumer() {
           await handleInvoiceCreated(evt.data)
         } else if (evt.event === 'billing.invoice.refunded') {
           await handleInvoiceRefunded(evt.data)
+        } else if (evt.event === 'payment.succeeded') {
+          await handlePaymentSucceeded(evt.data)
+        } else if (evt.event === 'payment.failed') {
+          await handlePaymentFailed(evt.data)
         }
 
         ch.ack(msg)
@@ -119,3 +123,22 @@ async function handleReminder(data: any) {
   if (toEmail) await EMAIL.sendMail({ to: toEmail, subject, text })
   if (toPhone) await SMS.sendSms({ to: toPhone, body: text })
 }
+
+async function handlePaymentSucceeded(data: any) {
+  const toEmail = data.guestContact?.email
+  const toPhone = data.guestContact?.phoneNumber
+  const subject = `Payment Successful`
+  const text = `Your payment of ${data.amount} has been processed successfully for reservation. Thank you!`
+  if (toEmail) await EMAIL.sendMail({ to: toEmail, subject, text })
+  if (toPhone) await SMS.sendSms({ to: toPhone, body: text })
+}
+
+async function handlePaymentFailed(data: any) {
+  const toEmail = data.guestContact?.email
+  const toPhone = data.guestContact?.phoneNumber
+  const subject = `Payment Failed`
+  const text = `Your payment attempt failed. Please try again or contact support for assistance.`
+  if (toEmail) await EMAIL.sendMail({ to: toEmail, subject, text })
+  if (toPhone) await SMS.sendSms({ to: toPhone, body: text })
+}
+
