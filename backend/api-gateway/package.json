@@ -12,6 +12,7 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/compression": "^1.8.1",
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
@@ -21,12 +22,16 @@
     "typescript": "^5.7.3"
   },
   "dependencies": {
+    "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^7.5.0",
+    "express-slow-down": "^2.0.3",
     "fs": "^0.0.1-security",
+    "helmet": "^8.0.0",
     "http-proxy-middleware": "^3.0.3",
     "morgan": "^1.10.0",
     "path": "^0.12.7",

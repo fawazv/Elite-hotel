@@ -6,8 +6,16 @@ import { HttpStatus } from '../../enums/http.status'
 import { IMediaService } from '../interface/IMedia.service'
 import { UserRepository } from '../../repositories/implementation/user.repository'
 
+// Max file size for avatars: 5MB
+const MAX_AVATAR_SIZE = 5 * 1024 * 1024
+
+// Helper function to escape regex special characters
+function escapeRegex(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 export class UserService implements IUserService {
-  private userRepo: any // UserRepository (typed looser for compatibility)
+  private userRepo: UserRepository
   private mediaService: IMediaService
 
   constructor(userRepo: UserRepository, mediaService: IMediaService) {
@@ -27,27 +35,31 @@ export class UserService implements IUserService {
     role?: string
   }) {
     const page = query.page && query.page > 0 ? query.page : 1
-    const limit = query.limit && query.limit > 0 ? query.limit : 20
+    // Limit maximum items per page to prevent large data dumps
+    const limit =
+      query.limit && query.limit > 0 ? Math.min(query.limit, 100) : 20
     const skip = (page - 1) * limit
 
     const filter: any = {}
     if (query.search) {
+      // Escape regex to prevent ReDoS attacks
+      const sanitizedSearch = escapeRegex(query.search)
       filter.$or = [
-        { fullName: { $regex: query.search, $options: 'i' } },
-        { email: { $regex: query.search, $options: 'i' } },
-        { phoneNumber: { $regex: query.search, $options: 'i' } },
+        { fullName: { $regex: sanitizedSearch, $options: 'i' } },
+        { email: { $regex: sanitizedSearch, $options: 'i' } },
+        { phoneNumber: { $regex: sanitizedSearch, $options: 'i' } },
       ]
     }
     if (query.role) filter.role = query.role
 
     const [data, total] = await Promise.all([
-      (this.userRepo as any).findAll(filter, {
+      this.userRepo.findAll(filter, {
         skip,
         limit,
         sort: { createdAt: -1 },
         projection: { password: 0 },
       }),
-      (this.userRepo as any).count(filter),
+      this.userRepo.count(filter),
     ])
     return { data, total, page, limit }
   }
@@ -75,6 +87,24 @@ export class UserService implements IUserService {
     file: Express.Multer.File
   ): Promise<{ publicId: string; url: string }> {
     if (!file) throw new CustomError('No file uploaded', HttpStatus.BAD_REQUEST)
+
+    // Validate file size before processing
+    if (file.size > MAX_AVATAR_SIZE) {
+      throw new CustomError(
+        `File size exceeds maximum allowed size of ${MAX_AVATAR_SIZE / 1024 / 1024}MB`,
+        HttpStatus.BAD_REQUEST
+      )
+    }
+
+    // Validate file type
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg']
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new CustomError(
+        'Invalid file type. Only JPEG, PNG, and WebP images are allowed',
+        HttpStatus.BAD_REQUEST
+      )
+    }
+
     const existing = await this.userRepo.findById(id)
     if (!existing) throw new CustomError('User not found', HttpStatus.NOT_FOUND)
 

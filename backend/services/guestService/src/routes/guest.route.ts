@@ -1,4 +1,3 @@
-// src/routes/guest.route.ts
 import express from 'express'
 import validateRequest from '../middleware/validateRequest'
 import {
@@ -10,7 +9,7 @@ import {
 import { guestController } from '../config/container'
 import authenticateToken from '../middleware/auth.middleware'
 import { authorizeRole } from '../middleware/authorizeRole'
-import { upload } from '../middleware/upload.middleware'
+import { upload, validateImageContent } from '../middleware/upload.middleware'
 
 const router = express.Router()
 
@@ -20,6 +19,7 @@ router.post(
   authenticateToken,
   authorizeRole(['admin', 'receptionist']),
   upload.single('idProofImage'),
+  validateImageContent,
   validateRequest(createGuestSchema),
   guestController.create.bind(guestController)
 )
@@ -62,6 +62,7 @@ router.post(
   authenticateToken,
   authorizeRole(['admin', 'receptionist']),
   upload.single('image'),
+  validateImageContent,
   guestController.updateIdProofImage.bind(guestController)
 )
 

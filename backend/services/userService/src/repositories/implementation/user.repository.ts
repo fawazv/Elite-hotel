@@ -8,15 +8,14 @@ export class UserRepository
   implements IUserRepository
 {
   async findByEmail(email: string): Promise<IUser | null> {
-    try {
-      return await User.findOne({ email })
-    } catch (error) {
-      return null
-    }
+    // Normalize email before querying
+    const normalizedEmail = email.toLowerCase().trim()
+    return await User.findOne({ email: normalizedEmail }).select('-password')
   }
 
   async findByIdLean(id: string): Promise<IUser | null> {
-    return User.findById(id).lean().exec()
+    // Always exclude password field
+    return User.findById(id).select('-password').lean().exec()
   }
 
   async updateUserField(
@@ -24,23 +23,29 @@ export class UserRepository
     field: string,
     value: string
   ): Promise<IUser | null> {
+    const normalizedEmail = email.toLowerCase().trim()
     const update = { $set: { [field]: value } }
-    return await User.findOneAndUpdate({ email }, update, { new: true })
+    return await User.findOneAndUpdate({ email: normalizedEmail }, update, {
+      new: true,
+    }).select('-password')
   }
 
   async findByPhoneNumber(phoneNumber: string): Promise<IUser | null> {
-    return await User.findOne({ phoneNumber })
+    return await User.findOne({ phoneNumber }).select('-password')
   }
 
   async updateByEmail(
     email: string,
     updateData: Partial<IUser>
   ): Promise<IUser | null> {
+    const normalizedEmail = email.toLowerCase().trim()
     const updatedUser = await User.findOneAndUpdate(
-      { email: email },
-      { $set: updateData }, // $set operator updates specific fields
+      { email: normalizedEmail },
+      { $set: updateData },
       { new: true, upsert: false }
-    ).lean()
+    )
+      .select('-password')
+      .lean()
 
     return updatedUser
   }

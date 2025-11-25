@@ -1,22 +1,44 @@
 // src/validators/guest.validator.ts
 import Joi from 'joi'
 
-const phone = Joi.string().pattern(/^[0-9]{10,15}$/)
+// Regex patterns for security
+const phonePattern = /^[0-9]{10,15}$/
+const namePattern = /^[a-zA-Z\s\-']+$/ // Only letters, spaces, hyphens, apostrophes
+const postalCodePattern = /^[A-Z0-9\s\-]{3,10}$/i
+
+// Sanitize string to prevent XSS
+const sanitizedString = (minLength: number = 1, maxLength: number = 100) =>
+  Joi.string()
+    .min(minLength)
+    .max(maxLength)
+    .trim()
+    .regex(/^[^<>]*$/, 'no HTML tags') // Prevent HTML/script tags
+
+const phone = Joi.string()
+  .pattern(phonePattern)
+  .message('Phone number must be 10-15 digits')
 
 const address = Joi.object({
-  line1: Joi.string().allow('', null),
-  line2: Joi.string().allow('', null),
-  city: Joi.string().allow('', null),
-  state: Joi.string().allow('', null),
-  postalCode: Joi.string().allow('', null),
-  country: Joi.string().allow('', null),
+  line1: sanitizedString(0, 200).allow('', null),
+  line2: sanitizedString(0, 200).allow('', null),
+  city: sanitizedString(0, 100).allow('', null),
+  state: sanitizedString(0, 100).allow('', null),
+  postalCode: Joi.string()
+    .pattern(postalCodePattern)
+    .allow('', null)
+    .message('Invalid postal code format'),
+  country: Joi.string()
+    .length(2)
+    .uppercase()
+    .allow('', null)
+    .message('Country must be a 2-letter ISO code (e.g., US, IN)'),
 })
 
 const idProof = Joi.object({
   type: Joi.string()
     .valid('Passport', 'NationalID', 'DrivingLicense', 'Other')
     .optional(),
-  number: Joi.string().max(100).optional(),
+  number: sanitizedString(1, 50).optional(),
 })
 
 const preferences = Joi.object({
@@ -26,41 +48,52 @@ const preferences = Joi.object({
   ),
   roomType: Joi.string().valid('Standard', 'Deluxe', 'Premium', 'Luxury'),
   bedType: Joi.string().valid('Single', 'Double', 'Queen', 'King'),
-  notes: Joi.string().max(2000),
+  notes: sanitizedString(0, 2000),
 })
 
 export const createGuestSchema = Joi.object({
-  firstName: Joi.string().min(2).max(100).required(),
-  lastName: Joi.string().min(1).max(100).optional(),
-  email: Joi.string().email().optional(),
+  firstName: sanitizedString(2, 100)
+    .pattern(namePattern)
+    .required()
+    .message('First name can only contain letters, spaces, hyphens, and apostrophes'),
+  lastName: sanitizedString(1, 100)
+    .pattern(namePattern)
+    .optional()
+    .message('Last name can only contain letters, spaces, hyphens, and apostrophes'),
+  email: Joi.string()
+    .email()
+    .max(255)
+    .lowercase()
+    .trim()
+    .optional(),
   phoneNumber: phone.required(),
-  dateOfBirth: Joi.date().optional(),
+  dateOfBirth: Joi.date().max('now').optional(),
   address: address.optional(),
   idProof: idProof.optional(),
   preferences: preferences.optional(),
-  notes: Joi.string().max(5000).optional(),
+  notes: sanitizedString(0, 5000).optional(),
   isBlacklisted: Joi.boolean().optional(),
 })
 
-export const updateGuestSchema = createGuestSchema // PUT expects full valid object if you want strictness
+export const updateGuestSchema = createGuestSchema // PUT expects full valid object
 
 export const patchGuestSchema = Joi.object({
-  firstName: Joi.string().min(2).max(100),
-  lastName: Joi.string().min(1).max(100),
-  email: Joi.string().email(),
+  firstName: sanitizedString(2, 100).pattern(namePattern),
+  lastName: sanitizedString(1, 100).pattern(namePattern),
+  email: Joi.string().email().max(255).lowercase().trim(),
   phoneNumber: phone,
-  dateOfBirth: Joi.date(),
+  dateOfBirth: Joi.date().max('now'),
   address: address,
   idProof: idProof,
   preferences: preferences,
-  notes: Joi.string().max(5000),
+  notes: sanitizedString(0, 5000),
   isBlacklisted: Joi.boolean(),
 }).min(1)
 
 export const ensureGuestSchema = Joi.object({
-  firstName: Joi.string().min(2).max(100).required(),
-  lastName: Joi.string().min(1).max(100).optional(),
-  email: Joi.string().email().optional(),
+  firstName: sanitizedString(2, 100).pattern(namePattern).required(),
+  lastName: sanitizedString(1, 100).pattern(namePattern).optional(),
+  email: Joi.string().email().max(255).lowercase().trim().optional(),
   phoneNumber: phone.required(),
   idProof: idProof.optional(),
 })

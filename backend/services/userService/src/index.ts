@@ -8,21 +8,69 @@ import userRoute from './routes/user.route'
 import errorHandler from './middleware/errorHandler'
 import helmet from 'helmet'
 import morgan from 'morgan'
+import compression from 'compression'
 import { initRabbitMQ } from './config/rabbitmq.config'
 import { initUserRpcConsumer } from './consumers/user.rpc.consumer'
+import { sanitizeInput } from './middleware/sanitization.middleware'
+import { requestTimeout } from './middleware/timeout.middleware'
 
 const app = express()
 
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
-app.use(helmet())
+// Request timeout (30 seconds)
+app.use(requestTimeout(30000))
+
+// Security: Request body size limits to prevent DoS
+app.use(express.json({ limit: '10mb' }))
+app.use(express.urlencoded({ extended: true, limit: '10mb' }))
+
+// Security: Helmet with enhanced configuration
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+      },
+    },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  })
+)
+
+// CORS: Support multiple origins from environment
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',')
+  : ['http://localhost:5173']
+
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true)
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error('Not allowed by CORS'))
+      }
+    },
     credentials: true,
   })
 )
+
+// Logging
 app.use(morgan('dev'))
+
+// Performance: Compress responses
+app.use(compression())
+
+// Security: Input sanitization to prevent NoSQL injection
+app.use(sanitizeInput)
 
 app.use('/', userRoute)
 

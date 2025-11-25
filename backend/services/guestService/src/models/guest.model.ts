@@ -73,7 +73,26 @@ const GuestSchema = new Schema<GuestDocument>(
   { timestamps: true }
 )
 
-// Useful index combo for fast lookup during booking:
-GuestSchema.index({ email: 1, phoneNumber: 1 }, { unique: false })
+// Performance indexes
+// 1. Compound index for filtered listings with sorting
+GuestSchema.index({ isBlacklisted: 1, createdAt: -1 })
+
+// 2. Text index for full-text search on name and email
+GuestSchema.index(
+  { firstName: 'text', lastName: 'text', email: 'text' },
+  { 
+    weights: { firstName: 10, lastName: 8, email: 5 },
+    name: 'guest_text_search'
+  }
+)
+
+// 3. Unique sparse index on email (allows multiple null values, but unique non-null)
+GuestSchema.index({ email: 1 }, { unique: true, sparse: true })
+
+// 4. Index for phone number lookups (already indexed above, but ensuring it's there)
+GuestSchema.index({ phoneNumber: 1 })
+
+// 5. Compound index for quick booking lookups
+GuestSchema.index({ email: 1, phoneNumber: 1 })
 
 export const Guest = model<GuestDocument>('Guest', GuestSchema)

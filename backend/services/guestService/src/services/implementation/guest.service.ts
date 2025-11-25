@@ -74,17 +74,34 @@ export class GuestService implements IGuestService {
     const filter: any = {}
     if (typeof query.isBlacklisted === 'boolean')
       filter.isBlacklisted = query.isBlacklisted
+    
+    // Use text index for better search performance
     if (query.search) {
-      filter.$or = [
-        { firstName: { $regex: query.search, $options: 'i' } },
-        { lastName: { $regex: query.search, $options: 'i' } },
-        { email: { $regex: query.search, $options: 'i' } },
-        { phoneNumber: { $regex: query.search, $options: 'i' } },
-      ]
+      filter.$text = { $search: query.search }
+    }
+
+    // Field projection: only select necessary fields for listing
+    const projection = {
+      firstName: 1,
+      lastName: 1,
+      email: 1,
+      phoneNumber: 1,
+      isBlacklisted: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      'idProof.type': 1,
     }
 
     const [data, total] = await Promise.all([
-      this.guestRepo.findAll(filter, { skip, limit, sort: { createdAt: -1 } }),
+      this.guestRepo.findAll(
+        filter,
+        { 
+          skip, 
+          limit, 
+          sort: query.search ? { score: { $meta: 'textScore' } } : { createdAt: -1 },
+          projection 
+        }
+      ),
       this.guestRepo.count(filter),
     ])
     return { data, total, page, limit }

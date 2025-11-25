@@ -7,10 +7,7 @@ import { successResponse } from '../../utils/response.handler'
 import { setRefreshTokenCookie } from '../../utils/tokencookie.util'
 import { generateAccessToken } from '../../utils/token.util'
 import CustomError from '../../utils/CustomError'
-
-interface CustomeRequest extends Request {
-  user?: string | JwtPayload
-}
+import { AuthenticatedRequest } from '../../middleware/auth.middleware'
 
 export class AuthController implements IAuthController {
   private authService: IAuthService
@@ -185,7 +182,7 @@ export class AuthController implements IAuthController {
     }
   }
 
-  async changePassword(req: CustomeRequest, res: Response, next: NextFunction) {
+  async changePassword(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const user = req.user as JwtPayload
       if (!user) {

@@ -7,21 +7,42 @@ import guestRoute from './routes/guest.route'
 import errorHandler from './middleware/errorHandler'
 import helmet from 'helmet'
 import morgan from 'morgan'
+import mongoSanitize from 'express-mongo-sanitize'
+import compression from 'compression'
 import { initTopology } from './config/rabbitmq.config'
 import { initGuestRpcServer } from './rpc/guest.rpc.server'
 
 const app = express()
 
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+// Security: Request size limits to prevent DoS
+app.use(express.json({ limit: '100kb' }))
+app.use(express.urlencoded({ extended: true, limit: '100kb' }))
 
+// Security headers
 app.use(helmet())
+
+// Sanitize data to prevent NoSQL injection
+app.use(
+  mongoSanitize({
+    replaceWith: '_',
+    onSanitize: ({ req, key }) => {
+      console.warn(`Sanitized key "${key}" in request`)
+    },
+  })
+)
+
+// Response compression
+app.use(compression())
+
+// CORS configuration
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
     credentials: true,
   })
 )
+
+// Request logging
 app.use(morgan('dev'))
 
 app.use('/', guestRoute)

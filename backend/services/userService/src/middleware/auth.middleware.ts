@@ -1,46 +1,77 @@
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { Response, NextFunction } from 'express'
-import { User } from '../models/user.model'
 import { CustomeRequest } from '../interfaces/CustomRequest'
+import CustomError from '../utils/CustomError'
+import { HttpStatus } from '../enums/http.status'
 
-const authenticateToken = (
+/**
+ * Authenticate JWT token from Authorization header
+ * Verifies token signature and expiration, extracts user payload
+ */
+const authenticateToken = async (
   req: CustomeRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const token = req.headers['authorization']
+    const authHeader = req.headers['authorization']
+    
+    if (!authHeader) {
+      throw new CustomError(
+        'Access denied. No token provided',
+        HttpStatus.UNAUTHORIZED
+      )
+    }
+
+    // Extract token from "Bearer <token>" format
+    const token = authHeader.split(' ')[1]
+    
     if (!token) {
-      return res
-        .status(401)
-        .json({ message: 'Access denied . No token provided' })
+      throw new CustomError(
+        'Invalid token format. Expected: Bearer <token>',
+        HttpStatus.UNAUTHORIZED
+      )
     }
-    const newToken = token?.split(' ')[1]
+
     const secret = process.env.ACCESS_TOKEN_SECRET
-    jwt.decode(newToken, { complete: true })
-
+    
     if (!secret) {
-      throw new Error('Access token secret is not defined')
+      console.error('CRITICAL: ACCESS_TOKEN_SECRET is not defined in environment')
+      throw new CustomError(
+        'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      )
     }
 
-    jwt.verify(newToken, secret, async (err, user) => {
-      if (err) {
-        return res.status(401).json({ message: 'Invalid token' })
-      }
-      req.user = user as JwtPayload
-      const userId = req.user.id
-      if (!userId) {
-        return res.status(401).json({ message: 'Unauthorized' })
-      }
-      const userData = await User.findById(userId)
-      if (!userData) {
-        return res.status(404).json({ message: 'User not found' })
-      }
+    // Synchronous verification - throws error if invalid or expired
+    const decoded = jwt.verify(token, secret) as JwtPayload
+    
+    // Validate payload structure
+    if (!decoded.id) {
+      throw new CustomError(
+        'Invalid token payload',
+        HttpStatus.UNAUTHORIZED
+      )
+    }
 
-      next()
-    })
+    // Attach user info to request
+    req.user = decoded
+    
+    next()
   } catch (error) {
-    console.error('Error founded in authenticate token', error)
+    // Handle JWT-specific errors
+    if (error instanceof jwt.JsonWebTokenError) {
+      return next(new CustomError('Invalid token', HttpStatus.UNAUTHORIZED))
+    }
+    if (error instanceof jwt.TokenExpiredError) {
+      return next(new CustomError('Token expired', HttpStatus.UNAUTHORIZED))
+    }
+    if (error instanceof jwt.NotBeforeError) {
+      return next(new CustomError('Token not yet valid', HttpStatus.UNAUTHORIZED))
+    }
+    
+    // Pass other errors to global error handler
+    next(error)
   }
 }
 
