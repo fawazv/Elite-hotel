@@ -19,7 +19,7 @@ const router = express.Router()
 router.post(
   '/',
   authenticateToken,
-  authorizeRole(['Admin']),
+  authorizeRole(['admin']),
   upload.single('image'),
   validateRequest(createRoomSchema),
   roomController.create.bind(roomController)
@@ -32,7 +32,7 @@ router.get('/:id', roomController.getById.bind(roomController))
 router.patch(
   '/:id',
   authenticateToken,
-  authorizeRole(['Admin']),
+  authorizeRole(['admin']),
   upload.single('image'),
   validateRequest(patchRoomSchema),
   roomController.patch.bind(roomController)
@@ -41,7 +41,7 @@ router.patch(
 router.delete(
   '/:id',
   authenticateToken,
-  authorizeRole(['Admin']),
+  authorizeRole(['admin']),
   roomController.remove.bind(roomController)
 )
 
