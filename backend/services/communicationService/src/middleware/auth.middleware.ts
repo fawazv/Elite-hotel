@@ -1,87 +1,25 @@
-import jwt, { JwtPayload } from 'jsonwebtoken';
-import { Response, NextFunction } from 'express';
-import CustomError from '../utils/CustomError';
-import { HttpStatus } from '../enums/http.status';
+import { Response, NextFunction } from 'express'
+import jwt, { JwtPayload } from 'jsonwebtoken'
+import { AuthenticatedRequest } from '../types'
 
-// Define a custom request interface locally since we don't have the global one yet
-export interface AuthenticatedRequest extends Request {
-  user?: string | JwtPayload;
-  headers: any;
-}
-
-export const authenticateToken = async (
+export const authenticateToken = (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-) => {
+): void => {
   try {
-    const authHeader = req.headers['authorization'];
-    
-    if (!authHeader) {
-      throw new CustomError(
-        'Access denied. No token provided',
-        HttpStatus.UNAUTHORIZED
-      );
-    }
+    const authHeader = req.headers.authorization
+    const token = authHeader && authHeader.split(' ')[1]
 
-    const token = authHeader.split(' ')[1];
-    
     if (!token) {
-      throw new CustomError(
-        'Invalid token format. Expected: Bearer <token>',
-        HttpStatus.UNAUTHORIZED
-      );
+      res.status(401).json({ message: 'Access token required' })
+      return
     }
 
-    const secret = process.env.ACCESS_TOKEN_SECRET;
-    
-    if (!secret) {
-      console.error('CRITICAL: ACCESS_TOKEN_SECRET is not defined in environment');
-      throw new CustomError(
-        'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
-
-    const decoded = jwt.verify(token, secret) as JwtPayload;
-    
-    if (!decoded.id) {
-      throw new CustomError(
-        'Invalid token payload',
-        HttpStatus.UNAUTHORIZED
-      );
-    }
-
-    req.user = decoded;
-    next();
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload
+    req.user = decoded
+    next()
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      return next(new CustomError('Invalid token', HttpStatus.UNAUTHORIZED));
-    }
-    if (error instanceof jwt.TokenExpiredError) {
-      return next(new CustomError('Token expired', HttpStatus.UNAUTHORIZED));
-    }
-    next(error);
+    res.status(403).json({ message: 'Invalid or expired token' })
   }
-};
-
-export const socketAuthMiddleware = (socket: any, next: (err?: any) => void) => {
-  const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(' ')[1];
-
-  if (!token) {
-    return next(new Error('Authentication error: No token provided'));
-  }
-
-  const secret = process.env.ACCESS_TOKEN_SECRET;
-  if (!secret) {
-    return next(new Error('Internal server error: Secret not defined'));
-  }
-
-  jwt.verify(token, secret, (err: any, decoded: any) => {
-    if (err) {
-      return next(new Error('Authentication error: Invalid token'));
-    }
-    socket.user = decoded;
-    next();
-  });
-};
+}

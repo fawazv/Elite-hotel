@@ -21,6 +21,7 @@ services:
       - guest-service
       - reservation-service
       - notification-service
+      - communication-service
 
   auth-service:
     image: fawaz482/elite-auth:latest
@@ -80,3 +81,13 @@ services:
     depends_on:
       - rabbitmq
     # no ports exposed because it's only a RabbitMQ consumer
+
+  communication-service:
+    image: fawaz482/elite-communication:latest
+    env_file:
+      - ./backend/services/communicationService/.env
+    container_name: elite-communication
+    ports:
+      - '4010:4010'
+    depends_on:
+      - rabbitmq
