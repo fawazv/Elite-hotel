@@ -5,6 +5,10 @@ export interface PaymentDoc extends Document {
   _id: string
   reservationId: string
   guestId: string
+  guestContact?: {
+    email?: string
+    phoneNumber?: string
+  }
   amount: number
   currency: string
   provider: 'stripe' | 'razorpay'
@@ -18,6 +22,10 @@ const PaymentSchema = new Schema<PaymentDoc>(
   {
     reservationId: { type: String, required: true },
     guestId: { type: String, required: true },
+    guestContact: {
+      email: String,
+      phoneNumber: String,
+    },
     amount: { type: Number, required: true },
     currency: { type: String, required: true },
     provider: { type: String, enum: ['stripe', 'razorpay'], required: true },

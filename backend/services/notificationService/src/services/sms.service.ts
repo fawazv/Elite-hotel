@@ -1,5 +1,6 @@
 // notification-service/src/services/sms.service.ts
 import twilio, { Twilio } from 'twilio'
+import logger from '../utils/logger.service'
 
 export class SmsService {
   private client: Twilio
@@ -11,14 +12,19 @@ export class SmsService {
     this.from = process.env.TWILIO_PHONE_NUMBER || ''
 
     if (!accountSid || !authToken || !this.from) {
+      logger.error('Twilio credentials or phone number are missing in environment variables')
       throw new Error('Twilio credentials or phone number are missing in env')
     }
 
     this.client = twilio(accountSid, authToken)
+    logger.info('Twilio SMS service initialized')
   }
 
   async sendSms({ to, body }: { to: string; body: string }) {
-    if (!to) return
+    if (!to) {
+      logger.warn('SMS recipient missing, skipping SMS send')
+      return
+    }
 
     try {
       const message = await this.client.messages.create({
@@ -26,10 +32,20 @@ export class SmsService {
         from: this.from,
         to,
       })
-      console.log(`✅ SMS sent to ${to}, Message SID: ${message.sid}`)
+
+      logger.info('SMS sent successfully', {
+        to,
+        messageSid: message.sid,
+        status: message.status,
+      })
+
       return message
     } catch (err: any) {
-      console.error('❌ Error sending SMS:', err.message)
+      logger.error('Failed to send SMS', {
+        to,
+        error: err.message,
+        code: err.code,
+      })
       throw err
     }
   }

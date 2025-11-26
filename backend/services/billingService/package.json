@@ -12,10 +12,12 @@
   "type": "commonjs",
   "dependencies": {
     "amqplib": "^0.10.9",
+    "axios": "^1.11.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
-    "mongoose": "^8.18.0"
+    "mongoose": "^8.18.0",
+    "winston": "^3.11.0"
   },
   "devDependencies": {
     "@types/amqplib": "0.10.6",

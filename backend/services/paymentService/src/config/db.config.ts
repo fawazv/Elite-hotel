@@ -1,16 +1,19 @@
 import mongoose from 'mongoose'
+import logger from '../utils/logger.service'
 
-const connectMongoDB = async () => {
+const connectMongodb = async () => {
   try {
     const connectionString = process.env.MONGO_URI
     if (!connectionString) {
-      console.log('cannot get connectionString ')
-      return
+      logger.error('MONGO_URI environment variable is not set')
+      throw new Error('Database configuration missing')
     }
     await mongoose.connect(connectionString)
-    console.log('MongoDB connected (payment-service)')
+    logger.info('✅ MongoDB connected (payment-service)')
   } catch (error) {
-    console.error('failed to connect database', error)
+    logger.error('Failed to connect to MongoDB', { error })
+    throw error
   }
 }
-export default connectMongoDB
+
+export default connectMongodb

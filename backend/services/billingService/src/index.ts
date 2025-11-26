@@ -1,21 +1,22 @@
 import dotenv from 'dotenv'
 dotenv.config()
 import connectMongodb from './config/db.config'
-import { initTopology, getRabbitChannel } from './config/rabbitmq.config'
+import { initTopology } from './config/rabbitmq.config'
 import { startBillingConsumer } from './consumers/billing.consumer'
 import { BillingService } from './service/implementation/billing.service'
 import { BillingRepository } from './repository/implementation/billing.repository'
+import logger from './utils/logger.service'
 
 // Startup function
 async function start() {
   try {
     // MongoDB
     await connectMongodb()
-    console.log('✅ MongoDB connected (BillingService)')
+    logger.info('✅ MongoDB connected (BillingService)')
 
     // RabbitMQ
     await initTopology()
-    console.log('✅ RabbitMQ connected (BillingService)')
+    logger.info('✅ RabbitMQ connected (BillingService)')
 
     // Initialize service and repository
     const repo = new BillingRepository()
@@ -23,13 +24,24 @@ async function start() {
 
     // Start consumer
     await startBillingConsumer(billingService)
-    console.log('✅ Billing consumer started')
+    logger.info('✅ Billing consumer started')
 
-    console.log('🚀 BillingService running (background worker)')
+    logger.info('🚀 BillingService running (background worker)')
   } catch (err) {
-    console.error('❌ BillingService startup error:', err)
+    logger.error('❌ BillingService startup error', { error: err })
     process.exit(1)
   }
 }
+
+// Handle uncaught errors
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception', { error })
+  process.exit(1)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection', { reason, promise })
+  process.exit(1)
+})
 
 start()

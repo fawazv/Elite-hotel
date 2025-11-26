@@ -1,8 +1,10 @@
 // notification-service/src/services/email.service.ts
 import nodemailer from 'nodemailer'
+import logger from '../utils/logger.service'
 
 export class EmailService {
   private transporter: nodemailer.Transporter
+
   constructor() {
     // Example: use SMTP transport from env
     this.transporter = nodemailer.createTransport({
@@ -29,15 +31,35 @@ export class EmailService {
     html?: string
     attachments?: { filename: string; content: Buffer }[]
   }) {
-    if (!to) return
-    const info = await this.transporter.sendMail({
-      from: process.env.EMAIL_FROM,
-      to,
-      subject,
-      text,
-      html,
-      attachments,
-    })
-    return info
+    if (!to) {
+      logger.warn('Email recipient missing, skipping email send')
+      return
+    }
+
+    try {
+      const info = await this.transporter.sendMail({
+        from: process.env.EMAIL_FROM,
+        to,
+        subject,
+        text,
+        html,
+        attachments,
+      })
+
+      logger.info('Email sent successfully', {
+        to,
+        subject,
+        messageId: info.messageId,
+      })
+
+      return info
+    } catch (err) {
+      logger.error('Failed to send email', {
+        to,
+        subject,
+        error: (err as Error).message,
+      })
+      throw err
+    }
   }
 }

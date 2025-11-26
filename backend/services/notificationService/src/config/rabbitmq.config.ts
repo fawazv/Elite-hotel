@@ -1,33 +1,29 @@
-// src/config/rabbitmq.config.ts
+// notification-service/src/config/rabbitmq.config.ts
 import amqplib, { Connection, Channel } from 'amqplib'
+import logger from '../utils/logger.service'
 
 const RABBIT_URL = process.env.RABBITMQ_URL || 'amqp://localhost:5672'
 let connection: Connection | null = null
 let channel: Channel | null = null
 
-// Track topology to auto-reapply
-const exchanges: { name: string; type: string; options?: any }[] = []
-const queues: { name: string; options?: any }[] = []
-const bindings: { queue: string; exchange: string; pattern: string }[] = []
-
 export async function getRabbitConnection(): Promise<Connection> {
   while (!connection) {
     try {
       connection = await amqplib.connect(RABBIT_URL)
-      console.log('✅ Connected to RabbitMQ')
+      logger.info('✅ Connected to RabbitMQ')
 
       connection.on('error', (err) => {
-        console.error('❌ RabbitMQ connection error', err)
+        logger.error('❌ RabbitMQ connection error', { error: err })
         connection = null
       })
 
       connection.on('close', () => {
-        console.warn('⚠️ RabbitMQ connection closed, retrying...')
+        logger.warn('⚠️ RabbitMQ connection closed, retrying...')
         connection = null
       })
     } catch (err) {
-      console.error('❌ Failed to connect to RabbitMQ:', err)
-      console.log('⏳ Retrying in 5 seconds...')
+      logger.error('❌ Failed to connect to RabbitMQ', { error: err })
+      logger.info('⏳ Retrying in 5 seconds...')
       await new Promise((resolve) => setTimeout(resolve, 5000))
     }
   }
@@ -39,116 +35,59 @@ export async function getRabbitChannel(): Promise<Channel> {
     try {
       const conn = await getRabbitConnection()
       channel = await conn.createChannel()
-      console.log('✅ RabbitMQ channel created')
+      logger.info('✅ RabbitMQ channel created')
 
       channel.on('error', (err) => {
-        console.error('❌ RabbitMQ channel error', err)
+        logger.error('❌ RabbitMQ channel error', { error: err })
         channel = null
       })
 
       channel.on('close', () => {
-        console.warn('⚠️ RabbitMQ channel closed, retrying...')
+        logger.warn('⚠️ RabbitMQ channel closed, retrying...')
         channel = null
       })
-
-      // 🌀 Re-apply topology every time channel is created
-      await applyTopology(channel)
     } catch (err) {
-      console.error('❌ Failed to create RabbitMQ channel:', err)
-      console.log('⏳ Retrying in 5 seconds...')
+      logger.error('❌ Failed to create RabbitMQ channel', { error: err })
+      logger.info('⏳ Retrying in 5 seconds...')
       await new Promise((resolve) => setTimeout(resolve, 5000))
     }
   }
   return channel
 }
 
-/**
- * Save and apply exchanges, queues, and bindings
- */
-async function applyTopology(ch: Channel) {
-  // Declare exchanges
-  for (const ex of exchanges) {
-    await ch.assertExchange(ex.name, ex.type, ex.options)
-  }
-  // Declare queues
-  for (const q of queues) {
-    await ch.assertQueue(q.name, q.options)
-  }
-  // Apply bindings
-  for (const b of bindings) {
-    await ch.bindQueue(b.queue, b.exchange, b.pattern)
-  }
-}
+export async function initTopology() {
+  const channel = await getRabbitChannel()
 
-/**
- * Initialize top-level topology used across services.
- * Call once at service startup.
- */
-export async function initTopology(): Promise<void> {
-  // Register exchanges
-  exchanges.push(
-    { name: 'reservations.events', type: 'topic', options: { durable: true } },
-    { name: 'billing.events', type: 'topic', options: { durable: true } },
-    { name: 'housekeeping.events', type: 'topic', options: { durable: true } },
-    { name: 'notifications.dlx', type: 'direct', options: { durable: true } },
-    { name: 'notifications.retry', type: 'direct', options: { durable: true } } // ✅ retry exchange
+  // Delayed queue (with TTL and DLX)
+  await channel.assertQueue('notifications.delayed', {
+    durable: true,
+    deadLetterExchange: 'reservations.events',
+    deadLetterRoutingKey: 'reservation.notification',
+  })
+
+  // Main notifications queue
+  await channel.assertQueue('notifications.queue', { durable: true })
+
+  // Bind to reservation events
+  await channel.bindQueue(
+    'notifications.queue',
+    'reservations.events',
+    'reservation.*'
   )
 
-  // Register queues
-  queues.push(
-    { name: 'notifications.queue', options: { durable: true } },
-    {
-      name: 'notifications.delayed',
-      options: {
-        durable: true,
-        arguments: {
-          'x-dead-letter-exchange': 'reservations.events',
-          'x-dead-letter-routing-key': 'reservation.notification',
-        },
-      },
-    },
-    {
-      name: 'notifications.retry.queue', // ✅ retry queue
-      options: {
-        durable: true,
-        arguments: {
-          'x-dead-letter-exchange': 'reservations.events', // back to main exchange
-          'x-dead-letter-routing-key': 'reservation.notification',
-        },
-      },
-    }
+  // Bind to payment events
+  await channel.bindQueue(
+    'notifications.queue',
+    'payments.events',
+    'payment.*'
   )
 
-  // Register bindings
-  bindings.push(
-    {
-      queue: 'notifications.queue',
-      exchange: 'reservations.events',
-      pattern: 'reservation.*',
-    },
-    {
-      queue: 'notifications.queue',
-      exchange: 'billing.events',
-      pattern: 'billing.*',
-    },
-    {
-      queue: 'notifications.queue',
-      exchange: 'payments.events',
-      pattern: 'payment.*',
-    },
-    {
-      queue: 'notifications.queue',
-      exchange: 'housekeeping.events',
-      pattern: 'housekeeping.*',
-    },
-    {
-      queue: 'notifications.retry.queue',
-      exchange: 'notifications.retry', // bind retry queue to retry exchange
-      pattern: 'retry',
-    }
+  // Bind to billing events
+  await channel.bindQueue(
+    'notifications.queue',
+    'billing.events',
+    'billing.*'
   )
 
-  // Apply immediately to current channel
-  const ch = await getRabbitChannel()
-  await applyTopology(ch)
+  logger.info('✅ RabbitMQ topology initialized (NotificationService)')
 }

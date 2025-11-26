@@ -1,5 +1,6 @@
 import { getRabbitChannel } from '../config/rabbitmq.config'
 import { BillingService } from '../service/implementation/billing.service'
+import logger from '../utils/logger.service'
 
 export async function startBillingConsumer(billingService: BillingService) {
   const channel = await getRabbitChannel()
@@ -12,11 +13,20 @@ export async function startBillingConsumer(billingService: BillingService) {
   // Bind only to payment events
   await channel.bindQueue(q.queue, exchange, 'payment.*')
 
+  logger.info('Billing consumer started', {
+    queue: q.queue,
+    exchange,
+    pattern: 'payment.*',
+  })
+
   channel.consume(q.queue, async (msg) => {
     if (!msg) return
     try {
       const evt = JSON.parse(msg.content.toString())
-      console.log('BillingService received:', evt)
+      logger.info('BillingService received event', {
+        event: evt.event,
+        paymentId: evt.data?.paymentId,
+      })
 
       switch (evt.event) {
         case 'payment.initiated':
@@ -31,11 +41,16 @@ export async function startBillingConsumer(billingService: BillingService) {
         case 'payment.failed':
           await billingService.handlePaymentFailed(evt.data)
           break
+        default:
+          logger.debug('Unhandled payment event', { event: evt.event })
       }
 
       channel.ack(msg)
     } catch (err) {
-      console.error('Error in billing consumer:', err)
+      logger.error('Error in billing consumer', {
+        error: (err as Error).message,
+        stack: (err as Error).stack,
+      })
       channel.nack(msg, false, false)
     }
   })
