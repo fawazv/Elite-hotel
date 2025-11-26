@@ -58,6 +58,11 @@ export async function getRabbitChannel(): Promise<Channel> {
 export async function initTopology() {
   const channel = await getRabbitChannel()
 
+  // Assert all exchanges (idempotent - creates if not exists, connects if exists)
+  await channel.assertExchange('reservations.events', 'topic', { durable: true })
+  await channel.assertExchange('payments.events', 'topic', { durable: true })
+  await channel.assertExchange('billing.events', 'topic', { durable: true })
+
   // Delayed queue (with TTL and DLX)
   await channel.assertQueue('notifications.delayed', {
     durable: true,

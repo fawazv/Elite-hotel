@@ -145,6 +145,7 @@ app.use(
   authLimiter,
   createProxyMiddleware({
     target: targets.auth,
+    pathRewrite: { '^/auth/login': '/signin' },
     ...proxyConfig,
   })
 )
@@ -154,6 +155,7 @@ app.use(
   authLimiter,
   createProxyMiddleware({
     target: targets.auth,
+    pathRewrite: { '^/auth/register': '/signup' },
     ...proxyConfig,
   })
 )
@@ -248,6 +250,7 @@ app.use(
   writeLimiter,
   createProxyMiddleware({
     target: targets.payment,
+    pathRewrite: { '^/payment': '/api/payments' },
     ...proxyConfig,
   })
 )
