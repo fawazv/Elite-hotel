@@ -22,6 +22,9 @@ services:
       - reservation-service
       - notification-service
       - communication-service
+      - billing-service
+      - payment-service
+      - housekeeping-service
 
   auth-service:
     image: fawaz482/elite-auth:latest
@@ -89,5 +92,34 @@ services:
     container_name: elite-communication
     ports:
       - '4009:4009'
+    depends_on:
+      - rabbitmq
+
+  billing-service:
+    image: fawaz482/elite-billing:latest
+    env_file:
+      - ./backend/services/billingService/.env
+    container_name: elite-billing
+    depends_on:
+      - rabbitmq
+    # No ports exposed - background consumer only
+
+  payment-service:
+    image: fawaz482/elite-payment:latest
+    env_file:
+      - ./backend/services/paymentService/.env
+    container_name: elite-payment
+    ports:
+      - '4006:4006'
+    depends_on:
+      - rabbitmq
+
+  housekeeping-service:
+    image: fawaz482/elite-housekeeping:latest
+    env_file:
+      - ./backend/services/houseKeepingService/.env
+    container_name: elite-housekeeping
+    ports:
+      - '4008:4008'
     depends_on:
       - rabbitmq

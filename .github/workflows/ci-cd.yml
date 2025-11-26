@@ -43,6 +43,12 @@ jobs:
           npm ci
           cd ../communicationService
           npm ci
+          cd ../billingService
+          npm ci
+          cd ../paymentService
+          npm ci
+          cd ../houseKeepingService
+          npm ci
           cd ../../api-gateway
           npm ci
 
@@ -79,3 +85,15 @@ jobs:
         run: |
           docker build -t fawaz482/elite-communication:latest ./backend/services/communicationService
           docker push fawaz482/elite-communication:latest
+      - name: Build & Push Billing Service
+        run: |
+          docker build -t fawaz482/elite-billing:latest ./backend/services/billingService
+          docker push fawaz482/elite-billing:latest
+      - name: Build & Push Payment Service
+        run: |
+          docker build -t fawaz482/elite-payment:latest ./backend/services/paymentService
+          docker push fawaz482/elite-payment:latest
+      - name: Build & Push Housekeeping Service
+        run: |
+          docker build -t fawaz482/elite-housekeeping:latest ./backend/services/houseKeepingService
+          docker push fawaz482/elite-housekeeping:latest

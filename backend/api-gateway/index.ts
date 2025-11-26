@@ -117,6 +117,7 @@ const targets = {
   reservation: process.env.RESERVATION_API_BASE_URL,
   housekeeping: process.env.HOUSEKEEPING_API_BASE_URL,
   communication: process.env.COMMUNICATION_API_BASE_URL,
+  payment: process.env.PAYMENT_API_BASE_URL,
 }
 
 // Proxy configuration with timeout
@@ -237,6 +238,16 @@ app.use(
   createProxyMiddleware({
     target: targets.communication,
     pathRewrite: { '^/chat': '/api/chat' },
+    ...proxyConfig,
+  })
+)
+
+// Payment routes with write limiting
+app.use(
+  '/payment',
+  writeLimiter,
+  createProxyMiddleware({
+    target: targets.payment,
     ...proxyConfig,
   })
 )
