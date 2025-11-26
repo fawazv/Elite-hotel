@@ -25,13 +25,13 @@ const address = Joi.object({
   state: sanitizedString(0, 100).allow('', null),
   postalCode: Joi.string()
     .pattern(postalCodePattern)
-    .allow('', null)
-    .message('Invalid postal code format'),
+    .message('Invalid postal code format')
+    .allow('', null),
   country: Joi.string()
     .length(2)
+    .message('Country must be a 2-letter ISO code (e.g., US, IN)')
     .uppercase()
-    .allow('', null)
-    .message('Country must be a 2-letter ISO code (e.g., US, IN)'),
+    .allow('', null),
 })
 
 const idProof = Joi.object({
@@ -54,12 +54,12 @@ const preferences = Joi.object({
 export const createGuestSchema = Joi.object({
   firstName: sanitizedString(2, 100)
     .pattern(namePattern)
-    .required()
-    .message('First name can only contain letters, spaces, hyphens, and apostrophes'),
+    .message('First name can only contain letters, spaces, hyphens, and apostrophes')
+    .required(),
   lastName: sanitizedString(1, 100)
     .pattern(namePattern)
-    .optional()
-    .message('Last name can only contain letters, spaces, hyphens, and apostrophes'),
+    .message('Last name can only contain letters, spaces, hyphens, and apostrophes')
+    .optional(),
   email: Joi.string()
     .email()
     .max(255)
