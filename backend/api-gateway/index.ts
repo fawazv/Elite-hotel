@@ -116,6 +116,7 @@ const targets = {
   guest: process.env.GUEST_API_BASE_URL,
   reservation: process.env.RESERVATION_API_BASE_URL,
   housekeeping: process.env.HOUSEKEEPING_API_BASE_URL,
+  communication: process.env.COMMUNICATION_API_BASE_URL,
 }
 
 // Proxy configuration with timeout
@@ -215,6 +216,27 @@ app.use(
   writeLimiter,
   createProxyMiddleware({
     target: targets.housekeeping,
+    ...proxyConfig,
+  })
+)
+
+// Communication routes (videochat + chatbot) with read limiting
+app.use(
+  '/videochat',
+  readLimiter,
+  createProxyMiddleware({
+    target: targets.communication,
+    pathRewrite: { '^/videochat': '/api/videochat' },
+    ...proxyConfig,
+  })
+)
+
+app.use(
+  '/chat',
+  readLimiter,
+  createProxyMiddleware({
+    target: targets.communication,
+    pathRewrite: { '^/chat': '/api/chat' },
     ...proxyConfig,
   })
 )

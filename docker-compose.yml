@@ -88,6 +88,6 @@ services:
       - ./backend/services/communicationService/.env
     container_name: elite-communication
     ports:
-      - '4010:4010'
+      - '4009:4009'
     depends_on:
       - rabbitmq

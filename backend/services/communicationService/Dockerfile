@@ -8,6 +8,6 @@ RUN npm install --production
 
 COPY dist ./dist
 
-EXPOSE 4010
+EXPOSE 4009
 
 CMD ["node", "dist/index.js"]

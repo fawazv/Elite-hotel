@@ -9,6 +9,7 @@ import connectMongodb from './config/db.config'
 import { rabbitmqConnect } from './config/rabbitmq.config'
 import { initializeSocketIO } from './config/socket.config'
 import videoChatRoute from './routes/videochat.route'
+import chatbotRoute from './routes/chatbot.route'
 import errorHandler from './middleware/errorHandler'
 
 dotenv.config()
@@ -47,20 +48,22 @@ const limiter = rateLimit({
   message: 'Too many requests, please try again later',
 })
 app.use('/api/videochat', limiter)
+app.use('/api/chat', limiter)
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', service: 'videoChatService' })
+  res.json({ status: 'OK', service: 'communicationService' })
 })
 
 // Routes
 app.use('/api/videochat', videoChatRoute)
+app.use('/api/chat', chatbotRoute)
 
 // Error handling
 app.use(errorHandler)
 
 // Start server
-const PORT = process.env.PORT || 4010
+const PORT = process.env.PORT || 4009
 httpServer.listen(PORT, () => {
   console.log(`🚀 Video Chat Service running on http://localhost:${PORT}`)
 })
