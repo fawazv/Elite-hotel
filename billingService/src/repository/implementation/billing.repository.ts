@@ -1,6 +1,6 @@
 // src/repository/implementation/billing.repository.ts
 import { BillingModel, BillingDoc } from '../../models/billing.model'
-import { IBillingRepository } from '../interface/IBilling.repository'
+import { IBillingRepository } from '../interface/IBilling.repository';
 
 export class BillingRepository implements IBillingRepository {
   async create(data: Partial<BillingDoc>): Promise<BillingDoc> {
