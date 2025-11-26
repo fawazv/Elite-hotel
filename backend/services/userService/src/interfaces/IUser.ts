@@ -12,7 +12,7 @@ interface IUser extends Document {
   avatar?: {
     publicId?: string
     url?: string
-  }
+  } | null
   createdAt?: Date
   updatedAt?: Date
 }

@@ -8,14 +8,37 @@ const RABBIT_URL = process.env.RABBITMQ_URL || 'amqp://localhost:5672'
 export async function initRabbitMQ(): Promise<Channel> {
   if (channel) return channel
 
-  connection = await amqplib.connect(RABBIT_URL)
-  channel = await connection.createChannel()
+  while (!connection) {
+    try {
+      console.log('[UserService] Connecting to RabbitMQ...')
+      connection = await amqplib.connect(RABBIT_URL)
+      console.log('[UserService] RabbitMQ connected')
 
-  // enable direct-reply-to for RPC
-  await channel.assertQueue('rpc.user.getContact', { durable: false })
+      connection.on('error', (err) => {
+        console.error('[UserService] RabbitMQ connection error', err)
+        connection = null
+      })
 
-  console.log('[UserService] RabbitMQ connected')
-  return channel
+      connection.on('close', () => {
+        console.warn('[UserService] RabbitMQ connection closed')
+        connection = null
+      })
+
+    } catch (err) {
+      console.error('[UserService] Failed to connect to RabbitMQ, retrying in 5s...', err)
+      await new Promise(resolve => setTimeout(resolve, 5000))
+    }
+  }
+
+  try {
+    channel = await connection.createChannel()
+    // enable direct-reply-to for RPC
+    await channel.assertQueue('rpc.user.getContact', { durable: false })
+    return channel
+  } catch (err) {
+    console.error('[UserService] Failed to create channel', err)
+    throw err
+  }
 }
 
 export function getChannel(): Channel {

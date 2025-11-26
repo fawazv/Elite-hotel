@@ -67,7 +67,7 @@ export class UserService implements IUserService {
   async patch(id: string, payload: Partial<IUser>): Promise<IUser | null> {
     // Prevent password updates here; password change happens in AuthService
     if ((payload as any).password) delete (payload as any).password
-    const patched = await this.userRepo.patch(id, payload)
+    const patched = await this.userRepo.update(id, payload)
     if (!patched) throw new CustomError('User not found', HttpStatus.NOT_FOUND)
     return patched
   }
