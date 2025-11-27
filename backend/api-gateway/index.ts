@@ -244,6 +244,15 @@ app.use(
   })
 )
 
+// Payment Webhook routes (Direct mapping, no /api prefix)
+app.use(
+  '/payments/webhook',
+  createProxyMiddleware({
+    target: targets.payment,
+    ...proxyConfig,
+  })
+)
+
 // Payment routes with write limiting
 app.use(
   '/payment',
