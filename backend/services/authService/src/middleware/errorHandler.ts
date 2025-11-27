@@ -5,25 +5,39 @@ interface CustomError extends Error {
 }
 
 const errorHandler = (
-  err: CustomError,
+  err: CustomError & { code?: string },
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  console.log(
-    "Error in auth middleware",
-    err,
-    "error.message )))) ",
-    err.message
+  // Ignore client disconnection errors - these are normal and not actionable
+  const ignoredErrors = ['ECONNABORTED', 'ECONNRESET', 'EPIPE'];
+  if (err.code && ignoredErrors.includes(err.code)) {
+    // Client disconnected before request completed - this is normal during dev (hot reload, etc.)
+    return;
+  }
+
+  // Log actual application errors
+  console.error(
+    "Error in auth middleware:",
+    {
+      name: err.name,
+      message: err.message,
+      statusCode: err.statusCode,
+      stack: err.stack
+    }
   );
 
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal server error";
 
-  res.status(statusCode).json({
-    success: false,
-    message,
-  });
+  // Only send response if connection is still open
+  if (!res.headersSent) {
+    res.status(statusCode).json({
+      success: false,
+      message,
+    });
+  }
 };
 
 export default errorHandler;
