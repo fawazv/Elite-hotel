@@ -2,6 +2,9 @@ import dotenv from 'dotenv'
 dotenv.config()
 import connectMongoDB from '../config/db.config'
 import { Room } from '../models/room.model'
+import { PutObjectCommand } from '@aws-sdk/client-s3'
+import s3Client, { S3_BUCKET } from '../config/s3.config'
+import axios from 'axios'
 
 const rooms = [
   {
@@ -10,7 +13,7 @@ const rooms = [
     type: 'Premium',
     price: 249,
     image: {
-      publicId: 'ocean-view-family-suite-1', // Placeholder publicId
+      publicId: 'ocean-view-family-suite-1',
       url: 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=400&h=300&fit=crop',
     },
     description:
@@ -34,7 +37,7 @@ const rooms = [
     type: 'Standard',
     price: 129,
     image: {
-      publicId: 'cozy-single-retreat-2', // Placeholder publicId
+      publicId: 'cozy-single-retreat-2',
       url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop',
     },
     description:
@@ -51,7 +54,7 @@ const rooms = [
     type: 'Deluxe',
     price: 189,
     image: {
-      publicId: 'deluxe-garden-suite-3', // Placeholder publicId
+      publicId: 'deluxe-garden-suite-3',
       url: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop',
     },
     description:
@@ -75,7 +78,7 @@ const rooms = [
     type: 'Premium',
     price: 299,
     image: {
-      publicId: 'executive-business-suite-4', // Placeholder publicId
+      publicId: 'executive-business-suite-4',
       url: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=400&h=300&fit=crop',
     },
     description:
@@ -101,7 +104,7 @@ const rooms = [
     type: 'Premium',
     price: 219,
     image: {
-      publicId: 'junior-honeymoon-suite-5', // Placeholder publicId
+      publicId: 'junior-honeymoon-suite-5',
       url: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop',
     },
     description:
@@ -126,7 +129,7 @@ const rooms = [
     type: 'Deluxe',
     price: 169,
     image: {
-      publicId: 'mountain-view-lodge-6', // Placeholder publicId
+      publicId: 'mountain-view-lodge-6',
       url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop',
     },
     description:
@@ -150,7 +153,7 @@ const rooms = [
     type: 'Standard',
     price: 149,
     image: {
-      publicId: 'classic-business-room-7', // Placeholder publicId
+      publicId: 'classic-business-room-7',
       url: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop',
     },
     description:
@@ -173,7 +176,7 @@ const rooms = [
     type: 'Luxury',
     price: 499,
     image: {
-      publicId: 'penthouse-suite-8', // Placeholder publicId
+      publicId: 'penthouse-suite-8',
       url: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=400&h=300&fit=crop',
     },
     description:
@@ -195,13 +198,59 @@ const rooms = [
   },
 ]
 
+async function uploadImageToS3(url: string, publicId: string) {
+  try {
+    console.log(`Downloading image for ${publicId}...`)
+    const response = await axios.get(url, { responseType: 'arraybuffer' })
+    const buffer = Buffer.from(response.data, 'binary')
+    const contentType = response.headers['content-type'] || 'image/jpeg'
+
+    const key = `hotel/rooms/${publicId}.jpg`
+
+    console.log(`Uploading to S3: ${key}...`)
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: S3_BUCKET,
+        Key: key,
+        Body: buffer,
+        ContentType: contentType,
+        // ACL: 'public-read', // Uncomment if bucket is not public by default but you want public access
+      })
+    )
+
+    const s3Url = `https://${S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`
+    console.log(`✅ Uploaded: ${s3Url}`)
+    return s3Url
+  } catch (error) {
+    console.error(`❌ Failed to upload image for ${publicId}:`, error)
+    return url // Fallback to original URL
+  }
+}
+
 ;(async () => {
   try {
     await connectMongoDB()
     console.log('Seeding rooms...')
+    
+    // Clear existing rooms
     await Room.deleteMany({})
-    await Room.insertMany(rooms)
-    console.log('✅ Rooms seeded successfully')
+
+    // Process rooms with image uploads
+    const roomsWithS3Images = await Promise.all(
+      rooms.map(async (room) => {
+        const s3Url = await uploadImageToS3(room.image.url, room.image.publicId)
+        return {
+          ...room,
+          image: {
+            ...room.image,
+            url: s3Url,
+          },
+        }
+      })
+    )
+
+    await Room.insertMany(roomsWithS3Images)
+    console.log('✅ Rooms seeded successfully with S3 images')
     process.exit(0)
   } catch (err) {
     console.error(err)
