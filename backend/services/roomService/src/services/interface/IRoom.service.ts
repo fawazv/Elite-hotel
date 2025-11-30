@@ -15,7 +15,7 @@ export type ListQuery = {
 export interface IRoomService {
   createRoom(
     payload: Partial<RoomDocument>,
-    file?: Express.Multer.File
+    files?: Express.Multer.File[]
   ): Promise<RoomDocument>
   getRoomById(id: string): Promise<RoomDocument | null>
   listRooms(
@@ -29,7 +29,7 @@ export interface IRoomService {
   patchRoom(
     id: string,
     payload: Partial<RoomDocument>,
-    file?: Express.Multer.File
+    files?: Express.Multer.File[]
   ): Promise<RoomDocument | null>
   deleteRoom(id: string): Promise<void>
 }

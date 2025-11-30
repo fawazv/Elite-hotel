@@ -4,6 +4,8 @@ import { paymentController } from '../config/container'
 
 const router = express.Router()
 
+router.get('/', paymentController.list.bind(paymentController))
+router.get('/:id', paymentController.getById.bind(paymentController))
 router.post('/initiate', paymentController.initiate.bind(paymentController))
 router.patch(
   '/:paymentId/status',

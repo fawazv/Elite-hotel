@@ -15,6 +15,10 @@ export class PaymentRepository implements IPaymentRepository {
     return PaymentModel.findOne({ reservationId }).lean()
   }
 
+  async findAll(filters?: any): Promise<PaymentDoc[]> {
+    return PaymentModel.find(filters || {}).sort({ createdAt: -1 }).lean()
+  }
+
   async updateStatus(
     id: string,
     status: PaymentDoc['status'],

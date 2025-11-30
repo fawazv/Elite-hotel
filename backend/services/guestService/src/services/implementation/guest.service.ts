@@ -90,6 +90,9 @@ export class GuestService implements IGuestService {
       createdAt: 1,
       updatedAt: 1,
       'idProof.type': 1,
+      status: 1,
+      isIdVerified: 1,
+      lastVisit: 1,
     }
 
     const [data, total] = await Promise.all([

@@ -69,6 +69,13 @@ const GuestSchema = new Schema<GuestDocument>(
     preferences: { type: PreferencesSchema },
     notes: { type: String, maxlength: 5000 },
     isBlacklisted: { type: Boolean, default: false },
+    status: {
+      type: String,
+      enum: ['Standard', 'VIP', 'Loyalty'],
+      default: 'Standard',
+    },
+    isIdVerified: { type: Boolean, default: false },
+    lastVisit: { type: Date },
   },
   { timestamps: true }
 )

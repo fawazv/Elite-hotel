@@ -10,4 +10,7 @@ export interface IBillingRepository {
   ): Promise<BillingDoc | null>
 
   findByPaymentId(paymentId: string): Promise<BillingDoc | null>
+  findAll(filters?: any): Promise<BillingDoc[]>
+  findById(id: string): Promise<BillingDoc | null>
+  findByReservation(reservationId: string): Promise<BillingDoc | null>
 }

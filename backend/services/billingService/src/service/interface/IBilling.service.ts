@@ -5,4 +5,7 @@ export interface IBillingService {
   handlePaymentSucceeded(evt: any): Promise<BillingDoc | null>
   handlePaymentRefunded(evt: any): Promise<BillingDoc | null>
   handlePaymentFailed(evt: any): Promise<BillingDoc | null>
+  findAll(filters?: any): Promise<BillingDoc[]>
+  findById(id: string): Promise<BillingDoc | null>
+  findByReservation(reservationId: string): Promise<BillingDoc | null>
 }

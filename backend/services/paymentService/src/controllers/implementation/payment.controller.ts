@@ -44,4 +44,50 @@ export class PaymentController implements IPaymentController {
       next(err)
     }
   }
+
+  async list(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { status, reservationId, provider } = req.query
+      const filters: any = {}
+      if (status) filters.status = status
+      if (reservationId) filters.reservationId = reservationId
+      if (provider) filters.provider = provider
+
+      const payments = await this.svc.findAll(filters)
+      res.json({
+        success: true,
+        data: payments,
+      })
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async getById(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { id } = req.params
+      const payment = await this.svc.findById(id)
+      if (!payment) {
+        res.status(404).json({
+          success: false,
+          message: 'Payment not found',
+        })
+        return
+      }
+      res.json({
+        success: true,
+        data: payment,
+      })
+    } catch (err) {
+      next(err)
+    }
+  }
 }

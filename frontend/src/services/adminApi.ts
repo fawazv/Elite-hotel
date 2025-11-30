@@ -13,6 +13,10 @@ export interface Room {
   image?: {
     url: string
   }
+  images?: {
+    url: string
+    publicId?: string
+  }[]
   description?: string
   amenities?: string[]
 }
@@ -34,6 +38,47 @@ export interface Reservation {
   status: 'Confirmed' | 'PendingPayment' | 'CheckedIn' | 'CheckedOut' | 'Cancelled'
   totalAmount: number
   createdAt?: string
+}
+
+export interface Billing {
+  _id: string
+  paymentId: string
+  reservationId: string
+  guestId: string
+  guestContact?: {
+    email?: string
+    phoneNumber?: string
+  }
+  amount: number
+  currency: string
+  status: 'pending' | 'paid' | 'refunded' | 'failed'
+  ledger: {
+    type: string
+    amount: number
+    note?: string
+    createdAt: string
+  }[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Payment {
+  _id: string
+  reservationId: string
+  guestId: string
+  guestContact?: {
+    email?: string
+    phoneNumber?: string
+  }
+  amount: number
+  currency: string
+  provider: 'stripe' | 'razorpay'
+  status: 'initiated' | 'succeeded' | 'failed' | 'refunded'
+  metadata?: any
+  refunded?: boolean
+  refundTxId?: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface User {
@@ -95,6 +140,14 @@ export const confirmReservation = async (id: string): Promise<Reservation> => {
 
 export const cancelReservation = async (id: string): Promise<Reservation> => {
   const response = await privateApi.post(`/reservations/${id}/cancel`)
+  return response.data.data || response.data
+}
+
+export const updateReservation = async (
+  id: string,
+  data: Partial<Reservation>
+): Promise<Reservation> => {
+  const response = await privateApi.patch(`/reservations/${id}`, data)
   return response.data.data || response.data
 }
 
@@ -197,4 +250,53 @@ export const fetchRecentActivity = async (limit: number = 5): Promise<Reservatio
     console.error('Error fetching recent activity:', error)
     throw error
   }
+}
+
+// ============= BILLING API =============
+
+export const fetchBillings = async (filters?: {
+  status?: string
+  reservationId?: string
+  dateFrom?: string
+  dateTo?: string
+}): Promise<Billing[]> => {
+  const params = new URLSearchParams()
+  if (filters?.status) params.append('status', filters.status)
+  if (filters?.reservationId) params.append('reservationId', filters.reservationId)
+  if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom)
+  if (filters?.dateTo) params.append('dateTo', filters.dateTo)
+
+  const response = await privateApi.get(`/billing?${params.toString()}`)
+  return response.data.data || response.data || []
+}
+
+export const fetchBillingById = async (id: string): Promise<Billing> => {
+  const response = await privateApi.get(`/billing/${id}`)
+  return response.data.data || response.data
+}
+
+export const fetchBillingByReservation = async (reservationId: string): Promise<Billing> => {
+  const response = await privateApi.get(`/billing/reservation/${reservationId}`)
+  return response.data.data || response.data
+}
+
+// ============= PAYMENT API =============
+
+export const fetchPayments = async (filters?: {
+  status?: string
+  reservationId?: string
+  provider?: string
+}): Promise<Payment[]> => {
+  const params = new URLSearchParams()
+  if (filters?.status) params.append('status', filters.status)
+  if (filters?.reservationId) params.append('reservationId', filters.reservationId)
+  if (filters?.provider) params.append('provider', filters.provider)
+
+  const response = await privateApi.get(`/payments?${params.toString()}`)
+  return response.data.data || response.data || []
+}
+
+export const fetchPaymentById = async (id: string): Promise<Payment> => {
+  const response = await privateApi.get(`/payments/${id}`)
+  return response.data.data || response.data
 }

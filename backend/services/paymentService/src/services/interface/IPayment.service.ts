@@ -15,4 +15,7 @@ export interface IPaymentService {
     status: 'succeeded' | 'failed' | 'refunded',
     metadata?: any
   ): Promise<PaymentDoc | null>
+
+  findAll(filters?: any): Promise<PaymentDoc[]>
+  findById(id: string): Promise<PaymentDoc | null>
 }

@@ -7,6 +7,8 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  UserCheck,
+  DollarSign,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -18,8 +20,10 @@ interface AdminSidebarProps {
 const navItems = [
   { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/admin/users', icon: Users, label: 'Users' },
+  { to: '/admin/guests', icon: UserCheck, label: 'Guests' },
   { to: '/admin/rooms', icon: DoorClosed, label: 'Rooms' },
   { to: '/admin/reservations', icon: CalendarCheck, label: 'Reservations' },
+  { to: '/admin/billing', icon: DollarSign, label: 'Billing' },
   { to: '/admin/settings', icon: Settings, label: 'Settings' },
 ]
 

@@ -11,6 +11,7 @@ export interface IRoom {
   type: RoomType
   price: number
   image?: IRoomImage // Cloudinary info
+  images?: IRoomImage[] // Multiple images support
   description?: string
   amenities: string[]
   size?: string

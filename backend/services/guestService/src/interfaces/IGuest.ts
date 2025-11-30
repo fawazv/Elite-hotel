@@ -26,6 +26,9 @@ export default interface IGuest {
   }
   notes?: string
   isBlacklisted?: boolean
+  status?: 'Standard' | 'VIP' | 'Loyalty'
+  isIdVerified?: boolean
+  lastVisit?: Date
   createdAt?: Date
   updatedAt?: Date
 }

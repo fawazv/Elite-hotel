@@ -36,7 +36,7 @@ export class RoomService implements IRoomService {
     return payload
   }
 
-  async createRoom(payload: Partial<RoomDocument>, file?: Express.Multer.File) {
+  async createRoom(payload: Partial<RoomDocument>, files?: Express.Multer.File[]) {
     payload = this.coerceBody(payload)
 
     if (payload.number == null) {
@@ -49,15 +49,24 @@ export class RoomService implements IRoomService {
       throw new CustomError('Room number already exists', HttpStatus.CONFLICT)
     }
 
-    if (file) {
-      const uploaded = await this.mediaService.uploadImage(
-        file.buffer,
-        file.originalname
-      )
-      ;(payload as any).image = {
-        publicId: uploaded.publicId,
-        url: uploaded.url,
+    const uploadedImages = []
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const uploaded = await this.mediaService.uploadImage(
+          file.buffer,
+          file.originalname
+        )
+        uploadedImages.push({
+          publicId: uploaded.publicId,
+          url: uploaded.url,
+        })
       }
+    }
+    
+    // Set both image (for backward compatibility) and images
+    if (uploadedImages.length > 0) {
+      ;(payload as any).image = uploadedImages[0]
+      ;(payload as any).images = uploadedImages
     }
 
     const newRoom = await this.roomRepository.create(payload)
@@ -128,23 +137,34 @@ export class RoomService implements IRoomService {
   async patchRoom(
     id: string,
     payload: Partial<RoomDocument>,
-    file?: Express.Multer.File
+    files?: Express.Multer.File[]
   ) {
     payload = this.coerceBody(payload)
     const existing = await this.roomRepository.findById(id)
     if (!existing) throw new CustomError('Room not found', HttpStatus.NOT_FOUND)
 
-    if (file) {
-      if (existing.image?.publicId) {
-        await this.mediaService.deleteImage(existing.image.publicId)
+    if (files && files.length > 0) {
+      // Upload new images
+      const newImages = []
+      for (const file of files) {
+        const uploaded = await this.mediaService.uploadImage(
+          file.buffer,
+          file.originalname
+        )
+        newImages.push({
+          publicId: uploaded.publicId,
+          url: uploaded.url,
+        })
       }
-      const uploaded = await this.mediaService.uploadImage(
-        file.buffer,
-        file.originalname
-      )
-      ;(payload as any).image = {
-        publicId: uploaded.publicId,
-        url: uploaded.url,
+
+      // Append to existing images
+      const currentImages = existing.images || []
+      const updatedImages = [...currentImages, ...newImages]
+      
+      ;(payload as any).images = updatedImages
+      // Update primary image if it wasn't set or if we want to update it to the first new one
+      if (!existing.image || !existing.image.url) {
+        ;(payload as any).image = newImages[0]
       }
     }
 

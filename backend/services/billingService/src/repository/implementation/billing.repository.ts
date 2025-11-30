@@ -25,4 +25,16 @@ export class BillingRepository implements IBillingRepository {
   async findByPaymentId(paymentId: string): Promise<BillingDoc | null> {
     return BillingModel.findOne({ paymentId }).exec()
   }
+
+  async findAll(filters?: any): Promise<BillingDoc[]> {
+    return BillingModel.find(filters || {}).sort({ createdAt: -1 }).exec()
+  }
+
+  async findById(id: string): Promise<BillingDoc | null> {
+    return BillingModel.findById(id).exec()
+  }
+
+  async findByReservation(reservationId: string): Promise<BillingDoc | null> {
+    return BillingModel.findOne({ reservationId }).exec()
+  }
 }

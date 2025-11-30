@@ -157,4 +157,16 @@ export class BillingService implements IBillingService {
 
     return updated
   }
+
+  async findAll(filters?: any): Promise<BillingDoc[]> {
+    return this.repo.findAll(filters)
+  }
+
+  async findById(id: string): Promise<BillingDoc | null> {
+    return this.repo.findById(id)
+  }
+
+  async findByReservation(reservationId: string): Promise<BillingDoc | null> {
+    return this.repo.findByReservation(reservationId)
+  }
 }

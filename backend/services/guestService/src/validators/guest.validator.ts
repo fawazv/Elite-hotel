@@ -73,6 +73,9 @@ export const createGuestSchema = Joi.object({
   preferences: preferences.optional(),
   notes: sanitizedString(0, 5000).optional(),
   isBlacklisted: Joi.boolean().optional(),
+  status: Joi.string().valid('Standard', 'VIP', 'Loyalty').optional(),
+  isIdVerified: Joi.boolean().optional(),
+  lastVisit: Joi.date().optional(),
 })
 
 export const updateGuestSchema = createGuestSchema // PUT expects full valid object
@@ -88,6 +91,9 @@ export const patchGuestSchema = Joi.object({
   preferences: preferences,
   notes: sanitizedString(0, 5000),
   isBlacklisted: Joi.boolean(),
+  status: Joi.string().valid('Standard', 'VIP', 'Loyalty'),
+  isIdVerified: Joi.boolean(),
+  lastVisit: Joi.date(),
 }).min(1)
 
 export const ensureGuestSchema = Joi.object({

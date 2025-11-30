@@ -1,10 +1,12 @@
 import dotenv from 'dotenv'
 dotenv.config()
+import express from 'express'
+import cors from 'cors'
 import connectMongodb from './config/db.config'
 import { initTopology } from './config/rabbitmq.config'
 import { startBillingConsumer } from './consumers/billing.consumer'
-import { BillingService } from './service/implementation/billing.service'
-import { BillingRepository } from './repository/implementation/billing.repository'
+import { billingService } from './config/container'
+import billingRoutes from './routes/billing.route'
 import logger from './utils/logger.service'
 
 // Startup function
@@ -18,15 +20,29 @@ async function start() {
     await initTopology()
     logger.info('✅ RabbitMQ connected (BillingService)')
 
-    // Initialize service and repository
-    const repo = new BillingRepository()
-    const billingService = new BillingService(repo)
-
     // Start consumer
     await startBillingConsumer(billingService)
     logger.info('✅ Billing consumer started')
 
-    logger.info('🚀 BillingService running (background worker)')
+    // Start Express server
+    const app = express()
+    app.use(cors())
+    app.use(express.json())
+
+    // Mount routes
+    app.use('/billing', billingRoutes)
+
+    // Health check
+    app.get('/health', (req, res) => {
+      res.json({ status: 'ok', service: 'billingService' })
+    })
+
+    const PORT = process.env.PORT || 4007
+    app.listen(PORT, () => {
+      logger.info(`✅ BillingService HTTP server running on port ${PORT}`)
+    })
+
+    logger.info('🚀 BillingService running (consumer + API)')
   } catch (err) {
     logger.error('❌ BillingService startup error', { error: err })
     process.exit(1)

@@ -12,8 +12,8 @@ export class RoomController implements IRoomController {
 
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const file = (req as any).file as Express.Multer.File | undefined
-      const result = await this.roomService.createRoom(req.body, file)
+      const files = (req as any).files as Express.Multer.File[] | undefined
+      const result = await this.roomService.createRoom(req.body, files)
       return successResponse(res, HttpStatus.CREATED, 'Room created', {
         data: result,
       })
@@ -58,11 +58,11 @@ export class RoomController implements IRoomController {
 
   async patch(req: Request, res: Response, next: NextFunction) {
     try {
-      const file = (req as any).file as Express.Multer.File | undefined
+      const files = (req as any).files as Express.Multer.File[] | undefined
       const result = await this.roomService.patchRoom(
         req.params.id,
         req.body,
-        file
+        files
       )
       return successResponse(res, HttpStatus.OK, 'Room patched', {
         data: result,

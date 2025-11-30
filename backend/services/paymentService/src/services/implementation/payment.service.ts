@@ -310,4 +310,12 @@ export class PaymentService implements IPaymentService {
       })
     }
   }
+
+  async findAll(filters?: any): Promise<PaymentDoc[]> {
+    return this.repo.findAll(filters)
+  }
+
+  async findById(id: string): Promise<PaymentDoc | null> {
+    return this.repo.findById(id)
+  }
 }

@@ -22,6 +22,7 @@ const RoomSchema = new Schema<RoomDocument>(
     },
     price: { type: Number, required: true, min: 0 },
     image: { type: ImageSchema, required: false },
+    images: { type: [ImageSchema], default: [] },
     description: { type: String },
     amenities: { type: [String], default: [] },
     size: { type: String },

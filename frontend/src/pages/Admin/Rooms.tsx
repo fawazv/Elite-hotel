@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { fetchRooms, deleteRoom, type Room } from '@/services/adminApi'
+import DeleteConfirmModal from '@/components/admin/DeleteConfirmModal'
 
 
 const Rooms = () => {
@@ -9,6 +10,8 @@ const Rooms = () => {
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [roomToDelete, setRoomToDelete] = useState<Room | null>(null)
 
   // Fetch rooms from API
   useEffect(() => {
@@ -30,16 +33,21 @@ const Rooms = () => {
     loadRooms()
   }, [])
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this room?')) {
-      try {
-        await deleteRoom(id)
-        setRooms(rooms.filter((room) => room._id !== id))
-        alert('Room deleted successfully')
-      } catch (err: any) {
-        console.error('Error deleting room:', err)
-        alert(err.response?.data?.message || 'Failed to delete room')
-      }
+  const handleDelete = (room: Room) => {
+    setRoomToDelete(room)
+    setDeleteModalOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!roomToDelete) return
+    
+    try {
+      await deleteRoom(roomToDelete._id)
+      setRooms(rooms.filter((room) => room._id !== roomToDelete._id))
+      setRoomToDelete(null)
+    } catch (err: any) {
+      console.error('Error deleting room:', err)
+      alert(err.response?.data?.message || 'Failed to delete room')
     }
   }
 
@@ -147,7 +155,7 @@ const Rooms = () => {
                         <Edit size={18} />
                       </button>
                       <button
-                        onClick={() => handleDelete(room._id)}
+                        onClick={() => handleDelete(room)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Delete"
                       >
@@ -161,6 +169,16 @@ const Rooms = () => {
           </table>
         </div>
       )}
+
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false)
+          setRoomToDelete(null)
+        }}
+        onConfirm={confirmDelete}
+        guestName={roomToDelete ? `Room ${roomToDelete.number} - ${roomToDelete.name}` : ''}
+      />
     </div>
   )
 }

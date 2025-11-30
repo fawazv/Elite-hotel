@@ -33,7 +33,7 @@ router.patch(
   '/:id',
   authenticateToken,
   authorizeRole(['admin']),
-  upload.single('image'),
+  upload.array('images'),
   validateRequest(patchRoomSchema),
   roomController.patch.bind(roomController)
 )

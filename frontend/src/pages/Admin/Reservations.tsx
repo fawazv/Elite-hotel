@@ -1,33 +1,44 @@
 import { useState, useEffect } from 'react'
-import { Eye, CheckCircle, XCircle } from 'lucide-react'
+import { Eye, CheckCircle, XCircle, Edit } from 'lucide-react'
 import {
   fetchReservations,
   confirmReservation,
   cancelReservation,
   type Reservation,
 } from '@/services/adminApi'
+import DeleteConfirmModal from '@/components/admin/DeleteConfirmModal'
+import ReservationDetailModal from '@/components/admin/ReservationDetailModal'
+import ReservationFormModal from '@/components/admin/ReservationFormModal'
 
 const Reservations = () => {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // Modal states
+  const [cancelModalOpen, setCancelModalOpen] = useState(false)
+  const [reservationToCancel, setReservationToCancel] = useState<Reservation | null>(null)
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [reservationToEdit, setReservationToEdit] = useState<Reservation | null>(null)
 
   // Fetch reservations from API
-  useEffect(() => {
-    const loadReservations = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const data = await fetchReservations()
-        setReservations(data)
-      } catch (err: any) {
-        console.error('Error fetching reservations:', err)
-        setError(err.response?.data?.message || 'Failed to load reservations')
-      } finally {
-        setLoading(false)
-      }
+  const loadReservations = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await fetchReservations()
+      setReservations(data)
+    } catch (err: any) {
+      console.error('Error fetching reservations:', err)
+      setError(err.response?.data?.message || 'Failed to load reservations')
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     loadReservations()
   }, [])
 
@@ -44,19 +55,39 @@ const Reservations = () => {
     }
   }
 
-  const handleCancel = async (id: string) => {
-    if (window.confirm('Are you sure you want to cancel this reservation?')) {
-      try {
-        await cancelReservation(id)
-        // Refresh reservations
-        const data = await fetchReservations()
-        setReservations(data)
-        alert('Reservation cancelled successfully')
-      } catch (err: any) {
-        console.error('Error cancelling reservation:', err)
-        alert(err.response?.data?.message || 'Failed to cancel reservation')
-      }
+  const handleCancel = (reservation: Reservation) => {
+    setReservationToCancel(reservation)
+    setCancelModalOpen(true)
+  }
+
+  const confirmCancel = async () => {
+    if (!reservationToCancel) return
+    
+    try {
+      await cancelReservation(reservationToCancel._id)
+      // Refresh reservations
+      const data = await fetchReservations()
+      setReservations(data)
+      setReservationToCancel(null)
+    } catch (err: any) {
+      console.error('Error cancelling reservation:', err)
+      alert(err.response?.data?.message || 'Failed to cancel reservation')
     }
+  }
+
+  const handleViewDetail = (reservation: Reservation) => {
+    setSelectedReservation(reservation)
+    setDetailModalOpen(true)
+  }
+
+  const handleEdit = (reservation: Reservation) => {
+    setReservationToEdit(reservation)
+    setEditModalOpen(true)
+  }
+
+  const handleEditSuccess = async () => {
+    const data = await fetchReservations()
+    setReservations(data)
   }
 
   const getStatusColor = (status: string) => {
@@ -141,10 +172,18 @@ const Reservations = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <button 
+                        onClick={() => handleViewDetail(reservation)}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" 
                         title="View"
                       >
                         <Eye size={18} />
+                      </button>
+                      <button 
+                        onClick={() => handleEdit(reservation)}
+                        className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" 
+                        title="Edit"
+                      >
+                        <Edit size={18} />
                       </button>
                       {reservation.status === 'PendingPayment' && (
                         <button 
@@ -157,7 +196,7 @@ const Reservations = () => {
                       )}
                       {(reservation.status === 'Confirmed' || reservation.status === 'PendingPayment') && (
                         <button 
-                          onClick={() => handleCancel(reservation._id)}
+                          onClick={() => handleCancel(reservation)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" 
                           title="Cancel"
                         >
@@ -172,9 +211,37 @@ const Reservations = () => {
           </table>
         </div>
       )}
+
+      <DeleteConfirmModal
+        isOpen={cancelModalOpen}
+        onClose={() => {
+          setCancelModalOpen(false)
+          setReservationToCancel(null)
+        }}
+        onConfirm={confirmCancel}
+        guestName={reservationToCancel ? `Reservation ${reservationToCancel.code}` : ''}
+      />
+
+      <ReservationDetailModal
+        isOpen={detailModalOpen}
+        onClose={() => {
+          setDetailModalOpen(false)
+          setSelectedReservation(null)
+        }}
+        reservation={selectedReservation}
+      />
+
+      <ReservationFormModal
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false)
+          setReservationToEdit(null)
+        }}
+        reservation={reservationToEdit}
+        onSuccess={handleEditSuccess}
+      />
     </div>
   )
 }
 
 export default Reservations
-
