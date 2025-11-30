@@ -4,7 +4,6 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
-import mongoSanitize from 'express-mongo-sanitize'
 import connectMongodb from './config/db.config'
 import reservationRoute from './routes/reservation.route'
 import errorHandler from './middleware/errorHandler'
@@ -17,7 +16,7 @@ const app = express()
 
 // Security middleware (BEFORE body parsing)
 app.use(helmet())
-app.use(mongoSanitize()) // Prevent NoSQL injection
+// app.use(mongoSanitize()) // Removed due to incompatibility with Express 5
 app.use(requestLogger) // Log all requests with correlation IDs
 
 // Rate limiting for public endpoints (more restrictive)

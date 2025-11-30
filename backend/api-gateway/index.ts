@@ -6,10 +6,8 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 
-
-
 const app = express();
-const PORT = process.env.GATEWAY_PORT || 3000;
+const PORT = process.env.GATEWAY_PORT || 4000;
 
 // Security middleware
 app.use(helmet());
@@ -63,7 +61,7 @@ services.forEach(({ path, target }) => {
 });
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (req: express.Request, res: express.Response) => {
   res.json({ 
     success: true, 
     message: 'API Gateway is running',
@@ -72,7 +70,7 @@ app.get('/health', (req, res) => {
 });
 
 // Root
-app.get('/', (req, res) => {
+app.get('/', (req: express.Request, res: express.Response) => {
   res.json({ 
     success: true, 
     message: 'Elite Hotel API Gateway',

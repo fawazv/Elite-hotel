@@ -1,53 +1,63 @@
 import { useState, useEffect } from 'react'
 import { Eye, CheckCircle, XCircle } from 'lucide-react'
-
-interface Reservation {
-  _id: string
-  code: string
-  guestContact: {
-    email: string
-  }
-  roomId: {
-    number: number
-    type: string
-  }
-  checkIn: string
-  checkOut: string
-  status: string
-  totalAmount: number
-}
+import {
+  fetchReservations,
+  confirmReservation,
+  cancelReservation,
+  type Reservation,
+} from '@/services/adminApi'
 
 const Reservations = () => {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // TODO: Fetch reservations from API
+  // Fetch reservations from API
   useEffect(() => {
-    const fetchReservations = async () => {
+    const loadReservations = async () => {
       try {
-        // Placeholder data
-        const mockData: Reservation[] = [
-          {
-            _id: '1',
-            code: 'RES-2024-001',
-            guestContact: { email: 'john@example.com' },
-            roomId: { number: 101, type: 'Luxury' },
-            checkIn: '2024-12-01',
-            checkOut: '2024-12-05',
-            status: 'Confirmed',
-            totalAmount: 1200,
-          },
-        ]
-        setReservations(mockData)
-      } catch (error) {
-        console.error('Error fetching reservations:', error)
+        setLoading(true)
+        setError(null)
+        const data = await fetchReservations()
+        setReservations(data)
+      } catch (err: any) {
+        console.error('Error fetching reservations:', err)
+        setError(err.response?.data?.message || 'Failed to load reservations')
       } finally {
         setLoading(false)
       }
     }
 
-    fetchReservations()
+    loadReservations()
   }, [])
+
+  const handleConfirm = async (id: string) => {
+    try {
+      await confirmReservation(id)
+      // Refresh reservations
+      const data = await fetchReservations()
+      setReservations(data)
+      alert('Reservation confirmed successfully')
+    } catch (err: any) {
+      console.error('Error confirming reservation:', err)
+      alert(err.response?.data?.message || 'Failed to confirm reservation')
+    }
+  }
+
+  const handleCancel = async (id: string) => {
+    if (window.confirm('Are you sure you want to cancel this reservation?')) {
+      try {
+        await cancelReservation(id)
+        // Refresh reservations
+        const data = await fetchReservations()
+        setReservations(data)
+        alert('Reservation cancelled successfully')
+      } catch (err: any) {
+        console.error('Error cancelling reservation:', err)
+        alert(err.response?.data?.message || 'Failed to cancel reservation')
+      }
+    }
+  }
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -68,6 +78,20 @@ const Reservations = () => {
     )
   }
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <p className="text-red-600 text-lg">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Retry
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -75,56 +99,82 @@ const Reservations = () => {
         <p className="text-gray-600 mt-1">Manage all hotel reservations</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Code</th>
-              <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Guest</th>
-              <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Room</th>
-              <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Check-In</th>
-              <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Check-Out</th>
-              <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Status</th>
-              <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Total</th>
-              <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {reservations.map((reservation) => (
-              <tr key={reservation._id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">{reservation.code}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{reservation.guestContact.email}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  Room {reservation.roomId.number} - {reservation.roomId.type}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">{reservation.checkIn}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{reservation.checkOut}</td>
-                <td className="px-6 py-4">
-                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(reservation.status)}`}>
-                    {reservation.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm font-semibold text-gray-900">${reservation.totalAmount}</td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View">
-                      <Eye size={18} />
-                    </button>
-                    <button className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Confirm">
-                      <CheckCircle size={18} />
-                    </button>
-                    <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Cancel">
-                      <XCircle size={18} />
-                    </button>
-                  </div>
-                </td>
+      {reservations.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+          <p className="text-gray-500 text-lg">No reservations found</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Code</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Guest</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Room</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Check-In</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Check-Out</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Status</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Total</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {reservations.map((reservation) => (
+                <tr key={reservation._id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{reservation.code}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{reservation.guestContact.email}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    Room {reservation.roomId.number} - {reservation.roomId.type}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {new Date(reservation.checkIn).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {new Date(reservation.checkOut).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(reservation.status)}`}>
+                      {reservation.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-900">${reservation.totalAmount}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <button 
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" 
+                        title="View"
+                      >
+                        <Eye size={18} />
+                      </button>
+                      {reservation.status === 'PendingPayment' && (
+                        <button 
+                          onClick={() => handleConfirm(reservation._id)}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" 
+                          title="Confirm"
+                        >
+                          <CheckCircle size={18} />
+                        </button>
+                      )}
+                      {(reservation.status === 'Confirmed' || reservation.status === 'PendingPayment') && (
+                        <button 
+                          onClick={() => handleCancel(reservation._id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" 
+                          title="Cancel"
+                        >
+                          <XCircle size={18} />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }
 
 export default Reservations
+
