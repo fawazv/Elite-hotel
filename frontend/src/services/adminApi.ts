@@ -51,15 +51,52 @@ export interface Billing {
   }
   amount: number
   currency: string
-  status: 'pending' | 'paid' | 'refunded' | 'failed'
+  status: 'pending' | 'paid' | 'refunded' | 'failed' | 'void' | 'archived'
   ledger: {
     type: string
     amount: number
     note?: string
     createdAt: string
   }[]
+  archived?: boolean
+  archivedAt?: string
+  disputeId?: string
   createdAt: string
   updatedAt: string
+}
+
+export interface Dispute {
+  _id: string
+  billingId: string
+  reason: string
+  status: 'open' | 'under_review' | 'resolved' | 'rejected'
+  resolutionNote?: string
+  createdBy: string
+  resolvedBy?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ChargeData {
+  type: string
+  amount: number
+  note?: string
+}
+
+export interface CreditData {
+  amount: number
+  reason: string
+  note?: string
+}
+
+export interface RefundData {
+  amount: number
+  reason: string
+}
+
+export interface AdjustmentData {
+  amount: number
+  note: string
 }
 
 export interface Payment {
@@ -277,6 +314,111 @@ export const fetchBillingById = async (id: string): Promise<Billing> => {
 
 export const fetchBillingByReservation = async (reservationId: string): Promise<Billing> => {
   const response = await privateApi.get(`/billing/reservation/${reservationId}`)
+  return response.data.data || response.data
+}
+
+// Ledger operations
+export const addCharge = async (billingId: string, data: ChargeData): Promise<Billing> => {
+  const response = await privateApi.post(`/billing/${billingId}/charges`, data)
+  return response.data.data || response.data
+}
+
+export const addCredit = async (billingId: string, data: CreditData): Promise<Billing> => {
+  const response = await privateApi.post(`/billing/${billingId}/credits`, data)
+  return response.data.data || response.data
+}
+
+export const processRefund = async (billingId: string, data: RefundData): Promise<Billing> => {
+  const response = await privateApi.post(`/billing/${billingId}/refund`, data)
+  return response.data.data || response.data
+}
+
+export const addAdjustment = async (billingId: string, data: AdjustmentData): Promise<Billing> => {
+  const response = await privateApi.post(`/billing/${billingId}/adjustment`, data)
+  return response.data.data || response.data
+}
+
+// Status management
+export const changeBillingStatus = async (billingId: string, status: string): Promise<Billing> => {
+  const response = await privateApi.patch(`/billing/${billingId}/status`, { status })
+  return response.data.data || response.data
+}
+
+export const sendInvoice = async (billingId: string): Promise<void> => {
+  await privateApi.post(`/billing/${billingId}/send-invoice`)
+}
+
+// Invoice & Export
+export const downloadInvoice = async (billingId: string): Promise<Blob> => {
+  const response = await privateApi.get(`/billing/${billingId}/download`, {
+    responseType: 'blob',
+  })
+  return response.data
+}
+
+export const exportBillings = async (
+  format: 'csv' | 'pdf',
+  filters?: {
+    status?: string
+    dateFrom?: string
+    dateTo?: string
+  }
+): Promise<Blob> => {
+  const params = new URLSearchParams({ format })
+  if (filters?.status) params.append('status', filters.status)
+  if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom)
+  if (filters?.dateTo) params.append('dateTo', filters.dateTo)
+
+  const response = await privateApi.get(`/billing/export/all?${params.toString()}`, {
+    responseType: 'blob',
+  })
+  return response.data
+}
+
+// Administrative
+export const getAuditLog = async (billingId: string): Promise<Billing['ledger']> => {
+  const response = await privateApi.get(`/billing/${billingId}/audit-log`)
+  return response.data.data || response.data
+}
+
+export const archiveBilling = async (billingId: string): Promise<Billing> => {
+  const response = await privateApi.post(`/billing/${billingId}/archive`)
+  return response.data.data || response.data
+}
+
+// Dispute management
+export const flagDispute = async (
+  billingId: string,
+  reason: string,
+  createdBy: string
+): Promise<Dispute> => {
+  const response = await privateApi.post(`/billing/${billingId}/dispute`, {
+    reason,
+    createdBy,
+  })
+  return response.data.data || response.data
+}
+
+export const resolveDispute = async (
+  billingId: string,
+  disputeId: string,
+  resolutionNote: string,
+  resolvedBy: string,
+  status: 'resolved' | 'rejected'
+): Promise<Dispute> => {
+  const response = await privateApi.patch(
+    `/billing/${billingId}/dispute/${disputeId}/resolve`,
+    {
+      resolutionNote,
+      resolvedBy,
+      status,
+    }
+  )
+  return response.data.data || response.data
+}
+
+export const getBillingDisputes = async (billingId: string): Promise<Dispute[]> => {
+  const response = await privateApi.get(`/billing/${billingId}/disputes`)
   return response.data.data || response.data
 }
 

@@ -47,7 +47,8 @@ async function start() {
       credentials: true,
     })
   )
-  app.use('/housekeeping', housekeepingRoutes(container))
+  // Routes - mounted at root since API Gateway rewrites /api/housekeeping to /
+  app.use('/', housekeepingRoutes(container))
 
   // global error handler
   app.use(errorHandler)

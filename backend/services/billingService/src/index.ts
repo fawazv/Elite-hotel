@@ -26,11 +26,17 @@ async function start() {
 
     // Start Express server
     const app = express()
-    app.use(cors())
+    
+    // CORS configuration - must specify origin when using credentials
+    app.use(cors({
+      origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:5173'],
+      credentials: true
+    }))
+    
     app.use(express.json())
 
-    // Mount routes
-    app.use('/billing', billingRoutes)
+    // Mount routes at root since API Gateway rewrites /api/billing to /
+    app.use('/', billingRoutes)
 
     // Health check
     app.get('/health', (req, res) => {

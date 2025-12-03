@@ -1,9 +1,11 @@
 // src/services/implementation/billing.service.ts
 import { BillingRepository } from '../../repository/implementation/billing.repository'
 import { getRabbitChannel } from '../../config/rabbitmq.config'
-import { BillingDoc } from '../../models/billing.model'
+import { BillingDoc, LedgerEntry } from '../../models/billing.model'
 import { IBillingService } from '../interface/IBilling.service'
 import { getGuestContact } from '../../rpc/guest.rpc.client'
+import { PDFService } from '../../utils/pdf.service'
+import { ExportService } from '../../utils/export.service'
 import logger from '../../utils/logger.service'
 
 export class BillingService implements IBillingService {
@@ -33,13 +35,13 @@ export class BillingService implements IBillingService {
     }
   }
 
+  // Existing event handlers
   async handlePaymentInitiated(evt: any): Promise<BillingDoc> {
     logger.info('Handling payment.initiated', {
       paymentId: evt.paymentId,
       reservationId: evt.reservationId,
     })
 
-    // ✅ Use guestContact from event if available, otherwise fetch via RPC
     let guestContact = evt.guestContact
     if (!guestContact) {
       try {
@@ -158,6 +160,187 @@ export class BillingService implements IBillingService {
     return updated
   }
 
+  // Ledger Operations
+  async addCharge(
+    billingId: string,
+    charge: Omit<LedgerEntry, 'createdAt'>
+  ): Promise<BillingDoc | null> {
+    logger.info('Adding charge to billing', { billingId, charge })
+
+    const updated = await this.repo.addCharge(billingId, charge)
+    if (updated) {
+      // Update total amount
+      const newTotal = updated.ledger.reduce((sum, entry) => sum + entry.amount, 0)
+      await this.repo.updateTotalAmount(billingId, newTotal)
+
+      await this.publishEvent('billing.charge.added', { billingId, charge })
+      logger.info('Charge added successfully', { billingId, amount: charge.amount })
+    }
+    return updated
+  }
+
+  async addCredit(
+    billingId: string,
+    credit: Omit<LedgerEntry, 'createdAt'>
+  ): Promise<BillingDoc | null> {
+    logger.info('Adding credit to billing', { billingId, credit })
+
+    // Credit should be negative amount
+    const creditEntry = { ...credit, amount: -Math.abs(credit.amount) }
+    const updated = await this.repo.addCredit(billingId, creditEntry)
+
+    if (updated) {
+      // Update total amount
+      const newTotal = updated.ledger.reduce((sum, entry) => sum + entry.amount, 0)
+      await this.repo.updateTotalAmount(billingId, newTotal)
+
+      await this.publishEvent('billing.credit.added', { billingId, credit: creditEntry })
+      logger.info('Credit added successfully', { billingId, amount: creditEntry.amount })
+    }
+    return updated
+  }
+
+  async processRefund(
+    billingId: string,
+    refund: Omit<LedgerEntry, 'createdAt'>
+  ): Promise<BillingDoc | null> {
+    logger.info('Processing refund for billing', { billingId, refund })
+
+    // Refund should be negative amount
+    const refundEntry = { ...refund, amount: -Math.abs(refund.amount) }
+    const updated = await this.repo.addRefund(billingId, refundEntry)
+
+    if (updated) {
+      // Update status to refunded
+      await this.repo.changeStatus(billingId, 'refunded', {
+        type: 'status_change',
+        amount: 0,
+        note: 'Status changed to refunded',
+      })
+
+      await this.publishEvent('billing.refund.processed', { billingId, refund: refundEntry })
+      logger.info('Refund processed successfully', { billingId, amount: refundEntry.amount })
+    }
+    return updated
+  }
+
+  async addAdjustment(
+    billingId: string,
+    adjustment: Omit<LedgerEntry, 'createdAt'>
+  ): Promise<BillingDoc | null> {
+    logger.info('Adding adjustment to billing', { billingId, adjustment })
+
+    const updated = await this.repo.addAdjustment(billingId, adjustment)
+
+    if (updated) {
+      // Update total amount
+      const newTotal = updated.ledger.reduce((sum, entry) => sum + entry.amount, 0)
+      await this.repo.updateTotalAmount(billingId, newTotal)
+
+      await this.publishEvent('billing.adjustment.added', { billingId, adjustment })
+      logger.info('Adjustment added successfully', { billingId, amount: adjustment.amount })
+    }
+    return updated
+  }
+
+  // Status Management
+  async changeBillingStatus(
+    billingId: string,
+    newStatus: BillingDoc['status']
+  ): Promise<BillingDoc | null> {
+    logger.info('Changing billing status', { billingId, newStatus })
+
+    const updated = await this.repo.changeStatus(billingId, newStatus, {
+      type: 'status_change',
+      amount: 0,
+      note: `Status changed to ${newStatus}`,
+    })
+
+    if (updated) {
+      await this.publishEvent('billing.status.changed', { billingId, newStatus })
+      logger.info('Status changed successfully', { billingId, newStatus })
+    }
+    return updated
+  }
+
+  async sendInvoiceEmail(billingId: string): Promise<void> {
+    logger.info('Sending invoice email', { billingId })
+
+    const billing = await this.repo.findById(billingId)
+    if (!billing) {
+      throw new Error('Billing not found')
+    }
+
+    if (!billing.guestContact?.email) {
+      throw new Error('Guest email not available')
+    }
+
+    // Publish event to notification service via RabbitMQ
+    await this.publishEvent('billing.invoice.send', {
+      billingId: billing._id,
+      email: billing.guestContact.email,
+      invoiceNumber: billing._id.toString().slice(-8).toUpperCase(),
+      amount: billing.amount,
+      currency: billing.currency,
+      status: billing.status,
+    })
+
+    logger.info('Invoice email queued', { billingId, email: billing.guestContact.email })
+  }
+
+  // Invoice Generation
+  async generateInvoicePDF(billingId: string): Promise<Buffer> {
+    logger.info('Generating invoice PDF', { billingId })
+
+    const billing = await this.repo.findById(billingId)
+    if (!billing) {
+      throw new Error('Billing not found')
+    }
+
+    const pdfBuffer = await PDFService.generateInvoice(billing)
+    logger.info('Invoice PDF generated', { billingId })
+    return pdfBuffer
+  }
+
+  // Administrative
+  async archiveBilling(billingId: string): Promise<BillingDoc | null> {
+    logger.info('Archiving billing', { billingId })
+
+    const updated = await this.repo.archive(billingId)
+    if (updated) {
+      await this.publishEvent('billing.archived', { billingId })
+      logger.info('Billing archived', { billingId })
+    }
+    return updated
+  }
+
+  async getAuditLog(billingId: string): Promise<LedgerEntry[]> {
+    logger.info('Fetching audit log', { billingId })
+    return this.repo.getAuditLog(billingId)
+  }
+
+  // Export
+  async exportBillingsCSV(filters?: any): Promise<string> {
+    logger.info('Exporting billings to CSV', { filters })
+
+    const billings = await this.repo.findAll(filters)
+    const csv = ExportService.exportToCSV(billings)
+
+    logger.info('Billings exported to CSV', { count: billings.length })
+    return csv
+  }
+
+  async exportBillingsPDF(filters?: any): Promise<Buffer> {
+    logger.info('Exporting billings to PDF', { filters })
+
+    const billings = await this.repo.findAll(filters)
+    const pdfBuffer = await ExportService.exportToPDFBatch(billings)
+
+    logger.info('Billings exported to PDF', { count: billings.length })
+    return pdfBuffer
+  }
+
+  // Existing query methods
   async findAll(filters?: any): Promise<BillingDoc[]> {
     return this.repo.findAll(filters)
   }
@@ -170,3 +353,4 @@ export class BillingService implements IBillingService {
     return this.repo.findByReservation(reservationId)
   }
 }
+

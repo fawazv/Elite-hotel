@@ -28,6 +28,7 @@ const AdminRoute: React.FC = () => {
         <Routes>
           <Route path="/" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
+            <Route path="dashboard" element={<Dashboard />} />
             <Route path="rooms" element={<AdminRooms />} />
             <Route path="rooms/new" element={<RoomForm />} />
             <Route path="rooms/edit/:id" element={<RoomForm />} />

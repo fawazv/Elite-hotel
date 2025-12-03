@@ -30,7 +30,7 @@ const webhookLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 })
-app.use('/payments/webhook', webhookLimiter)
+app.use('/webhook', webhookLimiter)
 
 // General rate limiting
 const generalLimiter = rateLimit({
@@ -43,7 +43,7 @@ app.use(generalLimiter)
 
 // ✅ Stripe needs raw body for signature verification (with size limit)
 app.use(
-  '/payments/webhook/stripe',
+  '/webhook/stripe',
   express.raw({ type: 'application/json', limit: '1mb' })
 )
 
@@ -74,9 +74,9 @@ app.use(
   })
 )
 
-// Routes
-app.use('/api/payments', paymentRoutes)
-app.use('/payments/webhook', webhookRoutes)
+// Routes - mounted at root since API Gateway rewrites /api/payments to /
+app.use('/', paymentRoutes)
+app.use('/webhook', webhookRoutes)
 
 // Enhanced health check
 app.get('/health', (req, res) => {

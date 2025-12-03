@@ -4,13 +4,33 @@ import { billingController } from '../config/container'
 
 const router = express.Router()
 
-// List billing records with optional filters
+// Query endpoints
 router.get('/', billingController.list.bind(billingController))
-
-// Get billing by ID
 router.get('/:id', billingController.getById.bind(billingController))
-
-// Get billing by reservation ID
 router.get('/reservation/:reservationId', billingController.getByReservation.bind(billingController))
 
+// Ledger operations
+router.post('/:id/charges', billingController.addCharge.bind(billingController))
+router.post('/:id/credits', billingController.addCredit.bind(billingController))
+router.post('/:id/refund', billingController.processRefund.bind(billingController))
+router.post('/:id/adjustment', billingController.addAdjustment.bind(billingController))
+
+// Status management
+router.patch('/:id/status', billingController.changeStatus.bind(billingController))
+router.post('/:id/send-invoice', billingController.sendInvoice.bind(billingController))
+
+// Invoice & Export
+router.get('/:id/download', billingController.downloadInvoice.bind(billingController))
+router.get('/export/all', billingController.exportBillings.bind(billingController))
+
+// Administrative
+router.get('/:id/audit-log', billingController.getAuditLog.bind(billingController))
+router.post('/:id/archive', billingController.archiveBilling.bind(billingController))
+
+// Dispute management
+router.post('/:id/dispute', billingController.flagDispute.bind(billingController))
+router.patch('/:id/dispute/:disputeId/resolve', billingController.resolveDispute.bind(billingController))
+router.get('/:id/disputes', billingController.getDisputesByBilling.bind(billingController))
+
 export default router
+

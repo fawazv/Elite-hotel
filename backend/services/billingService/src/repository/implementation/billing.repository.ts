@@ -1,6 +1,6 @@
 // src/repository/implementation/billing.repository.ts
-import { BillingModel, BillingDoc } from '../../models/billing.model'
-import { IBillingRepository } from '../interface/IBilling.repository';
+import { BillingModel, BillingDoc, LedgerEntry } from '../../models/billing.model'
+import { IBillingRepository } from '../interface/IBilling.repository'
 
 export class BillingRepository implements IBillingRepository {
   async create(data: Partial<BillingDoc>): Promise<BillingDoc> {
@@ -22,6 +22,113 @@ export class BillingRepository implements IBillingRepository {
     }).exec()
   }
 
+  // Ledger Operations
+  async addCharge(
+    billingId: string,
+    charge: Omit<LedgerEntry, 'createdAt'>
+  ): Promise<BillingDoc | null> {
+    return BillingModel.findByIdAndUpdate(
+      billingId,
+      {
+        $push: { ledger: { ...charge, createdAt: new Date() } },
+      },
+      { new: true }
+    ).exec()
+  }
+
+  async addCredit(
+    billingId: string,
+    credit: Omit<LedgerEntry, 'createdAt'>
+  ): Promise<BillingDoc | null> {
+    return BillingModel.findByIdAndUpdate(
+      billingId,
+      {
+        $push: { ledger: { ...credit, createdAt: new Date() } },
+      },
+      { new: true }
+    ).exec()
+  }
+
+  async addRefund(
+    billingId: string,
+    refund: Omit<LedgerEntry, 'createdAt'>
+  ): Promise<BillingDoc | null> {
+    return BillingModel.findByIdAndUpdate(
+      billingId,
+      {
+        $push: { ledger: { ...refund, createdAt: new Date() } },
+      },
+      { new: true }
+    ).exec()
+  }
+
+  async addAdjustment(
+    billingId: string,
+    adjustment: Omit<LedgerEntry, 'createdAt'>
+  ): Promise<BillingDoc | null> {
+    return BillingModel.findByIdAndUpdate(
+      billingId,
+      {
+        $push: { ledger: { ...adjustment, createdAt: new Date() } },
+      },
+      { new: true }
+    ).exec()
+  }
+
+  // Status Management
+  async changeStatus(
+    billingId: string,
+    newStatus: BillingDoc['status'],
+    ledgerEntry: Omit<LedgerEntry, 'createdAt'>
+  ): Promise<BillingDoc | null> {
+    return BillingModel.findByIdAndUpdate(
+      billingId,
+      {
+        status: newStatus,
+        $push: { ledger: { ...ledgerEntry, createdAt: new Date() } },
+      },
+      { new: true }
+    ).exec()
+  }
+
+  // Administrative
+  async archive(billingId: string): Promise<BillingDoc | null> {
+    return BillingModel.findByIdAndUpdate(
+      billingId,
+      {
+        archived: true,
+        archivedAt: new Date(),
+        status: 'archived',
+        $push: {
+          ledger: {
+            type: 'status_change',
+            amount: 0,
+            note: 'Billing archived',
+            createdAt: new Date(),
+          },
+        },
+      },
+      { new: true }
+    ).exec()
+  }
+
+  async getAuditLog(billingId: string): Promise<LedgerEntry[]> {
+    const billing = await BillingModel.findById(billingId).select('ledger').exec()
+    return billing?.ledger || []
+  }
+
+  async updateTotalAmount(
+    billingId: string,
+    newAmount: number
+  ): Promise<BillingDoc | null> {
+    return BillingModel.findByIdAndUpdate(
+      billingId,
+      { amount: newAmount },
+      { new: true }
+    ).exec()
+  }
+
+  // Existing methods
   async findByPaymentId(paymentId: string): Promise<BillingDoc | null> {
     return BillingModel.findOne({ paymentId }).exec()
   }
