@@ -1,5 +1,12 @@
 import { BillingDoc, LedgerEntry } from '../../models/billing.model'
 
+export interface PaginatedResult<T> {
+  data: T[]
+  total: number
+  page: number
+  totalPages: number
+}
+
 export interface IBillingRepository {
   create(data: Partial<BillingDoc>): Promise<BillingDoc>
 
@@ -44,7 +51,10 @@ export interface IBillingRepository {
 
   // Existing methods
   findByPaymentId(paymentId: string): Promise<BillingDoc | null>
-  findAll(filters?: any): Promise<BillingDoc[]>
+  findAll(
+    filters?: any,
+    options?: { page: number; limit: number; sort?: any }
+  ): Promise<PaginatedResult<BillingDoc>>
   findById(id: string): Promise<BillingDoc | null>
   findByReservation(reservationId: string): Promise<BillingDoc | null>
 }

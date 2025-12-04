@@ -3,16 +3,28 @@ import { Server as HTTPServer } from 'http'
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { SocketUser } from '../types'
 import { publishEvent } from '../config/rabbitmq.config'
+import { socketRateLimitMiddleware } from '../middleware/socket-rate-limit'
+
+import { setupRedisAdapter } from './redis-adapter'
 
 const connectedUsers = new Map<string, SocketUser>()
 
-export const initializeSocketIO = (httpServer: HTTPServer): Server => {
+export const initializeSocketIO = async (httpServer: HTTPServer): Promise<Server> => {
   const io = new Server(httpServer, {
     cors: {
       origin: process.env.FRONTEND_URL || 'http://localhost:5173',
       credentials: true,
     },
   })
+
+  // Setup Redis Adapter if configured
+  if (process.env.REDIS_URL) {
+    try {
+      await setupRedisAdapter(io)
+    } catch (error) {
+      console.warn('⚠️ Failed to connect to Redis, falling back to in-memory adapter')
+    }
+  }
 
   // Authentication middleware
   io.use((socket: Socket, next) => {
@@ -31,7 +43,17 @@ export const initializeSocketIO = (httpServer: HTTPServer): Server => {
     }
   })
 
+
   io.on('connection', (socket: Socket) => {
+    // Apply rate limiting to call events
+    socket.use(async ([eventName, ...args], next) => {
+      if (eventName.startsWith('call:')) {
+        await socketRateLimitMiddleware(socket, eventName, next)
+      } else {
+        next()
+      }
+    })
+
     const user = socket.data.user as JwtPayload
     console.log(`🔌 User connected: ${user.userId} (${user.role})`)
 

@@ -17,12 +17,12 @@ app.use(cors({
 }));
 
 // Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests, please try again later.'
-});
-app.use(limiter);
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   max: 100, // limit each IP to 100 requests per windowMs
+//   message: 'Too many requests, please try again later.'
+// });
+// app.use(limiter);
 
 // Service routes
 const services = [
@@ -31,8 +31,8 @@ const services = [
   { path: '/api/rooms', target: process.env.ROOM_API_BASE_URL || 'http://localhost:4003' },
   { path: '/api/guests', target: process.env.GUEST_API_BASE_URL || 'http://localhost:4004' },
   { path: '/api/reservations', target: process.env.RESERVATION_API_BASE_URL || 'http://localhost:4005' },
-  { path: '/api/billing', target: process.env.BILLING_API_BASE_URL || 'http://localhost:4006' },
-  { path: '/api/payments', target: process.env.PAYMENT_API_BASE_URL || 'http://localhost:4007' },
+  { path: '/api/payments', target: process.env.PAYMENT_API_BASE_URL || 'http://localhost:4006' },
+  { path: '/api/billing', target: process.env.BILLING_API_BASE_URL || 'http://localhost:4007' },
   { path: '/api/housekeeping', target: process.env.HOUSEKEEPING_API_BASE_URL || 'http://localhost:4008' },
   { path: '/api/communication', target: process.env.COMMUNICATION_API_BASE_URL || 'http://localhost:4009' },
   { path: '/api/notifications', target: process.env.NOTIFICATION_API_BASE_URL || 'http://localhost:4010' },

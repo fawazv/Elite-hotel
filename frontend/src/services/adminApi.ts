@@ -129,6 +129,8 @@ export interface User {
   avatar?: {
     url: string
   }
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface DashboardStats {
@@ -142,11 +144,63 @@ export interface DashboardStats {
   revenueChange?: string
 }
 
+export interface PaginatedResponse<T> {
+  data: T[]
+  total: number
+  page: number
+  limit: number
+}
+
 // ============= ROOMS API =============
 
-export const fetchRooms = async (): Promise<Room[]> => {
-  const response = await privateApi.get('/rooms')
-  return response.data.data || response.data
+export const fetchRooms = async (params?: {
+  page?: number
+  limit?: number
+  search?: string
+  type?: string
+  available?: boolean
+  minPrice?: number
+  maxPrice?: number
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  sort?: Array<{ column: string; direction: 'asc' | 'desc' }>
+}): Promise<PaginatedResponse<Room>> => {
+  const queryParams = new URLSearchParams()
+  
+  if (params?.page) queryParams.append('page', params.page.toString())
+  if (params?.limit) queryParams.append('limit', params.limit.toString())
+  if (params?.search) queryParams.append('search', params.search)
+  if (params?.type) queryParams.append('type', params.type)
+  if (params?.available !== undefined) queryParams.append('available', params.available.toString())
+  if (params?.minPrice) queryParams.append('minPrice', params.minPrice.toString())
+  if (params?.maxPrice) queryParams.append('maxPrice', params.maxPrice.toString())
+  if (params?.sortBy) queryParams.append('sortBy', params.sortBy)
+  if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder)
+  if (params?.sort) queryParams.append('sort', JSON.stringify(params.sort))
+  
+  const queryString = queryParams.toString()
+  const url = queryString ? `/rooms?${queryString}` : '/rooms'
+  
+  const response = await privateApi.get(url)
+  
+  // Check if pagination data exists
+  if (response.data.total !== undefined && response.data.page !== undefined) {
+    return {
+      data: response.data.data || [],
+      total: response.data.total,
+      page: response.data.page,
+      limit: response.data.limit || 20,
+    }
+  }
+  
+  // Fallback for non-paginated response
+  const data = response.data.data || response.data || []
+  return {
+    data,
+    total: data.length,
+    page: 1,
+    limit: data.length,
+  }
 }
 
 export const fetchRoomById = async (id: string): Promise<Room> => {
@@ -160,9 +214,45 @@ export const deleteRoom = async (id: string): Promise<void> => {
 
 // ============= RESERVATIONS API =============
 
-export const fetchReservations = async (): Promise<Reservation[]> => {
-  const response = await privateApi.get('/reservations')
-  return response.data.data || response.data
+export const fetchReservations = async (params?: {
+  page?: number
+  limit?: number
+  search?: string
+  status?: string
+  sort?: Array<{ column: string; direction: 'asc' | 'desc' }>
+}): Promise<PaginatedResponse<Reservation>> => {
+  const queryParams = new URLSearchParams()
+  
+  if (params?.page) queryParams.append('page', params.page.toString())
+  if (params?.limit) queryParams.append('limit', params.limit.toString())
+  if (params?.search) queryParams.append('search', params.search)
+  if (params?.status) queryParams.append('status', params.status)
+  if (params?.sort) queryParams.append('sort', JSON.stringify(params.sort))
+  
+  const queryString = queryParams.toString()
+  const url = queryString ? `/reservations?${queryString}` : '/reservations'
+  
+  const response = await privateApi.get(url)
+  
+  // Backend returns: { success, message, data, total, page, limit }
+  // Check if pagination data exists at root level
+  if (response.data.total !== undefined && response.data.page !== undefined) {
+    return {
+      data: response.data.data || [],
+      total: response.data.total,
+      page: response.data.page,
+      limit: response.data.limit || 20,
+    }
+  }
+  
+  // Fallback for non-paginated response (backward compatibility)
+  const data = response.data.data || response.data || []
+  return {
+    data,
+    total: data.length,
+    page: 1,
+    limit: data.length,
+  }
 }
 
 export const fetchReservationById = async (id: string): Promise<Reservation> => {
@@ -200,9 +290,48 @@ export const checkOutReservation = async (id: string): Promise<Reservation> => {
 
 // ============= USERS API =============
 
-export const fetchUsers = async (): Promise<User[]> => {
-  const response = await privateApi.get('/users')
-  return response.data.data || response.data
+export const fetchUsers = async (params?: {
+  page?: number
+  limit?: number
+  search?: string
+  role?: string
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  sort?: Array<{ column: string; direction: 'asc' | 'desc' }>
+}): Promise<PaginatedResponse<User>> => {
+  const queryParams = new URLSearchParams()
+  
+  if (params?.page) queryParams.append('page', params.page.toString())
+  if (params?.limit) queryParams.append('limit', params.limit.toString())
+  if (params?.search) queryParams.append('search', params.search)
+  if (params?.role) queryParams.append('role', params.role)
+  if (params?.sortBy) queryParams.append('sortBy', params.sortBy)
+  if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder)
+  if (params?.sort) queryParams.append('sort', JSON.stringify(params.sort))
+  
+  const queryString = queryParams.toString()
+  const url = queryString ? `/users?${queryString}` : '/users'
+  
+  const response = await privateApi.get(url)
+  
+  // Check if pagination data exists
+  if (response.data.total !== undefined && response.data.page !== undefined) {
+    return {
+      data: response.data.data || [],
+      total: response.data.total,
+      page: response.data.page,
+      limit: response.data.limit || 20,
+    }
+  }
+  
+  // Fallback for non-paginated response
+  const data = response.data.data || response.data || []
+  return {
+    data,
+    total: data.length,
+    page: 1,
+    limit: data.length,
+  }
 }
 
 export const fetchUserById = async (id: string): Promise<User> => {
@@ -296,15 +425,39 @@ export const fetchBillings = async (filters?: {
   reservationId?: string
   dateFrom?: string
   dateTo?: string
-}): Promise<Billing[]> => {
+  page?: number
+  limit?: number
+  search?: string
+  sort?: Array<{ column: string; direction: 'asc' | 'desc' }>
+}): Promise<PaginatedResponse<Billing>> => {
   const params = new URLSearchParams()
   if (filters?.status) params.append('status', filters.status)
   if (filters?.reservationId) params.append('reservationId', filters.reservationId)
   if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom)
   if (filters?.dateTo) params.append('dateTo', filters.dateTo)
+  if (filters?.page) params.append('page', filters.page.toString())
+  if (filters?.limit) params.append('limit', filters.limit.toString())
+  if (filters?.search) params.append('search', filters.search)
+  if (filters?.sort) params.append('sort', JSON.stringify(filters.sort))
 
   const response = await privateApi.get(`/billing?${params.toString()}`)
-  return response.data.data || response.data || []
+  
+  if (response.data.pagination) {
+    return {
+      data: response.data.data,
+      total: response.data.pagination.total,
+      page: response.data.pagination.page,
+      limit: response.data.pagination.limit
+    }
+  }
+
+  const data = response.data.data || response.data || []
+  return {
+    data,
+    total: data.length,
+    page: 1,
+    limit: data.length
+  }
 }
 
 export const fetchBillingById = async (id: string): Promise<Billing> => {
@@ -425,17 +578,56 @@ export const getBillingDisputes = async (billingId: string): Promise<Dispute[]> 
 // ============= PAYMENT API =============
 
 export const fetchPayments = async (filters?: {
+  page?: number
+  limit?: number
   status?: string
   reservationId?: string
   provider?: string
-}): Promise<Payment[]> => {
+  minAmount?: number
+  maxAmount?: number
+  dateFrom?: string
+  dateTo?: string
+  search?: string
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  sort?: Array<{ column: string; direction: 'asc' | 'desc' }>
+}): Promise<PaginatedResponse<Payment>> => {
   const params = new URLSearchParams()
+  
+  if (filters?.page) params.append('page', filters.page.toString())
+  if (filters?.limit) params.append('limit', filters.limit.toString())
   if (filters?.status) params.append('status', filters.status)
   if (filters?.reservationId) params.append('reservationId', filters.reservationId)
   if (filters?.provider) params.append('provider', filters.provider)
+  if (filters?.minAmount) params.append('minAmount', filters.minAmount.toString())
+  if (filters?.maxAmount) params.append('maxAmount', filters.maxAmount.toString())
+  if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom)
+  if (filters?.dateTo) params.append('dateTo', filters.dateTo)
+  if (filters?.search) params.append('search', filters.search)
+  if (filters?.sortBy) params.append('sortBy', filters.sortBy)
+  if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder)
+  if (filters?.sort) params.append('sort', JSON.stringify(filters.sort))
 
   const response = await privateApi.get(`/payments?${params.toString()}`)
-  return response.data.data || response.data || []
+  
+  // Handle paginated response
+  if (response.data.total !== undefined && response.data.page !== undefined) {
+    return {
+      data: response.data.data || [],
+      total: response.data.total,
+      page: response.data.page,
+      limit: response.data.limit || 20,
+    }
+  }
+  
+  // Fallback for non-paginated response
+  const data = response.data.data || response.data || []
+  return {
+    data,
+    total: data.length,
+    page: 1,
+    limit: data.length,
+  }
 }
 
 export const fetchPaymentById = async (id: string): Promise<Payment> => {

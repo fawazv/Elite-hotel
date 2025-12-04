@@ -10,6 +10,7 @@ export type ListQuery = {
   sortBy?: 'price' | 'createdAt' | 'rating'
   sortOrder?: 'asc' | 'desc'
   search?: string
+  sort?: Array<{ column: string; direction: 'asc' | 'desc' }>
 }
 
 export interface IRoomService {

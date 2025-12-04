@@ -48,6 +48,7 @@ export class RoomController implements IRoomController {
         sortBy: (req.query.sortBy as any) || undefined,
         sortOrder: (req.query.sortOrder as any) || undefined,
         search: (req.query.search as string) || undefined,
+        sort: req.query.sort ? JSON.parse(req.query.sort as string) : undefined,
       }
       const result = await this.roomService.listRooms(q)
       return successResponse(res, HttpStatus.OK, 'Rooms fetched', result)

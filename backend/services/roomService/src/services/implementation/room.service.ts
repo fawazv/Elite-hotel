@@ -117,9 +117,17 @@ export class RoomService implements IRoomService {
 
     const skip = (page - 1) * limit
     const sort: any = { [sortBy]: sortOrder === 'asc' ? 1 : -1 }
+    if (query.sort && query.sort.length > 0) {
+      // Override with multi-column sort if provided
+      const multiSort: any = {}
+      query.sort.forEach((s) => {
+        multiSort[s.column] = s.direction === 'asc' ? 1 : -1
+      })
+      Object.assign(sort, multiSort)
+    }
 
     // Create cache key based on query parameters
-    const cacheKey = `rooms:${JSON.stringify({ page, limit, type, minPrice, maxPrice, available, sortBy, sortOrder, search })}`
+    const cacheKey = `rooms:${JSON.stringify({ page, limit, type, minPrice, maxPrice, available, sortBy, sortOrder, search, sort })}`
     const cached = cacheService.get<{ data: RoomDocument[]; total: number; page: number; limit: number }>(cacheKey)
     if (cached) {
       return cached

@@ -7,6 +7,7 @@ import { getGuestContact } from '../../rpc/guest.rpc.client'
 import { PDFService } from '../../utils/pdf.service'
 import { ExportService } from '../../utils/export.service'
 import logger from '../../utils/logger.service'
+import { PaginatedResult } from '../../repository/interface/IBilling.repository'
 
 export class BillingService implements IBillingService {
   private repo: BillingRepository
@@ -323,26 +324,29 @@ export class BillingService implements IBillingService {
   async exportBillingsCSV(filters?: any): Promise<string> {
     logger.info('Exporting billings to CSV', { filters })
 
-    const billings = await this.repo.findAll(filters)
-    const csv = ExportService.exportToCSV(billings)
+    const result = await this.repo.findAll(filters, { page: 1, limit: 10000 }) // Export all (limit high)
+    const csv = ExportService.exportToCSV(result.data)
 
-    logger.info('Billings exported to CSV', { count: billings.length })
+    logger.info('Billings exported to CSV', { count: result.data.length })
     return csv
   }
 
   async exportBillingsPDF(filters?: any): Promise<Buffer> {
     logger.info('Exporting billings to PDF', { filters })
 
-    const billings = await this.repo.findAll(filters)
-    const pdfBuffer = await ExportService.exportToPDFBatch(billings)
+    const result = await this.repo.findAll(filters, { page: 1, limit: 10000 }) // Export all
+    const pdfBuffer = await ExportService.exportToPDFBatch(result.data)
 
-    logger.info('Billings exported to PDF', { count: billings.length })
+    logger.info('Billings exported to PDF', { count: result.data.length })
     return pdfBuffer
   }
 
   // Existing query methods
-  async findAll(filters?: any): Promise<BillingDoc[]> {
-    return this.repo.findAll(filters)
+  async findAll(
+    filters?: any,
+    options?: { page: number; limit: number; sort?: any }
+  ): Promise<PaginatedResult<BillingDoc>> {
+    return this.repo.findAll(filters, options)
   }
 
   async findById(id: string): Promise<BillingDoc | null> {
@@ -353,4 +357,3 @@ export class BillingService implements IBillingService {
     return this.repo.findByReservation(reservationId)
   }
 }
-

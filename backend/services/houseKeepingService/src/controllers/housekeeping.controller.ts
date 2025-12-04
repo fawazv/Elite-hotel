@@ -14,9 +14,60 @@ export class HousekeepingController {
 
   completeTask = asyncHandler(async (req: CustomeRequest, res: Response) => {
     const taskId = req.params.id
-    const notes = req.body.notes
-    const updated = await this.svc.completeTask(taskId, notes)
+    const { notes, actualDuration, checklist, images } = req.body
+    const completedBy = req.user?.id // From auth middleware
+    
+    const updated = await this.svc.completeTask(
+      taskId,
+      { notes, actualDuration, checklist, images },
+      completedBy
+    )
     res.json({ success: true, data: updated })
+  })
+
+  updateTaskStatus = asyncHandler(async (req: CustomeRequest, res: Response) => {
+    const taskId = req.params.id
+    const { status, notes } = req.body
+    const updated = await this.svc.updateTaskStatus(taskId, status, notes)
+    res.json({ success: true, data: updated })
+  })
+
+  updateChecklist = asyncHandler(async (req: CustomeRequest, res: Response) => {
+    const taskId = req.params.id
+    const { checklist } = req.body
+    const updated = await this.svc.updateChecklist(taskId, checklist)
+    res.json({ success: true, data: updated })
+  })
+
+  bulkAssignTasks = asyncHandler(async (req: CustomeRequest, res: Response) => {
+    const { assignedTo, roomIds, taskType } = req.body
+    const tasks = await this.svc.bulkAssignTasks(assignedTo, roomIds, taskType)
+    res.status(201).json({ 
+      success: true, 
+      data: tasks,
+      message: `${tasks.length} tasks created successfully`
+    })
+  })
+
+  getTasksByStaff = asyncHandler(async (req: CustomeRequest, res: Response) => {
+    const staffId = req.params.staffId
+    const date = req.query.date ? new Date(req.query.date as string) : undefined
+    const tasks = await this.svc.getTasksByStaff(staffId, date)
+    res.json({ success: true, data: tasks, total: tasks.length })
+  })
+
+  getRoomHistory = asyncHandler(async (req: CustomeRequest, res: Response) => {
+    const roomId = req.params.roomId
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10
+    const history = await this.svc.getRoomHistory(roomId, limit)
+    res.json({ success: true, data: history, total: history.length })
+  })
+
+  getTaskStatistics = asyncHandler(async (req: CustomeRequest, res: Response) => {
+    const dateFrom = req.query.dateFrom ? new Date(req.query.dateFrom as string) : undefined
+    const dateTo = req.query.dateTo ? new Date(req.query.dateTo as string) : undefined
+    const stats = await this.svc.getTaskStatistics(dateFrom, dateTo)
+    res.json({ success: true, data: stats })
   })
 
   getTask = asyncHandler(async (req: CustomeRequest, res: Response) => {
@@ -35,6 +86,9 @@ export class HousekeepingController {
       reservationId: req.query.reservationId as string | undefined,
       assignedTo: req.query.assignedTo as string | undefined,
       status: req.query.status as any,
+      taskType: req.query.taskType as any,
+      priority: req.query.priority as any,
+      completedBy: req.query.completedBy as string | undefined,
       dateFrom: req.query.dateFrom as string | undefined,
       dateTo: req.query.dateTo as string | undefined,
       sortBy: (req.query.sortBy as any) || 'createdAt',

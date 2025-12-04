@@ -34,17 +34,22 @@ export interface GuestListResponse {
   limit: number
 }
 
-export const fetchGuests = async (
-  page: number = 1,
-  limit: number = 20,
-  search?: string,
+export const fetchGuests = async (params: {
+  page?: number
+  limit?: number
+  search?: string
   isBlacklisted?: boolean
-): Promise<GuestListResponse> => {
-  const params: any = { page, limit }
-  if (search) params.search = search
-  if (isBlacklisted !== undefined) params.isBlacklisted = isBlacklisted
+  sort?: Array<{ column: string; direction: 'asc' | 'desc' }>
+}): Promise<GuestListResponse> => {
+  const queryParams: any = { 
+    page: params.page || 1, 
+    limit: params.limit || 20 
+  }
+  if (params.search) queryParams.search = params.search
+  if (params.isBlacklisted !== undefined) queryParams.isBlacklisted = params.isBlacklisted
+  if (params.sort) queryParams.sort = JSON.stringify(params.sort)
 
-  const response = await privateApi.get('/guests', { params })
+  const response = await privateApi.get('/guests', { params: queryParams })
   // Backend returns: { success, message, data: [...], total, page, limit }
   return {
     data: response.data.data || [],

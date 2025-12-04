@@ -105,6 +105,7 @@ export class ReservationController implements IReservationController {
           ? new Date(req.query.dateTo as string)
           : undefined,
         search: (req.query.search as string) || undefined,
+        sort: req.query.sort ? JSON.parse(req.query.sort as string) : undefined,
       })
       return successResponse(res, HttpStatus.OK, 'Reservations fetched', result)
     } catch (err) {

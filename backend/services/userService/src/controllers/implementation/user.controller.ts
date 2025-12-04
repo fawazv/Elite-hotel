@@ -29,6 +29,7 @@ export class UserController implements IUserController {
         limit: req.query.limit ? Number(req.query.limit) : undefined,
         search: req.query.search as string | undefined,
         role: req.query.role as string | undefined,
+        sort: req.query.sort ? JSON.parse(req.query.sort as string) : undefined,
       }
       const result = await this.userService.list(q)
       return successResponse(res, HttpStatus.OK, 'Users fetched', result)

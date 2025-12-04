@@ -6,6 +6,7 @@ export type GuestListQuery = {
   limit?: number
   search?: string
   isBlacklisted?: boolean
+  sort?: Array<{ column: string; direction: 'asc' | 'desc' }>
 }
 
 export interface IGuestService {

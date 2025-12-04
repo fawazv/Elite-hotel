@@ -95,13 +95,22 @@ export class GuestService implements IGuestService {
       lastVisit: 1,
     }
 
+    // Build sort object
+    let sort: any = query.search ? { score: { $meta: 'textScore' } } : { createdAt: -1 }
+    if (query.sort && query.sort.length > 0) {
+      sort = {}
+      query.sort.forEach((s) => {
+        sort[s.column] = s.direction === 'asc' ? 1 : -1
+      })
+    }
+
     const [data, total] = await Promise.all([
       this.guestRepo.findAll(
         filter,
         { 
           skip, 
           limit, 
-          sort: query.search ? { score: { $meta: 'textScore' } } : { createdAt: -1 },
+          sort,
           projection 
         }
       ),

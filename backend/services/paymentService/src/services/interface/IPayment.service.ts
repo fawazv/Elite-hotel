@@ -16,6 +16,21 @@ export interface IPaymentService {
     metadata?: any
   ): Promise<PaymentDoc | null>
 
+  list(query: {
+    page?: number
+    limit?: number
+    status?: 'initiated' | 'succeeded' | 'failed' | 'refunded'
+    provider?: 'stripe' | 'razorpay'
+    minAmount?: number
+    maxAmount?: number
+    dateFrom?: string
+    dateTo?: string
+    search?: string
+    sortBy?: 'createdAt' | 'amount'
+    sortOrder?: 'asc' | 'desc'
+    sort?: Array<{ column: string; direction: 'asc' | 'desc' }>
+  }): Promise<{ data: PaymentDoc[]; total: number; page: number; limit: number }>
+
   findAll(filters?: any): Promise<PaymentDoc[]>
   findById(id: string): Promise<PaymentDoc | null>
 }

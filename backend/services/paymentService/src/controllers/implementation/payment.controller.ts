@@ -51,16 +51,38 @@ export class PaymentController implements IPaymentController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { status, reservationId, provider } = req.query
-      const filters: any = {}
-      if (status) filters.status = status
-      if (reservationId) filters.reservationId = reservationId
-      if (provider) filters.provider = provider
+      const {
+        page,
+        limit,
+        status,
+        provider,
+        minAmount,
+        maxAmount,
+        dateFrom,
+        dateTo,
+        search,
+        sortBy,
+        sortOrder
+      } = req.query
 
-      const payments = await this.svc.findAll(filters)
+      const result = await this.svc.list({
+        page: page ? parseInt(page as string) : undefined,
+        limit: limit ? parseInt(limit as string) : undefined,
+        status: status as any,
+        provider: provider as any,
+        minAmount: minAmount ? parseFloat(minAmount as string) : undefined,
+        maxAmount: maxAmount ? parseFloat(maxAmount as string) : undefined,
+        dateFrom: dateFrom as string,
+        dateTo: dateTo as string,
+        search: search as string,
+        sortBy: (sortBy as any) || 'createdAt',
+        sortOrder: (sortOrder as any) || 'desc',
+        sort: req.query.sort ? JSON.parse(req.query.sort as string) : undefined
+      })
+
       res.json({
         success: true,
-        data: payments,
+        ...result
       })
     } catch (err) {
       next(err)

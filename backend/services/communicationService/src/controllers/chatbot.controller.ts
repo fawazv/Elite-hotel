@@ -2,6 +2,9 @@ import { Response } from 'express'
 import { AuthenticatedRequest } from '../types'
 import chatbotService from '../services/chatbot.service'
 import Joi from 'joi'
+import { InputValidator } from '../utils/input-validator'
+import { ContentModerator } from '../services/content-moderator.service'
+import { ErrorHandler } from '../utils/error-handler'
 
 const sendMessageSchema = Joi.object({
   conversationId: Joi.string().required(),
@@ -45,25 +48,30 @@ export class ChatbotController {
 
   async sendMessage(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const { error } = sendMessageSchema.validate(req.body)
-      if (error) {
-        res.status(400).json({ message: error.details[0].message })
-        return
+      // Validate request using new InputValidator
+      const validatedData = InputValidator.validateMessageRequest(req.body)
+      
+      // Moderate content
+      const { clean, flagged } = await ContentModerator.moderateInput(
+        validatedData.message
+      )
+
+      if (flagged) {
+        console.warn(`[Security] PII detected in message from user ${req.user!.userId}`)
+        // We could block the message here, but for now we proceed with the redacted version
       }
 
-      const { conversationId, message } = req.body
-
-      const conversation = await chatbotService.sendMessage(conversationId, message)
+      const conversation = await chatbotService.sendMessage(
+        validatedData.conversationId,
+        clean
+      )
 
       res.json({
         message: 'Message sent successfully',
         conversation,
       })
     } catch (error: any) {
-      console.error('Error in sendMessage:', error)
-      res.status(error.message === 'Conversation not found' ? 404 : 500).json({
-        message: error.message || 'Failed to send message',
-      })
+      ErrorHandler.handle(error, req, res)
     }
   }
 

@@ -1,16 +1,12 @@
 import { Request, Response, NextFunction } from 'express'
+import { ErrorHandler } from '../utils/error-handler'
 
-const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction): void => {
-  console.error('Error:', err)
-
+const errorHandler = (err: any, req: Request, res: Response, next: NextFunction): void => {
   if (res.headersSent) {
     return next(err)
   }
 
-  res.status(500).json({
-    message: err.message || 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? err.stack : undefined,
-  })
+  ErrorHandler.handle(err, req, res)
 }
 
 export default errorHandler

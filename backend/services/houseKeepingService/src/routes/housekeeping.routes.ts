@@ -12,7 +12,9 @@ export default function routes(container = createContainer()) {
   const router = Router()
   const ctrl = container.controller
 
-  // assign -> Admin or Receptionist
+  // ===== TASK MANAGEMENT =====
+  
+  // Assign task -> Admin or Receptionist
   router.post(
     '/tasks/assign',
     authenticateToken,
@@ -21,6 +23,15 @@ export default function routes(container = createContainer()) {
     ctrl.assignTask
   )
 
+  // Bulk assign tasks -> Admin or Receptionist
+  router.post(
+    '/tasks/bulk-assign',
+    authenticateToken,
+    authorizeRole(['admin', 'receptionist']),
+    ctrl.bulkAssignTasks
+  )
+
+  // Reassign task -> Admin or Receptionist
   router.patch(
     '/tasks/:id/reassign',
     authenticateToken,
@@ -29,7 +40,23 @@ export default function routes(container = createContainer()) {
     ctrl.reassignTask
   )
 
-  // complete -> Housekeeper only
+  // Update task status -> Admin, Receptionist, or Housekeeper
+  router.patch(
+    '/tasks/:id/status',
+    authenticateToken,
+    authorizeRole(['admin', 'receptionist', 'housekeeper']),
+    ctrl.updateTaskStatus
+  )
+
+  // Update checklist -> Housekeeper
+  router.patch(
+    '/tasks/:id/checklist',
+    authenticateToken,
+    authorizeRole(['housekeeper']),
+    ctrl.updateChecklist
+  )
+
+  // Complete task -> Housekeeper
   router.post(
     '/tasks/:id/complete',
     authenticateToken,
@@ -38,7 +65,9 @@ export default function routes(container = createContainer()) {
     ctrl.completeTask
   )
 
-  // list -> any authenticated staff (with filtering)
+  // ===== QUERY/REPORTING =====
+
+  // List tasks -> Any authenticated staff (with filtering)
   router.get(
     '/tasks',
     authenticateToken,
@@ -54,8 +83,31 @@ export default function routes(container = createContainer()) {
     ctrl.listTasks
   )
 
-  // get -> any authenticated staff
+  // Get task by ID -> Any authenticated staff
   router.get('/tasks/:id', authenticateToken, ctrl.getTask)
+
+  // Get tasks by staff member
+  router.get(
+    '/staff/:staffId/tasks',
+    authenticateToken,
+    authorizeRole(['admin', 'receptionist']),
+    ctrl.getTasksByStaff
+  )
+
+  // Get room cleaning history
+  router.get(
+    '/rooms/:roomId/history',
+    authenticateToken,
+    ctrl.getRoomHistory
+  )
+
+  // Get task statistics
+  router.get(
+    '/statistics',
+    authenticateToken,
+    authorizeRole(['admin', 'receptionist']),
+    ctrl.getTaskStatistics
+  )
 
   return router
 }

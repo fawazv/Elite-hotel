@@ -9,6 +9,9 @@ import {
   ChevronRight,
   UserCheck,
   DollarSign,
+  MessageSquare,
+  Sparkles,
+  CreditCard,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -24,6 +27,9 @@ const navItems = [
   { to: '/admin/rooms', icon: DoorClosed, label: 'Rooms' },
   { to: '/admin/reservations', icon: CalendarCheck, label: 'Reservations' },
   { to: '/admin/billing', icon: DollarSign, label: 'Billing' },
+  { to: '/admin/payments', icon: CreditCard, label: 'Payments' },
+  { to: '/admin/housekeeping', icon: Sparkles, label: 'Housekeeping' },
+  { to: '/admin/communications', icon: MessageSquare, label: 'Communications' },
   { to: '/admin/settings', icon: Settings, label: 'Settings' },
 ]
 

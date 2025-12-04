@@ -397,6 +397,7 @@ export class ReservationService implements IReservationService {
     dateFrom?: Date
     dateTo?: Date
     search?: string
+    sort?: Array<{ column: string; direction: 'asc' | 'desc' }>
   }) {
     const page = q.page && q.page > 0 ? q.page : 1
     const limit = q.limit && q.limit > 0 ? q.limit : 20
@@ -415,8 +416,16 @@ export class ReservationService implements IReservationService {
       filter.$or = [{ code: { $regex: q.search, $options: 'i' } }]
     }
 
+    let sort: any = { createdAt: -1 }
+    if (q.sort && q.sort.length > 0) {
+      sort = {}
+      q.sort.forEach((s) => {
+        sort[s.column] = s.direction === 'asc' ? 1 : -1
+      })
+    }
+
     const [data, total] = await Promise.all([
-      this.repo.findAll(filter, { skip, limit, sort: { createdAt: -1 } }),
+      this.repo.findAll(filter, { skip, limit, sort }),
       this.repo.count(filter),
     ])
     return { data, total, page, limit }

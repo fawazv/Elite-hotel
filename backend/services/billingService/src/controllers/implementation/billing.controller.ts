@@ -14,7 +14,7 @@ export class BillingController implements IBillingController {
   // Existing query endpoints
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { status, reservationId, dateFrom, dateTo, archived } = req.query
+      const { status, reservationId, dateFrom, dateTo, archived, page, limit, search } = req.query
       
       const filters: any = {}
       if (status) filters.status = status
@@ -26,11 +26,47 @@ export class BillingController implements IBillingController {
         if (dateTo) filters.createdAt.$lte = new Date(dateTo as string)
       }
 
-      const billings = await this.svc.findAll(filters)
+      if (search) {
+        const searchRegex = { $regex: search, $options: 'i' }
+        filters.$or = [
+          { guestId: searchRegex },
+          { reservationId: searchRegex },
+          { paymentId: searchRegex },
+          { 'guestContact.email': searchRegex },
+          { 'guestContact.phoneNumber': searchRegex }
+        ]
+      }
+
+      const pageNum = parseInt(page as string) || 1
+      const limitNum = parseInt(limit as string) || 20
+
+      // Parse sort parameter
+      let sort: any = { createdAt: -1 }
+      if (req.query.sort) {
+        try {
+          const sortParams = JSON.parse(req.query.sort as string)
+          if (Array.isArray(sortParams) && sortParams.length > 0) {
+            sort = {}
+            sortParams.forEach((s: any) => {
+              sort[s.column] = s.direction === 'asc' ? 1 : -1
+            })
+          }
+        } catch (e) {
+          logger.warn('Invalid sort parameter', { sort: req.query.sort })
+        }
+      }
+
+      const result = await this.svc.findAll(filters, { page: pageNum, limit: limitNum, sort })
       
       res.json({
         success: true,
-        data: billings,
+        data: result.data,
+        pagination: {
+          total: result.total,
+          page: result.page,
+          limit: limitNum,
+          totalPages: result.totalPages
+        }
       })
     } catch (err) {
       logger.error('Error listing billings', { error: (err as Error).message })

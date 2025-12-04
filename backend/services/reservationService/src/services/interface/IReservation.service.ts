@@ -81,6 +81,7 @@ export interface IReservationService {
     dateFrom?: Date
     dateTo?: Date
     search?: string
+    sort?: Array<{ column: string; direction: 'asc' | 'desc' }>
   }): Promise<{
     data: ReservationDocument[]
     total: number

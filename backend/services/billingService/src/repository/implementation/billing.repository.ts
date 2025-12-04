@@ -1,11 +1,37 @@
 // src/repository/implementation/billing.repository.ts
 import { BillingModel, BillingDoc, LedgerEntry } from '../../models/billing.model'
-import { IBillingRepository } from '../interface/IBilling.repository'
+import { IBillingRepository, PaginatedResult } from '../interface/IBilling.repository'
 
 export class BillingRepository implements IBillingRepository {
+  // ... existing methods ...
+
   async create(data: Partial<BillingDoc>): Promise<BillingDoc> {
     const billing = new BillingModel(data)
     return billing.save()
+  }
+
+  async findAll(
+    filters?: any,
+    options: { page: number; limit: number; sort?: any } = { page: 1, limit: 20 }
+  ): Promise<PaginatedResult<BillingDoc>> {
+    const { page, limit, sort } = options
+    const skip = (page - 1) * limit
+
+    const [data, total] = await Promise.all([
+      BillingModel.find(filters || {})
+        .sort(sort || { createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      BillingModel.countDocuments(filters || {}),
+    ])
+
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    }
   }
 
   async updateStatus(
@@ -133,9 +159,7 @@ export class BillingRepository implements IBillingRepository {
     return BillingModel.findOne({ paymentId }).exec()
   }
 
-  async findAll(filters?: any): Promise<BillingDoc[]> {
-    return BillingModel.find(filters || {}).sort({ createdAt: -1 }).exec()
-  }
+
 
   async findById(id: string): Promise<BillingDoc | null> {
     return BillingModel.findById(id).exec()

@@ -33,6 +33,7 @@ export class UserService implements IUserService {
     limit?: number
     search?: string
     role?: string
+    sort?: Array<{ column: string; direction: 'asc' | 'desc' }>
   }) {
     const page = query.page && query.page > 0 ? query.page : 1
     // Limit maximum items per page to prevent large data dumps
@@ -52,11 +53,20 @@ export class UserService implements IUserService {
     }
     if (query.role) filter.role = query.role
 
+    // Build sort object
+    let sort: any = { createdAt: -1 } // Default sort
+    if (query.sort && query.sort.length > 0) {
+      sort = {}
+      query.sort.forEach((s) => {
+        sort[s.column] = s.direction === 'asc' ? 1 : -1
+      })
+    }
+
     const [data, total] = await Promise.all([
       this.userRepo.findAll(filter, {
         skip,
         limit,
-        sort: { createdAt: -1 },
+        sort,
         projection: { password: 0 },
       }),
       this.userRepo.count(filter),

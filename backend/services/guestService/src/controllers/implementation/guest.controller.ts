@@ -46,6 +46,7 @@ export class GuestController implements IGuestController {
           req.query.isBlacklisted != null
             ? req.query.isBlacklisted === 'true'
             : undefined,
+        sort: req.query.sort ? JSON.parse(req.query.sort as string) : undefined,
       }
       const result = await this.guestService.list(q)
       return successResponse(res, HttpStatus.OK, 'Guests fetched', result)

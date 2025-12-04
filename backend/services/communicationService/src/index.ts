@@ -18,7 +18,13 @@ const app = express()
 const httpServer = http.createServer(app)
 
 // Initialize Socket.IO
-const io = initializeSocketIO(httpServer)
+let io: any
+initializeSocketIO(httpServer).then((socketIo) => {
+  io = socketIo
+  console.log('✅ Socket.IO initialized with Redis adapter')
+})
+
+import { scheduleDataRetention } from './jobs/data-retention.job'
 
 // Connect to databases and message queue
 rabbitmqConnect().then(() => {
@@ -27,6 +33,8 @@ rabbitmqConnect().then(() => {
 
 connectMongodb().then(() => {
   console.log('✅ MongoDB connected')
+  // Start background jobs
+  scheduleDataRetention()
 })
 
 // Middleware

@@ -51,11 +51,17 @@ const AddCreditModal = ({ isOpen, onClose, billingId, onSuccess }: AddCreditModa
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <div
-          className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/30 backdrop-blur-md transition-opacity"
           onClick={onClose}
+          aria-hidden="true"
         ></div>
 
-        <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+        {/* Center positioning trick */}
+        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
+          &#8203;
+        </span>
+
+        <div className="relative inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full z-10">
           <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-bold text-white">Add Credit/Discount</h3>

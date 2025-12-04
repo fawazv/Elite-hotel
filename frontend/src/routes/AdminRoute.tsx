@@ -13,6 +13,9 @@ const AdminGuests = React.lazy(() => import('@pages/Admin/Guests'))
 const RoomDetail = React.lazy(() => import('@/pages/Admin/RoomDetail'))
 const RoomForm = React.lazy(() => import('@/pages/Admin/RoomForm'))
 const Billing = React.lazy(() => import('@/pages/Admin/Billing'))
+const Payments = React.lazy(() => import('@/pages/Admin/Payments'))
+const Housekeeping = React.lazy(() => import('@/pages/Admin/Housekeeping'))
+const Communications = React.lazy(() => import('@/pages/Admin/CommunicationsDashboard'))
 
 // Loading component
 const LoadingSpinner = () => (
@@ -35,8 +38,11 @@ const AdminRoute: React.FC = () => {
             <Route path="rooms/:id" element={<RoomDetail />} />
             <Route path="reservations" element={<AdminReservations />} />
             <Route path="billing" element={<Billing />} />
+            <Route path="payments" element={<Payments />} />
+            <Route path="housekeeping" element={<Housekeeping />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="guests" element={<AdminGuests />} />
+            <Route path="communications" element={<Communications />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
         </Routes>

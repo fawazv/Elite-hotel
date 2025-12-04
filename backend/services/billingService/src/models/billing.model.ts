@@ -9,6 +9,7 @@ export interface LedgerEntry {
 }
 
 export interface BillingDoc extends Document {
+  _id: mongoose.Types.ObjectId
   paymentId: string
   reservationId: string
   guestId: string

@@ -315,6 +315,79 @@ export class PaymentService implements IPaymentService {
     return this.repo.findAll(filters)
   }
 
+  async list(query: {
+    page?: number
+    limit?: number
+    status?: 'initiated' | 'succeeded' | 'failed' | 'refunded'
+    provider?: 'stripe' | 'razorpay'
+    minAmount?: number
+    maxAmount?: number
+    dateFrom?: string
+    dateTo?: string
+    search?: string
+    sortBy?: 'createdAt' | 'amount'
+    sortOrder?: 'asc' | 'desc'
+    sort?: Array<{ column: string; direction: 'asc' | 'desc' }>
+  }): Promise<{ data: PaymentDoc[]; total: number; page: number; limit: number }> {
+    const page = query.page && query.page > 0 ? query.page : 1
+    const limit = query.limit && query.limit > 0 ? Math.min(query.limit, 100) : 20
+
+    // Build filter object
+    const filter: any = {}
+    
+    if (query.status) {
+      filter.status = query.status
+    }
+    
+    if (query.provider) {
+      filter.provider = query.provider
+    }
+    
+    // Amount range filter
+    if (query.minAmount != null || query.maxAmount != null) {
+      filter.amount = {}
+      if (query.minAmount != null) filter.amount.$gte = query.minAmount
+      if (query.maxAmount != null) filter.amount.$lte = query.maxAmount
+    }
+    
+    // Date range filter
+    if (query.dateFrom || query.dateTo) {
+      filter.createdAt = {}
+      if (query.dateFrom) {
+        filter.createdAt.$gte = new Date(query.dateFrom)
+      }
+      if (query.dateTo) {
+        const endDate = new Date(query.dateTo)
+        endDate.setHours(23, 59, 59, 999)
+        filter.createdAt.$lte = endDate
+      }
+    }
+    
+    // Search by guest email or transaction metadata
+    if (query.search) {
+      const searchRegex = new RegExp(query.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+      filter.$or = [
+        { 'guestContact.email': searchRegex },
+        { 'metadata.stripeId': searchRegex },
+        { 'metadata.razorpayOrderId': searchRegex }
+      ]
+    }
+    
+    // Build sort object
+    let sort: any = { [query.sortBy || 'createdAt']: query.sortOrder === 'asc' ? 1 : -1 }
+    
+    if (query.sort && query.sort.length > 0) {
+      sort = {}
+      query.sort.forEach((s) => {
+        sort[s.column] = s.direction === 'asc' ? 1 : -1
+      })
+    }
+    
+    logger.debug('Listing payments with filters', { filter, page, limit, sort })
+    
+    return this.repo.list(filter, { page, limit, sort })
+  }
+
   async findById(id: string): Promise<PaymentDoc | null> {
     return this.repo.findById(id)
   }

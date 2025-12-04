@@ -1,5 +1,5 @@
-// src/service/interface/IBilling.service.ts
 import { BillingDoc, LedgerEntry } from '../../models/billing.model'
+import { PaginatedResult } from '../../repository/interface/IBilling.repository'
 
 export interface IBillingService {
   // Event handlers (existing)
@@ -49,7 +49,10 @@ export interface IBillingService {
   exportBillingsPDF(filters?: any): Promise<Buffer>
 
   // Existing query methods
-  findAll(filters?: any): Promise<BillingDoc[]>
+  findAll(
+    filters?: any,
+    options?: { page: number; limit: number; sort?: any }
+  ): Promise<PaginatedResult<BillingDoc>>
   findById(id: string): Promise<BillingDoc | null>
   findByReservation(reservationId: string): Promise<BillingDoc | null>
 }
