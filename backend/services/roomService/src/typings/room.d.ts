@@ -14,8 +14,9 @@ export interface IRoom {
   images?: IRoomImage[] // Multiple images support
   description?: string
   amenities: string[]
-  size?: string
-  capacity?: string
+  size: number
+  capacity: number
+  category: 'Single' | 'Double' | 'Suite' | 'Family'
   rating?: number
   available: boolean
   createdAt?: Date

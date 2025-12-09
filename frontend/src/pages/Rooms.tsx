@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { fetchPublicRooms } from '@/services/publicApi'
 
 // Type definitions
 interface Room {
+  id: string
+  _id: string
   number: number
   name: string
   type: string
+  category?: string
   price: number
   image: string
+  images?: { url: string }[]
   description: string
   amenities: string[]
-  size: string
-  capacity: string
+  size: number
+  capacity: number
   rating?: number
   available: boolean
 }
@@ -46,8 +52,8 @@ interface PaginationProps {
 
 interface RoomCardProps {
   room: Room
-  onViewRoom?: (roomId: number) => void
-  onBookRoom?: (roomId: number) => void
+  onViewRoom?: (roomId: string) => void
+  onBookRoom?: (roomId: string) => void
 }
 
 interface BadgeProps {
@@ -58,10 +64,6 @@ interface BadgeProps {
 interface StarRatingProps {
   rating: number
   maxRating?: number
-}
-
-interface RoomsBrowserProps {
-  rooms?: Room[]
 }
 
 // Badge Component
@@ -118,7 +120,6 @@ const SortSelect: React.FC<SortSelectProps> = ({
     { value: 'price-asc', label: 'Price: Low to High' },
     { value: 'price-desc', label: 'Price: High to Low' },
     { value: 'rating-desc', label: 'Rating: High to Low' },
-    { value: 'availability', label: 'Available First' },
   ],
 }) => {
   return (
@@ -265,15 +266,13 @@ const RoomCard: React.FC<RoomCardProps> = ({
 }) => {
   const handleViewRoom = () => {
     if (onViewRoom) {
-      onViewRoom(room.number)
-    } else {
-      console.log(`Viewing room ${room.number}: ${room.name}`)
+      onViewRoom(room.id)
     }
   }
 
   const handleBookRoom = () => {
     if (room.available && onBookRoom) {
-      onBookRoom(room.number)
+      onBookRoom(room.id)
     }
   }
 
@@ -299,7 +298,8 @@ const RoomCard: React.FC<RoomCardProps> = ({
           }}
         />
         <div className="absolute top-4 left-4 flex gap-2">
-          <Badge label={room.type} variant="primary" />
+           <Badge label={room.category || 'Standard'} variant="primary" />
+          <Badge label={room.type} variant="secondary" />
           <Badge
             label={room.available ? 'Available' : 'Unavailable'}
             variant={room.available ? 'success' : 'unavailable'}
@@ -344,7 +344,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
             >
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
             </svg>
-            <span className="font-medium">{room.size}</span>
+            <span className="font-medium">{room.size}m²</span>
           </div>
           <div className="flex items-center gap-2">
             <svg
@@ -363,7 +363,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
               <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
-            <span className="font-medium">{room.capacity}</span>
+            <span className="font-medium">{room.capacity} People</span>
           </div>
         </div>
 
@@ -424,200 +424,79 @@ const RoomCard: React.FC<RoomCardProps> = ({
   )
 }
 
-// Demo data with availability
-const demoRooms: Room[] = [
-  {
-    number: 1,
-    name: 'Ocean View Family Suite',
-    type: 'Premium',
-    price: 249,
-    image:
-      'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=400&h=300&fit=crop',
-    description:
-      'Spacious family suite with breathtaking ocean views, perfect for families seeking luxury and comfort with premium amenities.',
-    amenities: [
-      'Free WiFi',
-      'Ocean View',
-      'Breakfast',
-      'Family Friendly',
-      'Mini Bar',
-      'Balcony',
-    ],
-    size: '60m²',
-    capacity: '4-6 People',
-    rating: 4.8,
-    available: true,
-  },
-  {
-    number: 2,
-    name: 'Cozy Single Retreat',
-    type: 'Standard',
-    price: 129,
-    image:
-      'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop',
-    description:
-      'Intimate single room with beautiful landscape views, designed for solo travelers who appreciate comfort and tranquility.',
-    amenities: ['Free WiFi', 'TV', 'Breakfast', 'Work Desk', 'Coffee Machine'],
-    size: '25m²',
-    capacity: '1 Person',
-    rating: 4.2,
-    available: false,
-  },
-  {
-    number: 3,
-    name: 'Deluxe Garden Suite',
-    type: 'Deluxe',
-    price: 189,
-    image:
-      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop',
-    description:
-      'Elegant room with private garden access and premium furnishings, offering a perfect blend of luxury and nature.',
-    amenities: [
-      'Free WiFi',
-      'Garden View',
-      'Breakfast',
-      'Premium Bedding',
-      'Coffee Machine',
-      'Private Terrace',
-    ],
-    size: '35m²',
-    capacity: '2 People',
-    rating: 4.6,
-    available: true,
-  },
-  {
-    number: 4,
-    name: 'Executive Business Suite',
-    type: 'Premium',
-    price: 299,
-    image:
-      'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=400&h=300&fit=crop',
-    description:
-      'Our finest accommodation with panoramic city views, separate living area, and exclusive executive amenities for discerning guests.',
-    amenities: [
-      'Free WiFi',
-      'City View',
-      'Breakfast',
-      'Mini Bar',
-      'Coffee Machine',
-      'Bathtub',
-      'Butler Service',
-      'Executive Lounge',
-    ],
-    size: '65m²',
-    capacity: '2-4 People',
-    rating: 4.9,
-    available: true,
-  },
-  {
-    number: 5,
-    name: 'Junior Honeymoon Suite',
-    type: 'Premium',
-    price: 219,
-    image:
-      'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop',
-    description:
-      'Romantic junior suite with champagne service and luxury amenities, perfect for special occasions and romantic getaways.',
-    amenities: [
-      'Free WiFi',
-      'Romantic Setup',
-      'Breakfast',
-      'Mini Bar',
-      'Jacuzzi',
-      'Sitting Area',
-      'Champagne Service',
-    ],
-    size: '45m²',
-    capacity: '2-3 People',
-    rating: 4.7,
-    available: false,
-  },
-  {
-    number: 6,
-    name: 'Mountain View Lodge',
-    type: 'Deluxe',
-    price: 169,
-    image:
-      'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop',
-    description:
-      'Rustic yet elegant room with stunning mountain vistas and cozy fireplace, ideal for nature enthusiasts.',
-    amenities: [
-      'Free WiFi',
-      'Mountain View',
-      'Breakfast',
-      'Fireplace',
-      'Coffee Machine',
-      'Hiking Gear Storage',
-    ],
-    size: '40m²',
-    capacity: '2-3 People',
-    rating: 4.4,
-    available: true,
-  },
-  {
-    number: 7,
-    name: 'Classic Business Room',
-    type: 'Standard',
-    price: 149,
-    image:
-      'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop',
-    description:
-      'Professional and comfortable room designed for business travelers with modern amenities and work-friendly setup.',
-    amenities: [
-      'Free WiFi',
-      'Work Desk',
-      'Business Center Access',
-      'Coffee Machine',
-      'Iron & Board',
-    ],
-    size: '30m²',
-    capacity: '1-2 People',
-    rating: 4.3,
-    available: true,
-  },
-  {
-    number: 8,
-    name: 'Penthouse Suite',
-    type: 'Luxury',
-    price: 499,
-    image:
-      'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=400&h=300&fit=crop',
-    description:
-      'Ultimate luxury experience with private terrace, panoramic views, and exclusive concierge service.',
-    amenities: [
-      'Free WiFi',
-      'Private Terrace',
-      'Concierge',
-      'Mini Bar',
-      'Jacuzzi',
-      'Butler Service',
-      'City View',
-      'Champagne Service',
-    ],
-    size: '85m²',
-    capacity: '2-6 People',
-    rating: 4.9,
-    available: false,
-  },
-]
-
 // Main RoomsBrowser Component
-const RoomsBrowser: React.FC<RoomsBrowserProps> = ({ rooms = demoRooms }) => {
+const RoomsBrowser: React.FC = () => {
+  const navigate = useNavigate()
   const [page, setPage] = useState<number>(1)
   const [sortOption, setSortOption] = useState<string>('recommended')
   const [typeFilter, setTypeFilter] = useState<string>('all')
-  const [availabilityFilter, setAvailabilityFilter] = useState<string>('all')
+  const [categoryFilter, setCategoryFilter] = useState<string>('all')
+  const [availabilityFilter, setAvailabilityFilter] = useState<string>('available') // Default to available
+  const [rooms, setRooms] = useState<Room[]>([])
   const [filteredRooms, setFilteredRooms] = useState<Room[]>([])
   const [displayedRooms, setDisplayedRooms] = useState<Room[]>([])
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
 
   const roomsPerPage = 6
+
+  // Fetch rooms from backend on mount
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        // Fetch all rooms (limit 100 for now to support client-side filtering)
+        const response = await fetchPublicRooms({
+           limit: 100
+        })
+        
+        const roomsData = response.data
+        
+        // Transform backend data to component format
+        const transformedRooms: Room[] = roomsData.map((room) => ({
+          id: room._id,
+          _id: room._id,
+          number: room.number,
+          name: room.name,
+          type: room.type,
+          category: room.category,
+          price: room.price,
+          image: room.images?.[0]?.url || room.image?.url || '/placeholder-room.jpg',
+          images: room.images,
+          description: room.description || 'Comfortable and elegant room with modern amenities.',
+          amenities: room.amenities || ['Free WiFi', 'Air Conditioning', 'TV'],
+          size: room.size || 35,
+          capacity: room.capacity || 2,
+          rating: room.rating || 4.5,
+          available: room.available,
+        }))
+        
+        setRooms(transformedRooms)
+        setIsLoading(false)
+      } catch (err) {
+        console.error('Failed to fetch rooms:', err)
+        setError('Failed to load rooms. Please try again later.')
+        setIsLoading(false)
+        setRooms([])
+      }
+    }
+
+    fetchRooms()
+  }, [])
 
   // Get unique room types for filter
   const roomTypes = Array.from(new Set(rooms.map((room) => room.type)))
   const typeFilterOptions = [
     { value: 'all', label: 'All Types' },
     ...roomTypes.map((type) => ({ value: type, label: type })),
+  ]
+
+
+  const categoryFilterOptions = [
+    { value: 'all', label: 'All Categories' },
+    ...['Single', 'Double', 'Triple', 'Quad', 'Family', 'Suite'].map((cat) => ({ value: cat, label: cat })),
   ]
 
   const availabilityFilterOptions = [
@@ -634,6 +513,11 @@ const RoomsBrowser: React.FC<RoomsBrowserProps> = ({ rooms = demoRooms }) => {
     // Apply type filter
     if (typeFilter !== 'all') {
       filtered = filtered.filter((room) => room.type === typeFilter)
+    }
+
+    // Apply category filter
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter((room) => room.category === categoryFilter)
     }
 
     // Apply availability filter
@@ -672,7 +556,7 @@ const RoomsBrowser: React.FC<RoomsBrowserProps> = ({ rooms = demoRooms }) => {
       setFilteredRooms(filtered)
       setIsLoading(false)
     }, 300)
-  }, [rooms, sortOption, typeFilter, availabilityFilter])
+  }, [rooms, sortOption, typeFilter, categoryFilter, availabilityFilter])
 
   // Calculate displayed rooms based on current page
   useEffect(() => {
@@ -682,9 +566,7 @@ const RoomsBrowser: React.FC<RoomsBrowserProps> = ({ rooms = demoRooms }) => {
   }, [filteredRooms, page])
 
   const calculatedTotalPages = Math.ceil(filteredRooms.length / roomsPerPage)
-  const availableRoomsCount = filteredRooms.filter(
-    (room) => room.available
-  ).length
+
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage)
@@ -703,6 +585,13 @@ const RoomsBrowser: React.FC<RoomsBrowserProps> = ({ rooms = demoRooms }) => {
     setPage(1)
   }
 
+  const handleCategoryFilterChange = (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    setCategoryFilter(event.target.value)
+    setPage(1)
+  }
+
   const handleAvailabilityFilterChange = (
     event: React.ChangeEvent<HTMLSelectElement>
   ) => {
@@ -714,17 +603,17 @@ const RoomsBrowser: React.FC<RoomsBrowserProps> = ({ rooms = demoRooms }) => {
     setPage(1)
     setSortOption('recommended')
     setTypeFilter('all')
+    setCategoryFilter('all')
     setAvailabilityFilter('all')
     scrollToTop()
   }
 
-  const handleViewRoom = (roomId: number) => {
-    alert(`Viewing room details for Room ID: ${roomId}`)
+  const handleViewRoom = (roomId: string) => {
+    navigate(`/rooms/${roomId}`)
   }
 
-  const handleBookRoom = (roomId: number) => {
-    const room = rooms.find((r) => r.number === roomId)
-    alert(`Booking ${room?.name} (Room ID: ${roomId})`)
+  const handleBookRoom = (roomId: string) => {
+    navigate(`/book/${roomId}`)
   }
 
   const scrollToTop = () => {
@@ -747,19 +636,22 @@ const RoomsBrowser: React.FC<RoomsBrowserProps> = ({ rooms = demoRooms }) => {
             </p>
             <div className="flex flex-wrap justify-center gap-4 text-sm">
               <span className="bg-primary-100 text-primary-800 px-4 py-2 rounded-full font-medium">
-                {filteredRooms.length} Total Rooms
+                {rooms.length} Total Rooms
               </span>
               <span className="bg-green-100 text-green-800 px-4 py-2 rounded-full font-medium">
-                {availableRoomsCount} Available
-              </span>
-              <span className="bg-red-100 text-red-800 px-4 py-2 rounded-full font-medium">
-                {filteredRooms.length - availableRoomsCount} Unavailable
+                 {rooms.filter(r => r.available).length} Available
               </span>
             </div>
           </div>
 
           {/* Filters and Sorting */}
           <div className="flex flex-col lg:flex-row gap-4 mb-8 p-6 bg-gray-50 rounded-xl">
+             <FilterSelect
+              value={categoryFilter}
+              onChange={handleCategoryFilterChange}
+              options={categoryFilterOptions}
+              label="Category"
+            />
             <FilterSelect
               value={typeFilter}
               onChange={handleTypeFilterChange}
@@ -788,6 +680,19 @@ const RoomsBrowser: React.FC<RoomsBrowserProps> = ({ rooms = demoRooms }) => {
             </div>
           </div>
 
+          {/* Error State */}
+          {error && (
+            <div className="flex flex-col justify-center items-center py-10">
+               <p className="text-red-500 mb-4">{error}</p>
+                <button
+                onClick={() => window.location.reload()}
+                className="bg-primary-600 text-white px-6 py-2 rounded-lg"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
           {/* Loading State */}
           {isLoading ? (
             <div className="flex justify-center items-center py-20">
@@ -799,46 +704,19 @@ const RoomsBrowser: React.FC<RoomsBrowserProps> = ({ rooms = demoRooms }) => {
               <div className="space-y-6">
                 {displayedRooms.map((room) => (
                   <RoomCard
-                    key={room.number}
+                    key={room.id}
                     room={room}
                     onViewRoom={handleViewRoom}
                     onBookRoom={handleBookRoom}
                   />
                 ))}
               </div>
-
-              {/* No Results */}
-              {displayedRooms.length === 0 && !isLoading && (
-                <div className="py-20 text-center">
-                  <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-                    <svg
-                      className="w-12 h-12 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                      />
-                    </svg>
+              
+              {displayedRooms.length === 0 && !isLoading && !error && (
+                  <div className="text-center py-20">
+                      <p className="text-gray-500 text-lg">No rooms found matching your criteria.</p>
+                      <button onClick={handleClearFilters} className="mt-4 text-primary-600 hover:underline">Clear Filters</button>
                   </div>
-                  <h3 className="text-2xl font-semibold text-gray-900 mb-2">
-                    No rooms found
-                  </h3>
-                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                    No rooms match your current filters. Try adjusting your
-                    search criteria or browse all available rooms.
-                  </p>
-                  <button
-                    onClick={handleClearFilters}
-                    className="bg-primary-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors shadow-lg"
-                  >
-                    Clear All Filters
-                  </button>
-                </div>
               )}
 
               {/* Pagination */}
@@ -849,40 +727,6 @@ const RoomsBrowser: React.FC<RoomsBrowserProps> = ({ rooms = demoRooms }) => {
                   onPageChange={handlePageChange}
                 />
               )}
-
-              {/* Bottom Summary */}
-              {displayedRooms.length > 0 && (
-                <div className="mt-12 text-center pt-8 border-t border-gray-200">
-                  <p className="text-gray-600 mb-4">
-                    Showing {displayedRooms.length} of {filteredRooms.length}{' '}
-                    rooms
-                    {availabilityFilter === 'all' &&
-                      ` (${availableRoomsCount} available)`}
-                  </p>
-                  <div className="flex flex-wrap justify-center gap-3">
-                    <button
-                      onClick={() => setAvailabilityFilter('available')}
-                      className="text-green-600 hover:text-green-700 font-medium transition-colors"
-                    >
-                      Show Available Only
-                    </button>
-                    <span className="text-gray-300">•</span>
-                    <button
-                      onClick={handleClearFilters}
-                      className="text-primary-600 hover:text-primary-700 font-medium transition-colors"
-                    >
-                      Reset All Filters
-                    </button>
-                    <span className="text-gray-300">•</span>
-                    <button
-                      onClick={scrollToTop}
-                      className="text-gray-600 hover:text-gray-700 font-medium transition-colors"
-                    >
-                      Back to Top
-                    </button>
-                  </div>
-                </div>
-              )}
             </>
           )}
         </div>
@@ -890,5 +734,4 @@ const RoomsBrowser: React.FC<RoomsBrowserProps> = ({ rooms = demoRooms }) => {
     </div>
   )
 }
-
 export default RoomsBrowser

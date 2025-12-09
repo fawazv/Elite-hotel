@@ -1,17 +1,24 @@
 import React, { useState, useEffect } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { fetchPublicRooms, searchAvailableRooms } from '@/services/publicApi'
 
 // Type definitions
 interface Room {
-  id: number
+  id: string
+  _id: string
+  number: number
   name: string
   type: string
+  category?: string
   price: number
   image: string
+  images?: { url: string }[]
   description: string
   amenities: string[]
-  size: string
-  capacity: string
+  size: number
+  capacity: number
   rating?: number
+  available: boolean
 }
 
 interface SortOption {
@@ -45,8 +52,8 @@ interface PaginationProps {
 
 interface RoomCardProps {
   room: Room
-  onViewRoom?: (roomId: number) => void
-  onBookRoom?: (roomId: number) => void
+  onViewRoom?: (roomId: string) => void
+  onBookRoom?: (roomId: string) => void
 }
 
 interface BadgeProps {
@@ -318,7 +325,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
             >
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
             </svg>
-            <span className="font-medium">{room.size}</span>
+            <span className="font-medium">{room.size}m²</span>
           </div>
           <div className="flex items-center gap-2">
             <svg
@@ -337,7 +344,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
               <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
-            <span className="font-medium">{room.capacity}</span>
+            <span className="font-medium">{room.capacity} People</span>
           </div>
         </div>
 
@@ -383,168 +390,125 @@ const RoomCard: React.FC<RoomCardProps> = ({
   )
 }
 
-// Demo data - only available rooms for search results
-const demoResults: Room[] = [
-  {
-    id: 1,
-    name: 'Ocean View Family Suite',
-    type: 'Premium',
-    price: 249,
-    image:
-      'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=400&h=300&fit=crop',
-    description:
-      'Spacious family suite with breathtaking ocean views, perfect for families seeking luxury and comfort with premium amenities.',
-    amenities: [
-      'Free WiFi',
-      'Ocean View',
-      'Breakfast',
-      'Family Friendly',
-      'Mini Bar',
-      'Balcony',
-    ],
-    size: '60m²',
-    capacity: '4-6 People',
-    rating: 4.8,
-  },
-  {
-    id: 3,
-    name: 'Deluxe Garden Suite',
-    type: 'Deluxe',
-    price: 189,
-    image:
-      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop',
-    description:
-      'Elegant room with private garden access and premium furnishings, offering a perfect blend of luxury and nature.',
-    amenities: [
-      'Free WiFi',
-      'Garden View',
-      'Breakfast',
-      'Premium Bedding',
-      'Coffee Machine',
-      'Private Terrace',
-    ],
-    size: '35m²',
-    capacity: '2 People',
-    rating: 4.6,
-  },
-  {
-    id: 4,
-    name: 'Executive Business Suite',
-    type: 'Premium',
-    price: 299,
-    image:
-      'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=400&h=300&fit=crop',
-    description:
-      'Our finest accommodation with panoramic city views, separate living area, and exclusive executive amenities for discerning guests.',
-    amenities: [
-      'Free WiFi',
-      'City View',
-      'Breakfast',
-      'Mini Bar',
-      'Coffee Machine',
-      'Bathtub',
-      'Butler Service',
-      'Executive Lounge',
-    ],
-    size: '65m²',
-    capacity: '2-4 People',
-    rating: 4.9,
-  },
-  {
-    id: 6,
-    name: 'Mountain View Lodge',
-    type: 'Deluxe',
-    price: 169,
-    image:
-      'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop',
-    description:
-      'Rustic yet elegant room with stunning mountain vistas and cozy fireplace, ideal for nature enthusiasts.',
-    amenities: [
-      'Free WiFi',
-      'Mountain View',
-      'Breakfast',
-      'Fireplace',
-      'Coffee Machine',
-      'Hiking Gear Storage',
-    ],
-    size: '40m²',
-    capacity: '2-3 People',
-    rating: 4.4,
-  },
-  {
-    id: 7,
-    name: 'Classic Business Room',
-    type: 'Standard',
-    price: 149,
-    image:
-      'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop',
-    description:
-      'Professional and comfortable room designed for business travelers with modern amenities and work-friendly setup.',
-    amenities: [
-      'Free WiFi',
-      'Work Desk',
-      'Business Center Access',
-      'Coffee Machine',
-      'Iron & Board',
-    ],
-    size: '30m²',
-    capacity: '1-2 People',
-    rating: 4.3,
-  },
-  {
-    id: 9,
-    name: 'Luxury City Suite',
-    type: 'Luxury',
-    price: 399,
-    image:
-      'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=400&h=300&fit=crop',
-    description:
-      'Premium luxury suite with stunning city views, marble bathroom, and exclusive amenities for the ultimate comfort experience.',
-    amenities: [
-      'Free WiFi',
-      'City View',
-      'Concierge',
-      'Mini Bar',
-      'Marble Bathroom',
-      'Butler Service',
-      'Premium Bedding',
-      'Champagne Service',
-    ],
-    size: '75m²',
-    capacity: '2-4 People',
-    rating: 4.9,
-  },
-]
-
 // Main SearchResults Component
 const SearchResults: React.FC<SearchResultsProps> = ({
-  results = demoResults,
+  results: externalResults,
   currentPage = 1,
 }) => {
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  
   const [page, setPage] = useState<number>(currentPage)
   const [sortOption, setSortOption] = useState<string>('recommended')
   const [typeFilter, setTypeFilter] = useState<string>('all')
+  const [categoryFilter, setCategoryFilter] = useState<string>('all')
+  const [rooms, setRooms] = useState<Room[]>([])
   const [filteredResults, setFilteredResults] = useState<Room[]>([])
   const [displayedResults, setDisplayedResults] = useState<Room[]>([])
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
 
   const roomsPerPage = 6
 
-  // Get unique room types for filter
-  const roomTypes = Array.from(new Set(results.map((room) => room.type)))
+  // Fetch rooms from backend on mount
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        // Get search params from URL
+        const checkIn = searchParams.get('checkIn') || undefined
+        const checkOut = searchParams.get('checkOut') || undefined
+        const roomType = searchParams.get('roomType') || undefined
+        const guests = searchParams.get('guests') || undefined
+        
+        // Fetch rooms from backend
+        let roomsData: any[] = []
+
+        if (checkIn && checkOut) {
+           // Use availability endpoint
+           roomsData = await searchAvailableRooms({
+             checkIn,
+             checkOut,
+             adults: guests ? parseInt(guests) : 1,
+             type: roomType === 'all' ? undefined : roomType,
+           })
+        } else {
+           // Fallback to standard list if no dates
+           const response = await fetchPublicRooms({
+             available: true,
+             type: roomType === 'all' ? undefined : roomType,
+             limit: 100, 
+           })
+           roomsData = response.data
+        }
+        
+        // Transform backend data to component format
+        const transformedRooms: Room[] = roomsData.map((room) => ({
+          id: room._id,
+          _id: room._id,
+          number: room.number,
+          name: room.name,
+          type: room.type,
+          category: room.category,
+          price: room.price,
+          image: room.images?.[0]?.url || room.image?.url || '/placeholder-room.jpg',
+          images: room.images,
+          description: room.description || 'Comfortable and elegant room with modern amenities.',
+          amenities: room.amenities || ['Free WiFi', 'Air Conditioning', 'TV'],
+          size: room.size || 35,
+          capacity: room.capacity || 2,
+          rating: room.rating || 4.5,
+          available: room.available,
+        }))
+        
+        setRooms(transformedRooms)
+        setIsLoading(false)
+      } catch (err) {
+        console.error('Failed to fetch rooms:', err)
+        setError('Failed to load rooms. Please try again later.')
+        setIsLoading(false)
+        // Fallback to empty array on error
+        setRooms([])
+      }
+    }
+
+    // Use external results if provided, otherwise fetch from API
+    if (externalResults && externalResults.length > 0) {
+      setRooms(externalResults)
+      setIsLoading(false)
+    } else {
+      fetchRooms()
+    }
+  }, [searchParams, externalResults])
+
+  // Get unique room types and categories for filter
+  const roomTypes = Array.from(new Set(rooms.map((room) => room.type)))
   const typeFilterOptions = [
     { value: 'all', label: 'All Types' },
     ...roomTypes.map((type) => ({ value: type, label: type })),
   ]
 
+
+  const categoryFilterOptions = [
+    { value: 'all', label: 'All Categories' },
+    ...['Single', 'Double', 'Triple', 'Quad', 'Family', 'Suite'].map((cat) => ({ value: cat, label: cat })),
+  ]
+
   // Apply sorting and filtering to results
   useEffect(() => {
     setIsLoading(true)
-    let filtered = [...results]
+    let filtered = [...rooms]
 
     // Apply type filter
     if (typeFilter !== 'all') {
       filtered = filtered.filter((room) => room.type === typeFilter)
+    }
+
+    // Apply category filter
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter((room) => room.category === categoryFilter)
     }
 
     // Apply sorting
@@ -568,7 +532,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       setFilteredResults(filtered)
       setIsLoading(false)
     }, 300)
-  }, [results, sortOption, typeFilter])
+  }, [rooms, sortOption, typeFilter, categoryFilter])
 
   // Calculate displayed results based on current page
   useEffect(() => {
@@ -596,20 +560,33 @@ const SearchResults: React.FC<SearchResultsProps> = ({
     setPage(1)
   }
 
+  const handleCategoryFilterChange = (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    setCategoryFilter(event.target.value)
+    setPage(1)
+  }
+
   const handleClearFilters = () => {
     setPage(1)
     setSortOption('recommended')
     setTypeFilter('all')
+    setCategoryFilter('all')
     scrollToTop()
   }
 
-  const handleViewRoom = (roomId: number) => {
-    alert(`Viewing room details for Room ID: ${roomId}`)
+  const handleViewRoom = (roomId: string) => {
+    navigate(`/rooms/${roomId}`)
   }
 
-  const handleBookRoom = (roomId: number) => {
-    const room = results.find((r) => r.id === roomId)
-    alert(`Booking ${room?.name} (Room ID: ${roomId})`)
+  const handleBookRoom = (roomId: string) => {
+    const checkIn = searchParams.get('checkIn') || ''
+    const checkOut = searchParams.get('checkOut') || ''
+    const guests = searchParams.get('guests') || '2'
+    
+    // Navigate to booking flow with room and date info
+    const bookingUrl = `/book/${roomId}?checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`
+    navigate(bookingUrl)
   }
 
   const scrollToTop = () => {
@@ -643,6 +620,12 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 
           {/* Filters and Sorting */}
           <div className="flex flex-col lg:flex-row gap-4 mb-8 p-6 bg-gray-50 rounded-xl">
+             <FilterSelect
+              value={categoryFilter}
+              onChange={handleCategoryFilterChange}
+              options={categoryFilterOptions}
+              label="Category"
+            />
             <FilterSelect
               value={typeFilter}
               onChange={handleTypeFilterChange}
@@ -665,8 +648,36 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             </div>
           </div>
 
-          {/* Loading State */}
-          {isLoading ? (
+          {/* Error State */}
+          {error ? (
+            <div className="flex flex-col justify-center items-center py-20">
+              <div className="mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6">
+                <svg
+                  className="w-12 h-12 text-red-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-2">
+                Something went wrong
+              </h3>
+              <p className="text-gray-600 mb-6">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-primary-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors shadow-lg"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : isLoading ? (
             <div className="flex justify-center items-center py-20">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
             </div>
@@ -674,9 +685,9 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             <>
               {/* Results Grid */}
               <div className="space-y-6">
-                {displayedResults.map((room) => (
+                {displayedResults.map((room, index) => (
                   <RoomCard
-                    key={room.id}
+                    key={room.id || "room-" + index}
                     room={room}
                     onViewRoom={handleViewRoom}
                     onBookRoom={handleBookRoom}

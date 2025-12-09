@@ -30,4 +30,34 @@ export class RoomLookupAdapter implements IRoomLookupService {
       throw new Error('Failed to fetch room details')
     }
   }
+
+  async getAllRooms() {
+    try {
+      const res = await axios.get(`${this.baseUrl}/`)
+      const rooms = res.data?.data
+
+      if (!Array.isArray(rooms)) {
+        throw new Error('Invalid response format: expected an array of rooms')
+      }
+
+      return rooms.map((room: any) => ({
+        id: room._id,
+        price: room.price,
+        available: room.available,
+        number: Number(room.number || 0),
+        type: room.type || 'unknown',
+        category: room.category || 'unknown',
+        name: room.name,
+        description: room.description,
+        image: room.image,
+        images: (room.images && room.images.length > 0) ? room.images : (room.image ? [room.image] : []),
+        amenities: room.amenities,
+        size: room.size,
+        capacity: room.capacity,
+        rating: room.rating,
+      }))
+    } catch (err: any) {
+      throw new Error('Failed to fetch all rooms')
+    }
+  }
 }

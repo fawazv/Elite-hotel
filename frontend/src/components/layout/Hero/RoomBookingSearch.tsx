@@ -1,20 +1,51 @@
-import { useState, type SetStateAction } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { z } from 'zod'
+
+const searchSchema = z.object({
+  checkIn: z.string().refine((val) => {
+    const date = new Date(val)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return date >= today
+  }, { message: "Check-in date cannot be in the past" }),
+  checkOut: z.string().refine((val) => {
+    const date = new Date(val)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return date > today
+  }, { message: "Check-out date must be in the future" }),
+  roomType: z.string().optional(),
+  guests: z.string().optional(),
+}).refine((data) => {
+  if (data.checkIn && data.checkOut) {
+    return new Date(data.checkOut) > new Date(data.checkIn)
+  }
+  return true
+}, {
+  message: "Check-out date must be after check-in date",
+  path: ["checkOut"]
+})
 
 const RoomBookingSearch = () => {
+  // Get today's date in YYYY-MM-DD format for min attribute
+  const today = new Date().toISOString().split('T')[0]
+
   const [checkIn, setCheckIn] = useState('')
   const [checkOut, setCheckOut] = useState('')
   const [roomType, setRoomType] = useState('')
   const [guests, setGuests] = useState('2')
+  const [errors, setErrors] = useState<{[key: string]: string}>({})
 
   const navigate = useNavigate()
 
+  // Updated to match backend enum + category (simplified for user selection)
   const roomTypeOptions = [
-    { value: '', label: 'Select a Room Type' },
-    { value: 'single', label: 'Single Bed' },
-    { value: 'double', label: 'Double Bed' },
-    { value: 'suite', label: 'Suite' },
-    { value: 'family', label: 'Family Room' },
+    { value: '', label: 'All Room Types' },
+    { value: 'Standard', label: 'Standard' },
+    { value: 'Deluxe', label: 'Deluxe' },
+    { value: 'Premium', label: 'Premium' },
+    { value: 'Luxury', label: 'Luxury' },
   ]
 
   const guestsOptions = [
@@ -34,7 +65,9 @@ const RoomBookingSearch = () => {
     placeholder?: string
     label?: string
     icon?: React.ReactNode
-    options?: { value: string; label: React.ReactNode }[]
+    options?: { value: string; label: string }[]
+    min?: string
+    error?: string
   }
 
   const InputField = ({
@@ -45,6 +78,8 @@ const RoomBookingSearch = () => {
     label,
     icon,
     options,
+    min,
+    error,
   }: InputFieldProps) => {
     return (
       <div className="space-y-2">
@@ -58,7 +93,7 @@ const RoomBookingSearch = () => {
             <select
               value={value}
               onChange={onChange}
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-800/20 focus:border-amber-800 transition-all appearance-none"
+              className={`w-full px-4 py-3 rounded-lg border ${error ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-amber-800/20 focus:border-amber-800 transition-all appearance-none cursor-pointer bg-white`}
             >
               {options?.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -72,15 +107,17 @@ const RoomBookingSearch = () => {
               value={value}
               onChange={onChange}
               placeholder={placeholder}
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-800/20 focus:border-amber-800 transition-all"
+              min={min}
+              className={`w-full px-4 py-3 rounded-lg border ${error ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-amber-800/20 focus:border-amber-800 transition-all`}
             />
           )}
           {icon && (
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+            <div className={`absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none ${error ? 'text-red-400' : 'text-gray-400'}`}>
               {icon}
             </div>
           )}
         </div>
+        {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
       </div>
     )
   }
@@ -121,14 +158,53 @@ const RoomBookingSearch = () => {
   )
 
   const handleSearch = () => {
-    console.log('Search parameters:', {
-      checkIn,
-      checkOut,
-      roomType,
-      guests,
-    })
-    // Here you would typically trigger a search or navigate to search results
-    navigate('/search-results')
+    // Validate inputs
+    const result = searchSchema.safeParse({ checkIn, checkOut, roomType, guests })
+
+    if (!result.success) {
+      const fieldErrors: {[key: string]: string} = {}
+      result.error.errors.forEach((err) => {
+        if (err.path[0]) fieldErrors[err.path[0] as string] = err.message
+      })
+      setErrors(fieldErrors)
+      return
+    }
+
+    setErrors({}) // Clear errors
+
+    const params = new URLSearchParams()
+    
+    if (checkIn) params.append('checkIn', checkIn)
+    if (checkOut) params.append('checkOut', checkOut)
+    if (roomType) params.append('roomType', roomType)
+    if (guests) params.append('guests', guests)
+
+    const searchString = params.toString()
+    navigate(`/search-results${searchString ? `?${searchString}` : ''}`)
+  }
+
+  const handleCheckInChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setCheckIn(e.target.value) 
+    if (errors.checkIn) setErrors({...errors, checkIn: ''})
+    
+    // Auto-update check-out min date or clear if invalid
+    if (e.target.value) {
+       // If check-out is before or same as new check-in, separate it
+       if (checkOut && new Date(checkOut) <= new Date(e.target.value)) {
+          setCheckOut('')
+       }
+    }
+  }
+
+  const getMinCheckOutDate = () => {
+    if (checkIn) {
+      const date = new Date(checkIn)
+      date.setDate(date.getDate() + 1)
+      return date.toISOString().split('T')[0]
+    }
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    return tomorrow.toISOString().split('T')[0]
   }
 
   return (
@@ -142,49 +218,42 @@ const RoomBookingSearch = () => {
           <InputField
             type="date"
             value={checkIn}
-            onChange={(e: { target: { value: SetStateAction<string> } }) =>
-              setCheckIn(e.target.value)
-            }
+            onChange={handleCheckInChange}
             label="Check-in Date"
             icon={calendarIcon}
-            placeholder={undefined}
-            options={undefined}
+            min={today}
+            error={errors.checkIn}
           />
 
           <InputField
             type="date"
             value={checkOut}
-            onChange={(e: { target: { value: SetStateAction<string> } }) =>
+            onChange={(e) => {
               setCheckOut(e.target.value)
-            }
+              if (errors.checkOut) setErrors({...errors, checkOut: ''})
+            }}
             label="Check-out Date"
             icon={calendarIcon}
-            placeholder={undefined}
-            options={undefined}
+            min={getMinCheckOutDate()}
+            error={errors.checkOut}
           />
 
           <InputField
             type="select"
             value={roomType}
-            onChange={(e: { target: { value: SetStateAction<string> } }) =>
-              setRoomType(e.target.value)
-            }
+            onChange={(e) => setRoomType(e.target.value)}
             label="Room Type"
             options={roomTypeOptions}
             icon={dropdownIcon}
-            placeholder={undefined}
           />
 
           <InputField
             type="select"
             value={guests}
-            onChange={(e: { target: { value: SetStateAction<string> } }) =>
-              setGuests(e.target.value)
-            }
+            onChange={(e) => setGuests(e.target.value)}
             label="Guests"
             options={guestsOptions}
             icon={dropdownIcon}
-            placeholder={undefined}
           />
         </div>
 

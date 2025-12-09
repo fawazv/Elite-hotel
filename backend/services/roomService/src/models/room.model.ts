@@ -25,8 +25,13 @@ const RoomSchema = new Schema<RoomDocument>(
     images: { type: [ImageSchema], default: [] },
     description: { type: String },
     amenities: { type: [String], default: [] },
-    size: { type: String },
-    capacity: { type: String },
+    size: { type: Number, required: true },
+    capacity: { type: Number, required: true },
+    category: { 
+      type: String, 
+      default: 'Double', 
+      enum: ['Single', 'Double', 'Triple', 'Quad', 'Family', 'Suite'] 
+    },
     rating: { type: Number, min: 0, max: 5 },
     available: { type: Boolean, default: true },
   },

@@ -30,6 +30,17 @@ export class ReservationController implements IReservationController {
     }
   }
 
+  async checkAvailability(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await this.svc.checkAvailability(req.body)
+      return successResponse(res, HttpStatus.OK, 'Availability checked', {
+        data: result,
+      })
+    } catch (err) {
+      next(err)
+    }
+  }
+
   async create(req: CustomeRequest, res: Response, next: NextFunction) {
     try {
       const createdBy = (req.user as any)?.id

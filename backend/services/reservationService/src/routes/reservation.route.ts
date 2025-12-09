@@ -36,6 +36,13 @@ router.post(
   reservationController.createPublic.bind(reservationController)
 )
 
+// Check Availability (Public)
+router.post(
+  '/available-rooms',
+  // Add validation schema if needed, e.g., validateRequest(availabilitySchema)
+  reservationController.checkAvailability.bind(reservationController)
+)
+
 // List / Get
 router.get(
   '/',

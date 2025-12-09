@@ -9,6 +9,8 @@ export interface IReservationController {
   patch(req: Request, res: Response, next: NextFunction): Promise<void>
   confirm(req: Request, res: Response, next: NextFunction): Promise<void>
   cancel(req: Request, res: Response, next: NextFunction): Promise<void>
+  createPublic(req: Request, res: Response, next: NextFunction): Promise<void>
+  checkAvailability(req: Request, res: Response, next: NextFunction): Promise<void>
   checkIn(req: Request, res: Response, next: NextFunction): Promise<void>
   checkOut(req: Request, res: Response, next: NextFunction): Promise<void>
 }

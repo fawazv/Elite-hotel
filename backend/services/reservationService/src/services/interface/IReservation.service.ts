@@ -29,6 +29,24 @@ export interface IRoomLookupService {
   ensureRoomExists(
     roomId: string
   ): Promise<{ id: string; price: number; available?: boolean }>
+  getAllRooms(): Promise<
+    Array<{
+      id: string
+      number: number
+      type: string
+      price: number
+      available: boolean
+      name?: string
+      description?: string
+      image?: { url: string } // Added this line
+      images?: { url: string }[]
+      amenities?: string[]
+      size?: number
+      capacity?: number
+      rating?: number
+      category?: string
+    }>
+  >
 }
 
 export interface IPaymentOrchestrator {
@@ -97,4 +115,12 @@ export interface IReservationService {
   cancel(id: string, reason?: string): Promise<ReservationDocument>
   checkIn(id: string): Promise<ReservationDocument>
   checkOut(id: string): Promise<ReservationDocument>
+
+  checkAvailability(criteria: {
+    checkIn: Date | string
+    checkOut: Date | string
+    adults?: number
+    children?: number
+    type?: string
+  }): Promise<any[]>
 }

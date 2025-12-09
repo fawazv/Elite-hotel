@@ -622,4 +622,54 @@ export class ReservationService implements IReservationService {
     }
     return updated!
   }
+
+
+  async checkAvailability(criteria: {
+    checkIn: Date | string
+    checkOut: Date | string
+    adults?: number
+    children?: number
+    type?: string
+  }): Promise<any[]> {
+    const { checkIn, checkOut } = this.normalizeDates(criteria)
+
+    if (!(checkIn < checkOut)) {
+      throw new CustomError(
+        'checkOut must be after checkIn',
+        HttpStatus.BAD_REQUEST
+      )
+    }
+
+    // 1. Fetch all rooms (candidates)
+    const allRooms = await this.roomLookup.getAllRooms()
+
+    // 2. Find all reservations intersecting this date range
+    // We want reservations where (res.checkIn < req.checkOut) AND (res.checkOut > req.checkIn)
+    // and status is one of [PendingPayment, Confirmed, CheckedIn]
+    const overlaps = await this.repo.findAll(
+      {
+        checkIn: { $lt: checkOut },
+        checkOut: { $gt: checkIn },
+        status: { $in: ['PendingPayment', 'Confirmed', 'CheckedIn'] },
+      },
+      { limit: 10000 } // Fetch plenty
+    )
+
+    const occupiedRoomIds = new Set(
+      overlaps.map((r) => r.roomId.toString())
+    )
+
+    // 3. Filter rooms
+    const availableRooms = allRooms.filter((room) => {
+      // Must be generally available/active
+      if (!room.available) return false
+      // Must not be occupied
+      if (occupiedRoomIds.has(room.id)) return false
+      // Optional: Filter by type
+      if (criteria.type && room.type !== criteria.type) return false
+      return true
+    })
+
+    return availableRooms
+  }
 }

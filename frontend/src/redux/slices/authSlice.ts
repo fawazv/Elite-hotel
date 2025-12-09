@@ -8,6 +8,10 @@ interface User {
   role: string
   phoneNumber?: string
   profileImage?: string
+  avatar?: {
+    publicId: string
+    url: string
+  }
 }
 
 interface AuthState {
@@ -36,8 +40,18 @@ const authSlice = createSlice({
       state.isAuthenticated = false
       state.user = null
     },
+    updateUser: (state, action: PayloadAction<Partial<User>>) => {
+      if (state.user) {
+        state.user = { ...state.user, ...action.payload }
+      }
+    },
+    updateAvatar: (state, action: PayloadAction<{ publicId: string; url: string } | null>) => {
+      if (state.user) {
+        state.user.avatar = action.payload || undefined
+      }
+    },
   },
 })
 
-export const { login, logout } = authSlice.actions
+export const { login, logout, updateUser, updateAvatar } = authSlice.actions
 export default authSlice.reducer

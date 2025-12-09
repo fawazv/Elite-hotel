@@ -12,8 +12,11 @@ export const createRoomSchema = Joi.object({
     Joi.array().items(Joi.string().trim()),
     Joi.string() // JSON array or comma-separated
   ).optional(),
-  size: Joi.string().optional(),
-  capacity: Joi.string().optional(),
+  size: Joi.alternatives(Joi.number(), Joi.string()).required(),
+  capacity: Joi.alternatives(Joi.number(), Joi.string()).required(),
+  category: Joi.string()
+    .valid('Single', 'Double', 'Suite', 'Family')
+    .optional(),
   rating: Joi.alternatives(Joi.number(), Joi.string()).optional(),
   available: Joi.alternatives(Joi.boolean(), Joi.string()).optional(),
 })
@@ -30,8 +33,9 @@ export const patchRoomSchema = Joi.object({
     Joi.array().items(Joi.string().trim()),
     Joi.string()
   ),
-  size: Joi.string(),
-  capacity: Joi.string(),
+  size: Joi.alternatives(Joi.number(), Joi.string()),
+  capacity: Joi.alternatives(Joi.number(), Joi.string()),
+  category: Joi.string().valid('Single', 'Double', 'Suite', 'Family'),
   rating: Joi.alternatives(Joi.number(), Joi.string()),
   available: Joi.alternatives(Joi.boolean(), Joi.string()),
 }).min(1)
