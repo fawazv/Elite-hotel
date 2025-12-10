@@ -32,5 +32,13 @@ router.post('/:id/dispute', billingController.flagDispute.bind(billingController
 router.patch('/:id/dispute/:disputeId/resolve', billingController.resolveDispute.bind(billingController))
 router.get('/:id/disputes', billingController.getDisputesByBilling.bind(billingController))
 
+// Analytics endpoints
+import { BillingAnalyticsController } from '../controllers/billing.analytics.controller';
+import { BillingModel } from '../models/billing.model';
+
+const billingAnalyticsController = new BillingAnalyticsController(BillingModel);
+
+router.get('/analytics/status', billingAnalyticsController.getBillingStatus.bind(billingAnalyticsController));
+
 export default router
 

@@ -5,6 +5,9 @@ import AdminProtectedRoute from '@/layouts/AdminProtectedRoute'
 
 // Lazy load admin components
 const Dashboard = React.lazy(() => import('@pages/Admin/Dashboard'))
+const ReceptionistDashboard = React.lazy(() => import('@pages/Admin/ReceptionistDashboard'))
+const HousekeeperDashboard = React.lazy(() => import('@pages/Admin/HousekeeperDashboard'))
+const RoleBasedDashboard = React.lazy(() => import('@/components/shared/RoleBasedDashboard'))
 const AdminRooms = React.lazy(() => import('@pages/Admin/Rooms'))
 const AdminReservations = React.lazy(() => import('@pages/Admin/Reservations'))
 const AdminUsers = React.lazy(() => import('@pages/Admin/Users'))
@@ -31,8 +34,15 @@ const AdminRoute: React.FC = () => {
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
           <Route path="/" element={<AdminLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="dashboard" element={<Dashboard />} />
+            {/* Role-based dashboard - automatically renders correct dashboard based on user role */}
+            <Route index element={<RoleBasedDashboard />} />
+            <Route path="dashboard" element={<RoleBasedDashboard />} />
+            
+            {/* Specific dashboard routes (for direct navigation if needed) */}
+            <Route path="dashboard/admin" element={<Dashboard />} />
+            <Route path="dashboard/receptionist" element={<ReceptionistDashboard />} />
+            <Route path="dashboard/housekeeper" element={<HousekeeperDashboard />} />
+            
             <Route path="rooms" element={<AdminRooms />} />
             <Route path="rooms/new" element={<RoomForm />} />
             <Route path="rooms/edit/:id" element={<RoomForm />} />

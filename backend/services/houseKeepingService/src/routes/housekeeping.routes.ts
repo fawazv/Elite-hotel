@@ -7,6 +7,8 @@ import authenticateToken from '../middleware/auth.middleware'
 import { authorizeRole } from '../middleware/authorizeRole'
 import { reassignTaskSchema } from '../dto/reassignTask.dto'
 import { listTasksSchema } from '../dto/listTasks.dto'
+import { HousekeepingAnalyticsController } from '../controllers/housekeeping.analytics.controller'
+import { HousekeepingModel } from '../models/housekeeping.model'
 
 export default function routes(container = createContainer()) {
   const router = Router()
@@ -108,6 +110,13 @@ export default function routes(container = createContainer()) {
     authorizeRole(['admin', 'receptionist']),
     ctrl.getTaskStatistics
   )
+
+  // ===== ANALYTICS ENDPOINTS =====
+  // Analytics endpoints for API Gateway dashboard aggregation (no auth - called by API Gateway)
+  const analyticsController = new HousekeepingAnalyticsController(HousekeepingModel)
+  
+router.get('/analytics/status', (req, res, next) => analyticsController.getHousekeepingStatus(req, res, next))
+  router.get('/analytics/my-stats/:userId', (req, res, next) => analyticsController.getMyStats(req, res, next))
 
   return router
 }

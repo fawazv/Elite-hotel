@@ -130,6 +130,7 @@ export default function Contact() {
                     type="text"
                     value={formData.name}
                     onChange={handleChange}
+                    autoComplete="name"
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     required
                   />
@@ -147,6 +148,7 @@ export default function Contact() {
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
+                    autoComplete="email"
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     required
                   />
@@ -165,6 +167,7 @@ export default function Contact() {
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
+                  autoComplete="off"
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   rows={4}
                   required

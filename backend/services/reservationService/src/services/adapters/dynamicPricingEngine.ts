@@ -49,6 +49,19 @@ export class DynamicPricingEngine implements IPricingEngine {
     const fees = Math.round(subtotal * 0.02)
     const total = subtotal + taxes + fees
 
+    const breakdown = [
+      { label: `Base Rate (${nights} nights x ${currency} ${baseRate})`, amount: subtotal + discountApplied }, // Original subtotal before discount
+    ]
+
+    if (discountApplied > 0) {
+      breakdown.push({ label: 'Discount', amount: -discountApplied })
+    }
+
+    breakdown.push({ label: 'Taxes (12%)', amount: taxes })
+    breakdown.push({ label: 'Fees (2%)', amount: fees })
+
+    // Optional: seasonal adjustment note or line item if needed, but for now just basic components
+
     return {
       baseRate,
       nights,
@@ -58,6 +71,7 @@ export class DynamicPricingEngine implements IPricingEngine {
       total,
       currency,
       discountApplied,
+      breakdown,
       notes: `Seasonal multiplier: ${seasonalMultiplier}, Occupancy: ${occupancyRate}%, Demand: ${occupancyMultiplier}`,
     }
   }

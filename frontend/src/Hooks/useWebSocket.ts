@@ -3,9 +3,8 @@
  * Manages WebSocket connection for real-time messaging and video call signaling
  */
 
-import { useEffect, useRef, useCallback, useState } from 'react';
-import { useSelector } from 'react-redux';
-import { io, Socket } from 'socket.io-client';
+import { useEffect, useRef } from 'react';
+import type { Socket } from 'socket.io-client';
 import type {
   IICEServersEvent,
   ICallIncomingEvent,
@@ -16,8 +15,7 @@ import type {
   ICallErrorEvent,
 } from '../types/communication.types';
 import { logCommunicationEvent } from '../services/communicationApi';
-
-const SOCKET_URL = import.meta.env.VITE_COMMUNICATION_WS_URL || 'http://localhost:4009';
+import { useSocket } from '../contexts/SocketContext';
 
 interface WebSocketEventHandlers {
   onICEServers?: (data: IICEServersEvent) => void;
@@ -33,196 +31,119 @@ interface UseWebSocketReturn {
   socket: Socket | null;
   connected: boolean;
   emit: (event: string, data: any) => void;
-  connect: () => void;
-  disconnect: () => void;
 }
 
 /**
  * Custom hook for managing WebSocket connection to communication service
+ * Now uses the global SocketContext
  */
 export const useWebSocket = (handlers?: WebSocketEventHandlers): UseWebSocketReturn => {
-  const socketRef = useRef<Socket | null>(null);
-  const [connected, setConnected] = useState(false);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
-  const reconnectAttemptsRef = useRef(0);
+  const { socket, isConnected: connected } = useSocket();
+  
+  // Store handlers in ref to avoid re-attaching listeners on every render if handlers change
+  const handlersRef = useRef(handlers);
+  
+  // Update ref when handlers change
+  useEffect(() => {
+    handlersRef.current = handlers;
+  }, [handlers]);
 
-  // Get auth token from Redux store
-  const token = useSelector((state: any) => state.auth?.token || localStorage.getItem('token'));
+  useEffect(() => {
+    if (!socket || !connected) return;
 
-  /**
-   * Establish WebSocket connection
-   */
-  const connect = useCallback(() => {
-    if (!token) {
-      console.warn('[WebSocket] No auth token available, skipping connection');
-      return;
-    }
-
-    if (socketRef.current?.connected) {
-      console.log('[WebSocket] Already connected');
-      return;
-    }
-
-    console.log('[WebSocket] Connecting to communication service...');
-
-    const socket = io(SOCKET_URL, {
-      auth: { token },
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5,
-    });
-
-    // Connection event handlers
-    socket.on('connect', () => {
-      console.log('[WebSocket] ✅ Connected to communication service');
-      setConnected(true);
-      reconnectAttemptsRef.current = 0;
-      
-      logCommunicationEvent('websocket_connected', {
-        socketId: socket.id,
-      });
-    });
-
-    socket.on('disconnect', (reason) => {
-      console.log('[WebSocket] Disconnected:', reason);
-      setConnected(false);
-      
-      logCommunicationEvent('websocket_disconnected', {
-        reason,
-      });
-
-      // Auto-reconnect on unexpected disconnect
-      if (reason === 'io server disconnect') {
-        // Server explicitly disconnected, attempt to reconnect
-        reconnectTimeoutRef.current = setTimeout(() => {
-          if (reconnectAttemptsRef.current < 5) {
-            reconnectAttemptsRef.current++;
-            console.log(`[WebSocket] Reconnection attempt ${reconnectAttemptsRef.current}/5`);
-            socket.connect();
-          }
-        }, 2000);
-      }
-    });
-
-    socket.on('connect_error', (error) => {
-      console.error('[WebSocket] Connection error:', error.message);
-      setConnected(false);
-      
-      logCommunicationEvent('websocket_error', {
-        error: error.message,
-      });
-    });
-
-    // Video call event handlers
-    socket.on('ice-servers', (data: IICEServersEvent) => {
+    // Define handlers that call the current ref
+    const onICEServers = (data: IICEServersEvent) => {
       console.log('[WebSocket] Received ICE servers');
-      handlers?.onICEServers?.(data);
-    });
+      handlersRef.current?.onICEServers?.(data);
+    };
 
-    socket.on('call:incoming', (data: ICallIncomingEvent) => {
+    const onCallIncoming = (data: ICallIncomingEvent) => {
       console.log('[WebSocket] 📞 Incoming call from:', data.callerId);
-      handlers?.onCallIncoming?.(data);
+      handlersRef.current?.onCallIncoming?.(data);
       
       logCommunicationEvent('call_incoming', {
         sessionId: data.sessionId,
         callerId: data.callerId,
         callerType: data.callerType,
       });
-    });
+    };
 
-    socket.on('call:answered', (data: ICallAnsweredEvent) => {
+    const onCallAnswered = (data: ICallAnsweredEvent) => {
       console.log('[WebSocket] ✅ Call answered:', data.sessionId);
-      handlers?.onCallAnswered?.(data);
+      handlersRef.current?.onCallAnswered?.(data);
       
       logCommunicationEvent('call_answered', {
         sessionId: data.sessionId,
       });
-    });
+    };
 
-    socket.on('call:rejected', (data: ICallRejectedEvent) => {
+    const onCallRejected = (data: ICallRejectedEvent) => {
       console.log('[WebSocket] ❌ Call rejected:', data.sessionId);
-      handlers?.onCallRejected?.(data);
+      handlersRef.current?.onCallRejected?.(data);
       
       logCommunicationEvent('call_rejected', {
         sessionId: data.sessionId,
       });
-    });
+    };
 
-    socket.on('call:ended', (data: ICallEndedEvent) => {
+    const onCallEnded = (data: ICallEndedEvent) => {
       console.log('[WebSocket] 📴 Call ended:', data.sessionId);
-      handlers?.onCallEnded?.(data);
+      handlersRef.current?.onCallEnded?.(data);
       
       logCommunicationEvent('call_ended', {
         sessionId: data.sessionId,
       });
-    });
+    };
 
-    socket.on('call:ice-candidate', (data: IICECandidateEvent) => {
+    const onICECandidate = (data: IICECandidateEvent) => {
       console.log('[WebSocket] Received ICE candidate');
-      handlers?.onICECandidate?.(data);
-    });
+      handlersRef.current?.onICECandidate?.(data);
+    };
 
-    socket.on('call:error', (data: ICallErrorEvent) => {
+    const onCallError = (data: ICallErrorEvent) => {
       console.error('[WebSocket] ❌ Call error:', data.message);
-      handlers?.onCallError?.(data);
+      handlersRef.current?.onCallError?.(data);
       
       logCommunicationEvent('call_error', {
         message: data.message,
         sessionId: data.sessionId,
       });
-    });
+    };
 
-    socketRef.current = socket;
-  }, [token, handlers]);
+    // Attach listeners
+    socket.on('ice-servers', onICEServers);
+    socket.on('call:incoming', onCallIncoming);
+    socket.on('call:answered', onCallAnswered);
+    socket.on('call:rejected', onCallRejected);
+    socket.on('call:ended', onCallEnded);
+    socket.on('call:ice-candidate', onICECandidate);
+    socket.on('call:error', onCallError);
 
-  /**
-   * Disconnect WebSocket
-   */
-  const disconnect = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
+    // Cleanup listeners
+    return () => {
+      socket.off('ice-servers', onICEServers);
+      socket.off('call:incoming', onCallIncoming);
+      socket.off('call:answered', onCallAnswered);
+      socket.off('call:rejected', onCallRejected);
+      socket.off('call:ended', onCallEnded);
+      socket.off('call:ice-candidate', onICECandidate);
+      socket.off('call:error', onCallError);
+    };
+  }, [socket, connected]);
 
-    if (socketRef.current) {
-      console.log('[WebSocket] Disconnecting...');
-      socketRef.current.disconnect();
-      socketRef.current = null;
-      setConnected(false);
-    }
-  }, []);
-
-  /**
-   * Emit event to server
-   */
-  const emit = useCallback((event: string, data: any) => {
-    if (!socketRef.current?.connected) {
+  const emit = (event: string, data: any) => {
+    if (!socket || !connected) {
       console.warn('[WebSocket] Cannot emit - not connected');
       return;
     }
-
     console.log(`[WebSocket] Emitting: ${event}`, data);
-    socketRef.current.emit(event, data);
-  }, []);
-
-  // Auto-connect on mount, disconnect on unmount
-  useEffect(() => {
-    if (token) {
-      connect();
-    }
-
-    return () => {
-      disconnect();
-    };
-  }, [token]); // Only reconnect if token changes
+    socket.emit(event, data);
+  };
 
   return {
-    socket: socketRef.current,
+    socket,
     connected,
     emit,
-    connect,
-    disconnect,
   };
 };
 

@@ -353,44 +353,35 @@ export const updateUserRole = async (
 
 // ============= DASHBOARD STATS API =============
 
-export const fetchDashboardStats = async (): Promise<DashboardStats> => {
+interface DashboardData {
+  financials: {
+    revenue: number
+    currency: string
+    status: string
+  }
+  occupancy: {
+    totalRooms: number
+    occupied: number
+    available: number
+    occupancyRate: number
+  }
+  users: {
+    total: number
+    activeStaff: number
+    activeGuests: number
+  }
+  systemStatus: {
+    reservation: boolean
+    room: boolean
+    user: boolean
+    payment: boolean
+  }
+}
+
+export const fetchDashboardStats = async (): Promise<DashboardData> => {
   try {
-    // Fetch data from all services in parallel
-    const [roomsResponse, reservationsResponse, usersResponse] = await Promise.all([
-      privateApi.get('/rooms'),
-      privateApi.get('/reservations'),
-      privateApi.get('/users'),
-    ])
-
-    const rooms: Room[] = roomsResponse.data.data || roomsResponse.data || []
-    const reservations: Reservation[] = reservationsResponse.data.data || reservationsResponse.data || []
-    const users: User[] = usersResponse.data.data || usersResponse.data || []
-
-    // Calculate statistics
-    const activeRooms = rooms.filter((room) => room.available).length
-    const totalBookings = reservations.length
-    const totalUsers = users.length
-
-    // Calculate revenue from confirmed/checked-in reservations
-    const revenue = reservations
-      .filter(
-        (r) =>
-          r.status === 'Confirmed' ||
-          r.status === 'CheckedIn' ||
-          r.status === 'CheckedOut'
-      )
-      .reduce((sum, r) => sum + (r.totalAmount || 0), 0)
-
-    return {
-      totalBookings,
-      activeRooms,
-      totalUsers,
-      revenue,
-      bookingsChange: '+12.5%', // TODO: Calculate actual change
-      roomsChange: `+${activeRooms}`,
-      usersChange: '+8.2%', // TODO: Calculate actual change
-      revenueChange: '+15.3%', // TODO: Calculate actual change
-    }
+    const response = await privateApi.get('/dashboard/admin')
+    return response.data.data
   } catch (error) {
     console.error('Error fetching dashboard stats:', error)
     throw error

@@ -68,6 +68,9 @@ const RoomBookingSearch = () => {
     options?: { value: string; label: string }[]
     min?: string
     error?: string
+    id?: string
+    name?: string
+    autoComplete?: string
   }
 
   const InputField = ({
@@ -80,19 +83,25 @@ const RoomBookingSearch = () => {
     options,
     min,
     error,
+    id,
+    name,
+    autoComplete,
   }: InputFieldProps) => {
     return (
       <div className="space-y-2">
         {label && (
-          <label className="block text-sm font-medium text-gray-700">
+          <label htmlFor={id} className="block text-sm font-medium text-gray-700">
             {label}
           </label>
         )}
         <div className="relative">
           {type === 'select' ? (
             <select
+              id={id}
+              name={name}
               value={value}
               onChange={onChange}
+              autoComplete={autoComplete}
               className={`w-full px-4 py-3 rounded-lg border ${error ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-amber-800/20 focus:border-amber-800 transition-all appearance-none cursor-pointer bg-white`}
             >
               {options?.map((option) => (
@@ -103,11 +112,14 @@ const RoomBookingSearch = () => {
             </select>
           ) : (
             <input
+              id={id}
+              name={name}
               type={type}
               value={value}
               onChange={onChange}
               placeholder={placeholder}
               min={min}
+              autoComplete={autoComplete}
               className={`w-full px-4 py-3 rounded-lg border ${error ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-amber-800/20 focus:border-amber-800 transition-all`}
             />
           )}
@@ -163,7 +175,7 @@ const RoomBookingSearch = () => {
 
     if (!result.success) {
       const fieldErrors: {[key: string]: string} = {}
-      result.error.errors.forEach((err) => {
+      result.error.issues.forEach((err) => {
         if (err.path[0]) fieldErrors[err.path[0] as string] = err.message
       })
       setErrors(fieldErrors)
@@ -216,16 +228,21 @@ const RoomBookingSearch = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           <InputField
+            id="check-in-date"
+            name="checkIn"
             type="date"
             value={checkIn}
             onChange={handleCheckInChange}
             label="Check-in Date"
             icon={calendarIcon}
             min={today}
+            autoComplete="off"
             error={errors.checkIn}
           />
 
           <InputField
+            id="check-out-date"
+            name="checkOut"
             type="date"
             value={checkOut}
             onChange={(e) => {
@@ -235,25 +252,32 @@ const RoomBookingSearch = () => {
             label="Check-out Date"
             icon={calendarIcon}
             min={getMinCheckOutDate()}
+            autoComplete="off"
             error={errors.checkOut}
           />
 
           <InputField
+            id="room-type"
+            name="roomType"
             type="select"
             value={roomType}
             onChange={(e) => setRoomType(e.target.value)}
             label="Room Type"
             options={roomTypeOptions}
             icon={dropdownIcon}
+            autoComplete="off"
           />
 
           <InputField
+            id="guests"
+            name="guests"
             type="select"
             value={guests}
             onChange={(e) => setGuests(e.target.value)}
             label="Guests"
             options={guestsOptions}
             icon={dropdownIcon}
+            autoComplete="off"
           />
         </div>
 

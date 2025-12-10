@@ -22,19 +22,25 @@ interface VideoChatProps {
   receiverId?: string;
   receiverType?: 'guest' | 'staff';
   autoStart?: boolean;
+  incomingCallData?: ICallIncomingEvent | null;
+  sessionId?: string;
+  onEndCall?: () => void;
 }
 
 export const VideoChat: React.FC<VideoChatProps> = ({
   receiverId,
   receiverType = 'staff',
   autoStart = false,
+  incomingCallData,
+  sessionId: propSessionId,
+  onEndCall,
 }) => {
   const [callState, setCallState] = useState<CallState>('idle');
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [incomingCall, setIncomingCall] = useState<ICallIncomingEvent | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(propSessionId || null);
+  const [incomingCall, setIncomingCall] = useState<ICallIncomingEvent | null>(incomingCallData || null);
   const [iceServers, setICEServers] = useState<IICEServersEvent | null>(null);
   const [callDuration, setCallDuration] = useState(0);
-  const [callerId, setCallerId] = useState<string | null>(null);
+  const [callerId, setCallerId] = useState<string | null>(incomingCallData?.callerId || null);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -48,9 +54,12 @@ export const VideoChat: React.FC<VideoChatProps> = ({
       setICEServers(data);
     },
     onCallIncoming: (data: ICallIncomingEvent) => {
-      console.log('[VideoChat] Incoming call');
-      setIncomingCall(data);
-      setCallState('ringing');
+      // Only handle if we aren't already in a call
+      if (callState === 'idle' && !incomingCallData) {
+        console.log('[VideoChat] Incoming call');
+        setIncomingCall(data);
+        setCallState('ringing');
+      }
     },
     onCallAnswered: async (data: any) => {
       console.log('[VideoChat] Call answered');
@@ -84,7 +93,7 @@ export const VideoChat: React.FC<VideoChatProps> = ({
       if (sessionId && (callerId || receiverId)) {
         emit('call:ice-candidate', {
           sessionId,
-          targetUserId: callerId || receiverId,
+          targetUserId: callerId || receiverId || (incomingCallData?.callerId),
           candidate: candidate.toJSON(),
         });
       }
@@ -103,9 +112,16 @@ export const VideoChat: React.FC<VideoChatProps> = ({
     }
   }, [webrtc.localStream]);
 
+  // Handle incoming call prop (Answer immediately if provided)
+  useEffect(() => {
+    if (incomingCallData && connected && callState === 'idle') {
+      acceptCall(incomingCallData);
+    }
+  }, [incomingCallData, connected]);
+
   // Auto-start call if specified
   useEffect(() => {
-    if (autoStart && receiverId && connected && !sessionId) {
+    if (autoStart && receiverId && connected && !sessionId && !incomingCallData) {
       initiateCall();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -169,13 +185,13 @@ export const VideoChat: React.FC<VideoChatProps> = ({
     }
   };
 
-  const acceptCall = async () => {
-    if (!incomingCall) return;
+  const acceptCall = async (callData: ICallIncomingEvent | null = incomingCall) => {
+    if (!callData) return;
 
     try {
-      setCallState('active');
-      setSessionId(incomingCall.sessionId);
-      setCallerId(incomingCall.callerId);
+      setCallState('active'); // Set active immediately to show UI
+      setSessionId(callData.sessionId);
+      setCallerId(callData.callerId);
 
       // Initialize WebRTC
       webrtc.initializePeerConnection();
@@ -184,22 +200,22 @@ export const VideoChat: React.FC<VideoChatProps> = ({
       await webrtc.startLocalStream();
 
       // Create and send answer
-      const answer = await webrtc.createAnswer(incomingCall.offer);
+      const answer = await webrtc.createAnswer(callData.offer);
       emit('call:answer', {
-        sessionId: incomingCall.sessionId,
-        callerId: incomingCall.callerId,
+        sessionId: callData.sessionId,
+        callerId: callData.callerId,
         answer,
       });
 
       // Update call status
-      await updateCallStatus(incomingCall.sessionId, { status: 'active' });
+      await updateCallStatus(callData.sessionId, { status: 'active' });
 
       setIncomingCall(null);
       startCallDuration();
 
       logCommunicationEvent('call_accepted', {
-        sessionId: incomingCall.sessionId,
-        callerId: incomingCall.callerId,
+        sessionId: callData.sessionId,
+        callerId: callData.callerId,
       });
     } catch (error: any) {
       console.error('[VideoChat] Failed to accept call:', error);
@@ -224,28 +240,42 @@ export const VideoChat: React.FC<VideoChatProps> = ({
     logCommunicationEvent('call_rejected', {
       sessionId: incomingCall.sessionId,
     });
+    
+    if (onEndCall) onEndCall();
   };
 
   const endCall = async () => {
-    if (sessionId && (callerId || receiverId)) {
+    const target = callerId || receiverId;
+    if (sessionId && target) {
       emit('call:hangup', {
         sessionId,
-        targetUserId: callerId || receiverId,
+        targetUserId: target,
       });
 
       if (callState === 'active') {
-        await updateCallStatus(sessionId, {
-          status: 'ended',
-          metadata: {
-            quality: 'good', // Can be enhanced with actual quality metrics
-          },
-        });
+        try {
+          await updateCallStatus(sessionId, {
+            status: 'ended',
+            metadata: {
+              quality: 'good',
+            },
+          });
+        } catch (e) {
+          console.error('Failed to update call status to ended', e);
+        }
       }
     }
 
     stopCallDuration();
     webrtc.closePeerConnection();
     setCallState('ended');
+    
+    // Notify parent
+    if (onEndCall) {
+       onEndCall();
+    }
+    
+    // Reset state after delay
     setTimeout(() => {
       setCallState('idle');
       setSessionId(null);
@@ -265,29 +295,17 @@ export const VideoChat: React.FC<VideoChatProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Incoming call modal
-  if (incomingCall && callState === 'ringing') {
-    return <IncomingCallModal callData={incomingCall} onAccept={acceptCall} onReject={rejectCall} />;
+  // Incoming call modal (Only used if NOT triggered via props)
+  if (incomingCall && callState === 'ringing' && !incomingCallData) {
+    return <IncomingCallModal callData={incomingCall} onAccept={() => acceptCall()} onReject={rejectCall} />;
   }
 
   // Idle state
   if (callState === 'idle') {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8">
-        <Phone className="w-24 h-24 text-gray-300 mb-4" />
-        <h2 className="text-2xl font-bold text-gray-700 mb-2">Video Chat</h2>
-        <p className="text-gray-500 mb-6">Ready to start a video call</p>
-        {receiverId && (
-          <button
-            onClick={initiateCall}
-            disabled={!connected}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-semibold px-8 py-3 rounded-lg flex items-center gap-2"
-          >
-            <Phone className="w-5 h-5" />
-            Start Call
-          </button>
-        )}
-        {!connected && <p className="text-red-500 text-sm mt-2">Connecting...</p>}
+        <Loader2 className="w-12 h-12 text-gray-400 animate-spin" />
+        <p className="text-gray-500 mt-4">Initializing...</p>
       </div>
     );
   }
@@ -321,7 +339,7 @@ export const VideoChat: React.FC<VideoChatProps> = ({
       />
 
       {/* Local Video (Picture-in-Picture) */}
-      <div className="absolute top-4 right-4 w-48 h-36 bg-gray-800 rounded-lg overflow-hidden shadow-lg">
+      <div className="absolute top-4 right-4 w-48 h-36 bg-gray-800 rounded-lg overflow-hidden shadow-lg border border-gray-700">
         <video
           ref={localVideoRef}
           autoPlay
@@ -345,7 +363,7 @@ export const VideoChat: React.FC<VideoChatProps> = ({
       )}
 
       {/* Controls */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-full max-w-md px-4">
         <VideoCallControls
           isAudioEnabled={webrtc.isAudioEnabled}
           isVideoEnabled={webrtc.isVideoEnabled}
@@ -357,7 +375,7 @@ export const VideoChat: React.FC<VideoChatProps> = ({
 
       {/* Call Ended Overlay */}
       {callState === 'ended' && (
-        <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
           <div className="text-center text-white">
             <h2 className="text-2xl font-bold mb-2">Call Ended</h2>
             <p className="text-gray-400">Duration: {formatDuration(callDuration)}</p>
@@ -367,7 +385,7 @@ export const VideoChat: React.FC<VideoChatProps> = ({
 
       {/* No remote stream placeholder */}
       {callState === 'active' && !webrtc.remoteStream && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-800 -z-10">
           <Loader2 className="w-12 h-12 animate-spin text-white" />
           <p className="text-white ml-4">Connecting...</p>
         </div>

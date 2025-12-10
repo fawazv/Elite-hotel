@@ -1,4 +1,5 @@
-import { Response } from 'express'
+
+import { Request, Response } from 'express'
 import { AuthenticatedRequest } from '../types'
 import chatbotService from '../services/chatbot.service'
 import Joi from 'joi'
@@ -185,6 +186,22 @@ export class ChatbotController {
     } catch (error) {
       console.error('Error in closeConversation:', error)
       res.status(500).json({ message: 'Failed to close conversation' })
+    }
+  }
+
+  async getGuestToken(req: Request, res: Response): Promise<void> {
+    try {
+      const { name, guestId } = req.body
+      
+      const tokenData = await chatbotService.generateGuestToken(name, guestId)
+      
+      res.json({
+        message: 'Guest token generated successfully',
+        ...tokenData
+      })
+    } catch (error) {
+      console.error('Error in getGuestToken:', error)
+      res.status(500).json({ message: 'Failed to generate guest token' })
     }
   }
 }

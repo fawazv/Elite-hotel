@@ -12,4 +12,13 @@ router.patch(
   paymentController.updateStatus.bind(paymentController)
 )
 
+// Analytics endpoints
+import { PaymentAnalyticsController } from '../controllers/payment.analytics.controller';
+import { PaymentModel } from '../models/payment.model';
+
+const paymentAnalyticsController = new PaymentAnalyticsController(PaymentModel);
+
+router.get('/analytics/revenue', paymentAnalyticsController.getRevenueMetrics.bind(paymentAnalyticsController));
+router.get('/analytics/pending', paymentAnalyticsController.getPendingPayments.bind(paymentAnalyticsController));
+
 export default router

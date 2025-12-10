@@ -99,4 +99,14 @@ router.post(
   reservationController.checkOut.bind(reservationController)
 )
 
+// Analytics endpoints
+import { ReservationAnalyticsController } from '../controllers/reservation.analytics.controller';
+import { Reservation } from '../models/reservation.model';
+
+const reservationAnalyticsController = new ReservationAnalyticsController(Reservation);
+
+router.get('/analytics/occupancy', reservationAnalyticsController.getOccupancyMetrics.bind(reservationAnalyticsController));
+router.get('/analytics/today-activity', reservationAnalyticsController.getTodayActivity.bind(reservationAnalyticsController));
+router.get('/analytics/room-context', reservationAnalyticsController.getRoomContext.bind(reservationAnalyticsController));
+
 export default router

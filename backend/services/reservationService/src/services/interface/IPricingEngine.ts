@@ -21,5 +21,9 @@ export interface PricingQuote {
   total: number
   currency: string
   discountApplied?: number
+  breakdown?: {
+    label: string
+    amount: number
+  }[]
   notes?: string
 }

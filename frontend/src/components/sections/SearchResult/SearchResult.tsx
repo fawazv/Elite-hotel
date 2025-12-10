@@ -446,8 +446,9 @@ const SearchResults: React.FC<SearchResultsProps> = ({
         
         // Transform backend data to component format
         const transformedRooms: Room[] = roomsData.map((room) => ({
-          id: room._id,
-          _id: room._id,
+          id: room.id || room._id,
+          _id: room._id || room.id,
+
           number: room.number,
           name: room.name,
           type: room.type,

@@ -45,4 +45,13 @@ router.delete(
   roomController.remove.bind(roomController)
 )
 
+// Analytics endpoints
+import { RoomAnalyticsController } from '../controllers/implementation/room.analytics.controller';
+import { roomService } from '../config/container';
+
+const roomAnalyticsController = new RoomAnalyticsController(roomService);
+
+router.get('/analytics/inventory', roomAnalyticsController.getInventoryAnalytics.bind(roomAnalyticsController));
+router.get('/analytics/room-status', roomAnalyticsController.getRoomStatusGrid.bind(roomAnalyticsController));
+
 export default router

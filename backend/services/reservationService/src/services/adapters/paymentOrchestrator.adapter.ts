@@ -5,7 +5,7 @@ import { IPaymentOrchestrator } from '../interface/IReservation.service'
 export class PaymentOrchestratorAdapter implements IPaymentOrchestrator {
   private baseUrl: string
   constructor(
-    baseUrl = process.env.PAYMENT_SERVICE_URL || 'http://localhost:4003'
+    baseUrl = process.env.PAYMENT_SERVICE_URL || 'http://localhost:4006'
   ) {
     this.baseUrl = baseUrl
   }
@@ -17,8 +17,27 @@ export class PaymentOrchestratorAdapter implements IPaymentOrchestrator {
     customer: { guestId: string }
     metadata?: Record<string, any>
   }) {
-    // Delegates to PaymentService (to be built next)
-    const res = await axios.post(`${this.baseUrl}/payments/intents`, params)
-    return res.data?.data // { id, clientSecret?, provider, extra? }
+    // Delegates to PaymentService
+    const payload = {
+      reservationId: params.metadata?.reservationId,
+      guestId: params.customer.guestId,
+      amount: params.amount,
+      currency: params.currency,
+      provider: params.provider.toLowerCase(),
+    }
+
+    const res = await axios.post(`${this.baseUrl}/initiate`, payload)
+    
+    // PaymentService returns { payment: PaymentDoc, providerResponse: any }
+    // We need to return { id, clientSecret?, provider, extra? }
+    
+    const { payment, providerResponse } = res.data
+    
+    return {
+       id: payment._id, // Internal payment ID
+       provider: payment.provider,
+       clientSecret: params.provider === 'Stripe' ? (providerResponse as any).client_secret : undefined,
+       extra: params.provider === 'Razorpay' ? providerResponse : undefined
+    }
   }
 }

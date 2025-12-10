@@ -14,6 +14,7 @@ import Rooms from '@/pages/Rooms'
 
 // Lazy load components for better performance
 const Home = React.lazy(() => import('../pages/Home'))
+const Booking = React.lazy(() => import('../pages/Booking'))
 // const Rooms = React.lazy(() => import('../pages/Rooms/Rooms'))
 // const Bookings = React.lazy(() => import('../pages/Bookings/Bookings'))
 // const About = React.lazy(() => import('../pages/About/About'))
@@ -48,6 +49,7 @@ const UserRoute: React.FC = () => {
           />
           <Route path="*" element={<NotFound />} />
           <Route path="/search-results" element={<SearchResults />} />
+          <Route path="/book/:roomId" element={<Booking />} />
         </Route>
 
         {/* Auth layout routes (without Header/Footer) */}

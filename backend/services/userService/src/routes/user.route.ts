@@ -57,4 +57,12 @@ router.delete(
   userController.remove.bind(userController)
 )
 
+// Analytics endpoints
+import { UserAnalyticsController } from '../controllers/user.analytics.controller';
+import { User as UserModel } from '../models/user.model';
+
+const userAnalyticsController = new UserAnalyticsController(UserModel);
+
+router.get('/analytics/metrics', userAnalyticsController.getUserMetrics.bind(userAnalyticsController));
+
 export default router

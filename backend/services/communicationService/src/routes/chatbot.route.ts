@@ -24,4 +24,20 @@ router.post('/message', (req, res) => chatbotController.sendMessage(req, res))
 router.put('/context/:conversationId', (req, res) => chatbotController.updateContext(req, res))
 router.post('/handoff', (req, res) => chatbotController.handoffToAgent(req, res))
 
-export default router
+// Analytics endpoints (public - no auth needed for API Gateway aggregation)
+import { CommunicationAnalyticsController } from '../controllers/communication.analytics.controller';
+
+// Note: These endpoints will be called by API Gateway, so removing auth requirement
+const communicationAnalyticsController = new CommunicationAnalyticsController(null, null);
+
+// Create a separate router without auth middleware for analytics
+const analyticsRouter = express.Router();
+analyticsRouter.get('/analytics/metrics', (req, res, next) => communicationAnalyticsController.getCommunicationMetrics(req, res, next));
+analyticsRouter.get('/analytics/live', (req, res, next) => communicationAnalyticsController.getLiveCommunication(req, res, next));
+
+// Combine routers
+const combinedRouter = express.Router();
+combinedRouter.use('/', router);
+combinedRouter.use('/', analyticsRouter);
+
+export default combinedRouter

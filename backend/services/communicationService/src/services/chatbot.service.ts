@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid'
 import geminiService, { ChatContext } from './gemini.service'
 import { publishEvent } from '../config/rabbitmq.config'
 import { Message } from '../types'
+import jwt from 'jsonwebtoken'
 
 export class ChatbotService {
   async createConversation(
@@ -173,6 +174,29 @@ export class ChatbotService {
     } catch (error) {
       console.error('Error closing conversation:', error)
       throw new Error('Failed to close conversation')
+    }
+  }
+
+
+  async generateGuestToken(name?: string, existingGuestId?: string): Promise<{ token: string, guestId: string, name: string }> {
+    try {
+      const guestId = existingGuestId || `guest_${uuidv4()}`
+      const guestName = name || 'Anonymous Guest'
+      
+      const token = jwt.sign(
+        {
+          userId: guestId,
+          role: 'guest',
+          name: guestName
+        },
+        process.env.JWT_SECRET!,
+        { expiresIn: '24h' }
+      )
+      
+      return { token, guestId, name: guestName }
+    } catch (error) {
+      console.error('Error generating guest token:', error)
+      throw new Error('Failed to generate guest token')
     }
   }
 }
