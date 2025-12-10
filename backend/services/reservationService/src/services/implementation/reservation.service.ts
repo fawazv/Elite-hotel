@@ -642,6 +642,7 @@ export class ReservationService implements IReservationService {
 
     // 1. Fetch all rooms (candidates)
     const allRooms = await this.roomLookup.getAllRooms()
+    console.log(`[CheckAvailability] Found ${allRooms.length} total rooms`)
 
     // 2. Find all reservations intersecting this date range
     // We want reservations where (res.checkIn < req.checkOut) AND (res.checkOut > req.checkIn)
@@ -654,6 +655,7 @@ export class ReservationService implements IReservationService {
       },
       { limit: 10000 } // Fetch plenty
     )
+    console.log(`[CheckAvailability] Found ${overlaps.length} overlapping reservations`)
 
     const occupiedRoomIds = new Set(
       overlaps.map((r) => r.roomId.toString())
@@ -670,6 +672,7 @@ export class ReservationService implements IReservationService {
       return true
     })
 
+    console.log(`[CheckAvailability] Returning ${availableRooms.length} available rooms`)
     return availableRooms
   }
 }

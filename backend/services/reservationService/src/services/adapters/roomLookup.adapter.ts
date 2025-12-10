@@ -6,7 +6,7 @@ export class RoomLookupAdapter implements IRoomLookupService {
   private baseUrl: string
 
   constructor(
-    baseUrl = process.env.ROOM_SERVICE_URL || 'http://localhost:4006'
+    baseUrl = process.env.ROOM_SERVICE_URL || 'http://localhost:4003'
   ) {
     this.baseUrl = baseUrl
   }
@@ -33,10 +33,12 @@ export class RoomLookupAdapter implements IRoomLookupService {
 
   async getAllRooms() {
     try {
-      const res = await axios.get(`${this.baseUrl}/`)
+      // Request a high limit to ensure we get all rooms for availability checking
+      const res = await axios.get(`${this.baseUrl}/?limit=1000`)
       const rooms = res.data?.data
 
       if (!Array.isArray(rooms)) {
+        console.error('RoomLookupAdapter: Invalid response format', res.data)
         throw new Error('Invalid response format: expected an array of rooms')
       }
 
@@ -57,6 +59,7 @@ export class RoomLookupAdapter implements IRoomLookupService {
         rating: room.rating,
       }))
     } catch (err: any) {
+      console.error('RoomLookupAdapter: Failed to fetch rooms', err.message)
       throw new Error('Failed to fetch all rooms')
     }
   }

@@ -5,13 +5,11 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
-import dashboardRoutes from './routes/dashboard.routes';
 
 const app = express();
 const PORT = process.env.GATEWAY_PORT || 4000;
 
-// Middleware
-app.use(express.json()); // Parse JSON bodies
+
 
 // Security middleware
 app.use(helmet());
@@ -63,9 +61,6 @@ services.forEach(({ path, target }) => {
   );
   console.log(`✓ ${path} -> ${target}`);
 });
-
-// Dashboard routes (before proxy to allow direct handling)
-app.use('/api/dashboard', dashboardRoutes);
 
 // Health check
 app.get('/health', (req: express.Request, res: express.Response) => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import type { RootState } from '@/redux/store/store';
+import { RootState } from '@/store/store';
 import AdminDashboard from '@/pages/Admin/Dashboard';
 import ReceptionistDashboard from '@/pages/Admin/ReceptionistDashboard';
 import HousekeeperDashboard from '@/pages/Admin/HousekeeperDashboard';
