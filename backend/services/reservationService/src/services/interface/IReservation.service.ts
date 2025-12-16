@@ -12,7 +12,7 @@ export type QuoteRequest = {
 }
 
 export type CreateReservationInput = {
-  guestId: string
+  guestId?: string
   roomId: string
   checkIn: Date | string
   checkOut: Date | string
@@ -23,6 +23,12 @@ export type CreateReservationInput = {
   requiresPrepayment?: boolean
   paymentProvider?: 'Stripe' | 'Razorpay'
   currency?: string
+  guestDetails?: {
+    firstName: string
+    lastName: string
+    email: string
+    phoneNumber: string
+  }
 }
 
 export interface IRoomLookupService {
@@ -55,7 +61,7 @@ export interface IPaymentOrchestrator {
     amount: number
     currency: string
     reservationCode: string
-    customer: { guestId: string }
+    customer: { guestId: string; email?: string; phoneNumber?: string }
     metadata?: Record<string, any>
   }): Promise<{
     id: string
@@ -123,4 +129,8 @@ export interface IReservationService {
     children?: number
     type?: string
   }): Promise<any[]>
+
+  lookupGuest(email?: string, phoneNumber?: string): Promise<any | null>
+  getUserReservations(userId: string): Promise<ReservationDocument[]>
+  publicLookup(code: string, contact: string): Promise<ReservationDocument | null>
 }

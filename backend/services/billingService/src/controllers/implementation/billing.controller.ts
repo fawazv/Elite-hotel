@@ -362,6 +362,30 @@ export class BillingController implements IBillingController {
     }
   }
 
+  async downloadInvoiceByReservation(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { reservationId } = req.params
+      const billing = await this.svc.findByReservation(reservationId)
+      
+      if (!billing) {
+        res.status(404).json({
+          success: false,
+          message: 'Billing record not found for this reservation',
+        })
+        return
+      }
+
+      const pdfBuffer = await this.svc.generateInvoicePDF(billing._id.toString())
+
+      res.setHeader('Content-Type', 'application/pdf')
+      res.setHeader('Content-Disposition', `attachment; filename=invoice_${billing.reservationId}.pdf`)
+      res.send(pdfBuffer)
+    } catch (err) {
+      logger.error('Error downloading invoice by reservation', { error: (err as Error).message })
+      next(err)
+    }
+  }
+
   async exportBillings(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { format, status, dateFrom, dateTo } = req.query

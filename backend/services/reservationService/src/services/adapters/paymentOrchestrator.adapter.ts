@@ -14,13 +14,17 @@ export class PaymentOrchestratorAdapter implements IPaymentOrchestrator {
     amount: number
     currency: string
     reservationCode: string
-    customer: { guestId: string }
+    customer: { guestId: string; email?: string; phoneNumber?: string }
     metadata?: Record<string, any>
   }) {
     // Delegates to PaymentService
     const payload = {
       reservationId: params.metadata?.reservationId,
       guestId: params.customer.guestId,
+      guestContact: {
+        email: params.customer.email,
+        phoneNumber: params.customer.phoneNumber
+      },
       amount: params.amount,
       currency: params.currency,
       provider: params.provider.toLowerCase(),

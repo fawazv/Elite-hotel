@@ -120,6 +120,8 @@ export class ReservationService implements IReservationService {
       includeStatuses: ['PendingPayment', 'Confirmed', 'CheckedIn'],
     })
     if (overlaps.length) {
+
+      
       throw new CustomError(
         'Room not available for the selected dates',
         HttpStatus.CONFLICT
@@ -248,8 +250,33 @@ export class ReservationService implements IReservationService {
     const nights = this.diffNights(checkIn, checkOut)
     if (nights < 1)
       throw new CustomError('Minimum 1 night', HttpStatus.BAD_REQUEST)
-    if (!input.guestId)
+    if (nights < 1)
+      throw new CustomError('Minimum 1 night', HttpStatus.BAD_REQUEST)
+
+    let guestId = input.guestId
+
+    // If no guestId, but we have details, create/find guest via RPC
+    if (!guestId && input.guestDetails) {
+      try {
+        const guest = await this.guestRpc.findOrCreateGuest(input.guestDetails)
+        if (guest && guest._id) {
+          guestId = guest._id
+        } else {
+          throw new Error('Failed to create guest')
+        }
+      } catch (err) {
+        throw new CustomError(
+          'Failed to process guest details',
+          HttpStatus.INTERNAL_SERVER_ERROR
+        )
+      }
+    }
+
+    if (!guestId)
       throw new CustomError('guestId required', HttpStatus.BAD_REQUEST)
+
+    if (!input.roomId)
+      throw new CustomError('roomId required', HttpStatus.BAD_REQUEST)
     if (!input.roomId)
       throw new CustomError('roomId required', HttpStatus.BAD_REQUEST)
 
@@ -269,11 +296,63 @@ export class ReservationService implements IReservationService {
       checkOut,
       includeStatuses: ['PendingPayment', 'Confirmed', 'CheckedIn'],
     })
-    if (overlaps.length)
+    if (overlaps.length) {
+      // Check if this is a retry by the same guest for the same room/dates
+      const pendingMatch = overlaps.find(
+        (r) =>
+          r.status === 'PendingPayment' &&
+          r.guestId.toString() === guestId?.toString() &&
+          r.roomId.toString() === input.roomId.toString() &&
+          r.checkIn.getTime() === checkIn.getTime() &&
+          r.checkOut.getTime() === checkOut.getTime()
+      )
+
+      if (pendingMatch) {
+        // Reuse logic: Generate new payment intent for the existing reservation
+        let paymentClientSecret: string | undefined
+        let paymentOrder: any | undefined
+
+        if (input.requiresPrepayment && input.paymentProvider) {
+          const pay = await this.payments.createPaymentIntent({
+            provider: input.paymentProvider,
+            amount: pendingMatch.totalAmount,
+            currency: pendingMatch.currency,
+            reservationCode: pendingMatch.code,
+            customer: {
+              guestId: pendingMatch.guestId.toString(),
+              email: input.guestDetails?.email,
+              phoneNumber: input.guestDetails?.phoneNumber,
+            },
+            metadata: { reservationId: pendingMatch._id.toString() },
+          })
+
+          const updated = await this.repo.update(
+            pendingMatch._id.toString(),
+            {
+              paymentProvider: pay.provider,
+              paymentIntentId: pay.id,
+              holdExpiresAt: dayjs().utc().add(30, 'minute').toDate(), // Extend hold
+            } as any
+          )
+
+          paymentClientSecret = pay.clientSecret
+          paymentOrder = pay.extra
+
+          return Object.assign(updated!.toObject(), {
+            paymentClientSecret,
+            paymentOrder,
+          })
+        }
+        
+        // If for some reason no payment needed or provider missing, return existing
+        return pendingMatch.toObject()
+      }
+
       throw new CustomError(
         'Room not available for selected dates',
         HttpStatus.CONFLICT
       )
+    }
 
     const quote = await this.quote({
       roomId: input.roomId,
@@ -287,7 +366,7 @@ export class ReservationService implements IReservationService {
     const code = generateCode()
     const doc = await this.repo.create({
       code,
-      guestId: input.guestId,
+      guestId: guestId!,
       roomId: input.roomId,
       checkIn,
       checkOut,
@@ -319,7 +398,11 @@ export class ReservationService implements IReservationService {
         amount: doc.totalAmount,
         currency: doc.currency,
         reservationCode: doc.code,
-        customer: { guestId: doc.guestId.toString() },
+        customer: { 
+          guestId: doc.guestId.toString(),
+          email: input.guestDetails?.email,
+          phoneNumber: input.guestDetails?.phoneNumber 
+        },
         metadata: { reservationId: doc._id.toString() },
       })
 
@@ -501,6 +584,7 @@ export class ReservationService implements IReservationService {
     const updated = await this.repo.update(id, {
       status: 'Confirmed',
       holdExpiresAt: undefined,
+      paymentCaptured: true,
     } as any)
     return updated!
   }
@@ -674,5 +758,37 @@ export class ReservationService implements IReservationService {
 
     console.log(`[CheckAvailability] Returning ${availableRooms.length} available rooms`)
     return availableRooms
+  }
+
+  async lookupGuest(email?: string, phoneNumber?: string): Promise<any | null> {
+    return this.guestRpc.lookupGuest(email, phoneNumber)
+  }
+
+  async getUserReservations(userId: string): Promise<ReservationDocument[]> {
+    return this.repo.findAll({ createdBy: userId }, { sort: { createdAt: -1 } })
+  }
+
+  async publicLookup(code: string, contact: string): Promise<ReservationDocument | null> {
+    const reservation = await this.repo.findByCode(code)
+    if (!reservation) return null
+
+    // Check against guestContact stored in reservation
+    const guestContact = (reservation.guestContact as any) || {}
+    const email = guestContact.email
+    const phoneNumber = guestContact.phoneNumber
+    
+    const normalize = (s: string) => s?.trim().toLowerCase() || ''
+    const contactNorm = normalize(contact)
+
+    // Check matches
+    const matchesEmail = email && normalize(email) === contactNorm
+    const matchesPhone = phoneNumber && (contactNorm.includes(normalize(phoneNumber)) || normalize(phoneNumber).includes(contactNorm))
+
+    if (matchesEmail || matchesPhone) {
+      return reservation
+    }
+    
+    // Security: Don't reveal mismatched contact
+    return null
   }
 }

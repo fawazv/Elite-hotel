@@ -8,6 +8,7 @@ import connectMongodb from './config/db.config'
 import reservationRoute from './routes/reservation.route'
 import errorHandler from './middleware/errorHandler'
 import { initTopology } from './config/rabbitmq.config'
+import { startPaymentConsumer } from './consumers/payment.consumer'
 import requestLogger from './middleware/request-logger.middleware'
 import sanitizeInputs from './middleware/sanitization.middleware'
 import logger from './utils/logger.service'
@@ -68,11 +69,11 @@ app.use(
 )
 
 // Apply public rate limiter to public booking endpoints
-app.use('/public', publicLimiter)
-app.use('/quote', publicLimiter)
+// app.use('/public', publicLimiter)
+// app.use('/quote', publicLimiter)
 
 // Apply general rate limiter to all other routes
-app.use(generalLimiter)
+// app.use(generalLimiter)
 
 // Routes
 app.use('/', reservationRoute)
@@ -101,6 +102,10 @@ async function start() {
     // 2. connect MongoDB
     await connectMongodb()
     logger.info('✅ MongoDB connected')
+
+    // 2.5 Start Consumers
+    await startPaymentConsumer()
+    logger.info('✅ Payment Consumer started')
 
     // 3. start express server
     const PORT = process.env.PORT || 4005

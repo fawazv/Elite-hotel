@@ -17,25 +17,15 @@ export async function startReservationConsumer() {
     try {
       const evt = JSON.parse(msg.content.toString())
       
-      if (evt.event === 'reservation.created') {
-        const { reservationId, guestId, guestContact, totalAmount, currency } = evt.data
-        
-        logger.info('Processing reservation.created event', {
-          reservationId,
-          amount: totalAmount,
-        })
-
-        await svc.initiatePayment({
-          reservationId,
-          guestId,
-          guestContact, // ✅ Pass guestContact to initiatePayment
-          amount: totalAmount,
-          currency,
-          provider: process.env.DEFAULT_PAYMENT_PROVIDER as
-            | 'stripe'
-            | 'razorpay',
-        })
-      }
+        if (evt.event === 'reservation.created') {
+           const { reservationId, totalAmount } = evt.data
+          // LOG ONLY - prevent duplicate payment
+          // Payment is already initiated synchronously by ReservationService
+          logger.info('Received reservation.created event (skipping generic payment init)', {
+             reservationId,
+             amount: totalAmount,
+          })
+        }
       ch.ack(msg)
     } catch (err) {
       logger.error('Reservation consumer error', {

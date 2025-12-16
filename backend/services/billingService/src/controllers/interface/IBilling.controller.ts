@@ -19,6 +19,7 @@ export interface IBillingController {
 
   // Invoice & Export
   downloadInvoice(req: Request, res: Response, next: NextFunction): Promise<void>
+  downloadInvoiceByReservation(req: Request, res: Response, next: NextFunction): Promise<void>
   exportBillings(req: Request, res: Response, next: NextFunction): Promise<void>
 
   // Administrative

@@ -194,7 +194,7 @@ export class PaymentService implements IPaymentService {
       if (input.provider === 'stripe') {
         // ✅ Include paymentId in metadata (critical for webhooks!)
         providerResponse = await this.stripe.paymentIntents.create({
-          amount: input.amount * 100, // cents
+          amount: Math.round(input.amount * 100), // cents
           currency: input.currency,
           metadata: {
             reservationId: input.reservationId,
@@ -213,7 +213,7 @@ export class PaymentService implements IPaymentService {
       } else {
         // ✅ Include paymentId in notes for Razorpay
         providerResponse = await this.razorpay.orders.create({
-          amount: input.amount * 100,
+          amount: Math.round(input.amount * 100),
           currency: input.currency,
           notes: {
             reservationId: input.reservationId,

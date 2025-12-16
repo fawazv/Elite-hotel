@@ -100,7 +100,15 @@ export class BillingService implements IBillingService {
         invoiceId: updated._id.toString(),
         paymentId: evt.paymentId,
       })
-      await this.publishEvent('billing.invoice.paid', updated)
+      
+      // ✅ Ensure guestContact is present for the notification
+      const payload = updated.toObject ? updated.toObject() : { ...updated }
+      if ((!payload.guestContact || !payload.guestContact.email) && evt.guestContact) {
+          payload.guestContact = evt.guestContact
+          // We could also update the repo here, but critical path is notification
+      }
+
+      await this.publishEvent('billing.invoice.paid', payload)
     } else {
       logger.warn('Invoice not found for payment.succeeded', {
         paymentId: evt.paymentId,
@@ -277,14 +285,7 @@ export class BillingService implements IBillingService {
     }
 
     // Publish event to notification service via RabbitMQ
-    await this.publishEvent('billing.invoice.send', {
-      billingId: billing._id,
-      email: billing.guestContact.email,
-      invoiceNumber: billing._id.toString().slice(-8).toUpperCase(),
-      amount: billing.amount,
-      currency: billing.currency,
-      status: billing.status,
-    })
+    await this.publishEvent('billing.invoice.send', billing)
 
     logger.info('Invoice email queued', { billingId, email: billing.guestContact.email })
   }

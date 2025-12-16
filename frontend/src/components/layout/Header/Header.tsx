@@ -145,8 +145,8 @@ const Header: React.FC = () => {
             </NavButton>
           )}
 
-          <NavButton href="/bookings" scrolled={isScrolledState}>
-            Find my booking
+          <NavButton href={isAuthenticated ? "/bookings" : "/find-booking"} scrolled={isScrolledState}>
+            {isAuthenticated ? "My Bookings" : "Find Booking"}
           </NavButton>
 
           {isAuthenticated ? (

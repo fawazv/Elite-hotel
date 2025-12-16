@@ -10,15 +10,15 @@ import SearchResults from '@/components/sections/SearchResult/SearchResult'
 
 import OTPVerification from '@/pages/OtpVerification'
 import ProtectedRoute from '@/layouts/ProtectedRoute'
-import Rooms from '@/pages/Rooms'
 
+// Lazy load components for better performance
 // Lazy load components for better performance
 const Home = React.lazy(() => import('../pages/Home'))
 const Booking = React.lazy(() => import('../pages/Booking'))
-// const Rooms = React.lazy(() => import('../pages/Rooms/Rooms'))
-// const Bookings = React.lazy(() => import('../pages/Bookings/Bookings'))
-// const About = React.lazy(() => import('../pages/About/About'))
-// const Contact = React.lazy(() => import('../pages/Contact/Contact'))
+const Rooms = React.lazy(() => import('../pages/Rooms'))
+const Bookings = React.lazy(() => import('../pages/Bookings/Bookings'))
+const BookingDetails = React.lazy(() => import('../pages/Bookings/BookingDetails'))
+const FindBooking = React.lazy(() => import('../pages/Bookings/FindBooking'))
 const SignIn = React.lazy(() => import('../pages/Signin'))
 const SignUp = React.lazy(() => import('../pages/Signup'))
 const Profile = React.lazy(() => import('../pages/Profile'))
@@ -36,9 +36,25 @@ const UserRoute: React.FC = () => {
         {/* Main layout routes (with Header/Footer, no snap scrolling) */}
         <Route path="/" element={<MainLayout />}>
           <Route path="rooms" element={<Rooms />} />
-          {/* <Route path="bookings" element={<Bookings />} /> */}
-          {/* <Route path="about" element={<About />} /> */}
-          {/* <Route path="contact" element={<Contact />} /> */}
+          
+          <Route 
+            path="bookings" 
+            element={
+              <ProtectedRoute>
+                <Bookings />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="bookings/:id" 
+            element={
+              <ProtectedRoute>
+                <BookingDetails />
+              </ProtectedRoute>
+            } 
+          />
+          <Route path="find-booking" element={<FindBooking />} />
+
           <Route
             path="account/profile"
             element={

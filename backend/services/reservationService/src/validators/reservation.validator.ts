@@ -14,7 +14,13 @@ export const quoteSchema = Joi.object({
 })
 
 export const createReservationSchema = Joi.object({
-  guestId: id.required(),
+  guestId: id.optional(),
+  guestDetails: Joi.object({
+    firstName: Joi.string().required(),
+    lastName: Joi.string().allow('').optional(),
+    email: Joi.string().email().required(),
+    phoneNumber: Joi.string().required(),
+  }).optional(),
   roomId: id.required(),
   checkIn: isoDate.required(),
   checkOut: isoDate.required(),
@@ -27,7 +33,7 @@ export const createReservationSchema = Joi.object({
     .valid('Stripe', 'Razorpay')
     .when('requiresPrepayment', { is: true, then: Joi.required() }),
   currency: Joi.string().length(3).uppercase().optional(),
-})
+}).or('guestId', 'guestDetails')
 
 export const listReservationSchema = Joi.object({
   page: Joi.number().min(1),

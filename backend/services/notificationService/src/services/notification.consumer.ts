@@ -41,7 +41,7 @@ export async function startNotificationConsumer() {
         } else if (evt.event === 'reservation.notification') {
           // TTL-based delayed notification — handle reminder
           await handleReminder(evt.data)
-        } else if (evt.event === 'billing.invoice.created') {
+        } else if (evt.event === 'billing.invoice.created' || evt.event === 'billing.invoice.send' || evt.event === 'billing.invoice.paid') {
           await handleInvoiceCreated(evt.data)
         } else if (evt.event === 'billing.invoice.refunded') {
           await handleInvoiceRefunded(evt.data)
@@ -76,12 +76,28 @@ async function handleReservationCreated(data: any) {
   const toEmail = data.guestContact?.email
   const toPhone = data.guestContact?.phoneNumber
   const subject = `Booking Confirmed — ${data.code}`
-  const text = `Hi — your reservation ${data.code} for ${data.checkIn} → ${data.checkOut} is confirmed. Total: ${data.totalAmount} ${data.currency}`
+  
+  const formattedCheckIn = dayjs(data.checkIn).format('MMM D, YYYY')
+  const formattedCheckOut = dayjs(data.checkOut).format('MMM D, YYYY')
+  
+  const text = `Hi! Your reservation ${data.code} is confirmed.\nDates: ${formattedCheckIn} to ${formattedCheckOut}\nTotal: ${data.totalAmount} ${data.currency}\n\nYou will receive a separate email with your invoice shortly.`
+  
+  const html = `
+    <div style="font-family: sans-serif; color: #333;">
+      <h1>Booking Confirmed!</h1>
+      <p>Hi,</p>
+      <p>Your reservation <strong>${data.code}</strong> has been successfully confirmed.</p>
+      <p><strong>Dates:</strong> ${formattedCheckIn} — ${formattedCheckOut}</p>
+      <p><strong>Total:</strong> ${data.currency} ${data.totalAmount}</p>
+      <hr />
+      <p><em>You will receive a separate email with your invoice shortly.</em></p>
+    </div>
+  `
 
   // ✅ Handle errors gracefully - one failure doesn't block the other
   if (toEmail) {
     try {
-      await EMAIL.sendMail({ to: toEmail, subject, text })
+      await EMAIL.sendMail({ to: toEmail, subject, text, html })
     } catch (err) {
       logger.error('Failed to send confirmation email', {
         reservationId: data.reservationId,

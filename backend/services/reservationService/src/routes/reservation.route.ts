@@ -36,14 +36,31 @@ router.post(
   reservationController.createPublic.bind(reservationController)
 )
 
-// Check Availability (Public)
-router.post(
-  '/available-rooms',
-  // Add validation schema if needed, e.g., validateRequest(availabilitySchema)
-  reservationController.checkAvailability.bind(reservationController)
-)
+  // Check Availability (Public)
+  router.post(
+    '/available-rooms',
+    // Add validation schema if needed, e.g., validateRequest(availabilitySchema)
+    reservationController.checkAvailability.bind(reservationController)
+  )
+
+  // Guest Lookup (Public)
+  router.post(
+    '/public/guest-lookup',
+    reservationController.lookupGuest.bind(reservationController)
+  )
 
 // List / Get
+router.get(
+  '/my-reservations',
+  authenticateToken,
+  reservationController.myReservations.bind(reservationController)
+)
+
+router.post(
+  '/public/lookup',
+  reservationController.publicLookup.bind(reservationController)
+)
+
 router.get(
   '/',
   authenticateToken,
@@ -54,7 +71,6 @@ router.get(
 router.get(
   '/:id',
   authenticateToken,
-  authorizeRole(['admin', 'receptionist']),
   reservationController.getById.bind(reservationController)
 )
 router.get(

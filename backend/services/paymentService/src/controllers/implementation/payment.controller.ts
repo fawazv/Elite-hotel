@@ -12,10 +12,11 @@ export class PaymentController implements IPaymentController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { reservationId, guestId, amount, currency, provider } = req.body
+      const { reservationId, guestId, guestContact, amount, currency, provider } = req.body
       const result = await this.svc.initiatePayment({
         reservationId,
         guestId,
+        guestContact,
         amount,
         currency,
         provider,

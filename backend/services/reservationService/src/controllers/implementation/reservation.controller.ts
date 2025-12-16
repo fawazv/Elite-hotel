@@ -67,7 +67,27 @@ export class ReservationController implements IReservationController {
     }
   }
 
-  async getById(req: Request, res: Response, next: NextFunction) {
+  async lookupGuest(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, phoneNumber } = req.body
+      const result = await this.svc.lookupGuest(email, phoneNumber)
+      if (!result) {
+        return successResponse(
+          res,
+          HttpStatus.NOT_FOUND,
+          'Guest not found',
+          null
+        )
+      }
+      return successResponse(res, HttpStatus.OK, 'Guest found', {
+        data: result,
+      })
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async getById(req: CustomeRequest, res: Response, next: NextFunction) {
     try {
       const r = await this.svc.getById(req.params.id)
       if (!r)
@@ -76,6 +96,19 @@ export class ReservationController implements IReservationController {
           HttpStatus.NOT_FOUND,
           'Reservation not found'
         )
+
+      // Authorization Check
+      const user = req.user as any
+      const isStaff = ['admin', 'receptionist'].includes(user?.role)
+      const isOwner = r.createdBy?.toString() === user?.id
+
+      if (!isStaff && !isOwner) {
+        return next({
+           message: 'You are not authorized to view this reservation',
+           status: HttpStatus.FORBIDDEN
+        })
+      }
+
       return successResponse(res, HttpStatus.OK, 'Reservation fetched', {
         data: r,
       })
@@ -170,6 +203,41 @@ export class ReservationController implements IReservationController {
     try {
       const r = await this.svc.checkOut(req.params.id)
       return successResponse(res, HttpStatus.OK, 'Checked out', { data: r })
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async myReservations(req: CustomeRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = (req.user as any)?.id
+      const result = await this.svc.getUserReservations(userId)
+      return successResponse(res, HttpStatus.OK, 'My reservations fetched', {
+        data: result,
+      })
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async publicLookup(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { code, contact } = req.body
+      if (!code || !contact) {
+        return next({
+          message: 'Code and contact (email/phone) are required',
+          status: HttpStatus.BAD_REQUEST
+        })
+      }
+
+      const result = await this.svc.publicLookup(code, contact)
+      if (!result) {
+        return successResponse(res, HttpStatus.NOT_FOUND, 'Booking not found or details mismatch', null)
+      }
+
+      return successResponse(res, HttpStatus.OK, 'Booking found', {
+        data: result
+      })
     } catch (err) {
       next(err)
     }

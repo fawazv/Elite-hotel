@@ -10,7 +10,10 @@ export interface IReservationController {
   confirm(req: Request, res: Response, next: NextFunction): Promise<void>
   cancel(req: Request, res: Response, next: NextFunction): Promise<void>
   createPublic(req: Request, res: Response, next: NextFunction): Promise<void>
-  checkAvailability(req: Request, res: Response, next: NextFunction): Promise<void>
+  checkAvailability(req: Request, res: Response, next: NextFunction): Promise<any>
+  lookupGuest(req: Request, res: Response, next: NextFunction): Promise<any>
   checkIn(req: Request, res: Response, next: NextFunction): Promise<void>
   checkOut(req: Request, res: Response, next: NextFunction): Promise<void>
+  myReservations(req: Request, res: Response, next: NextFunction): Promise<void>
+  publicLookup(req: Request, res: Response, next: NextFunction): Promise<void>
 }

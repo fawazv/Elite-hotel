@@ -54,7 +54,7 @@ export interface CreatePublicReservationPayload {
   adults: number
   children?: number
   guestDetails: GuestDetails
-  paymentProvider: 'stripe' | 'razorpay'
+  paymentProvider: 'Stripe' | 'Razorpay'
   requiresPrepayment: boolean
   currency?: string
   notes?: string
@@ -202,4 +202,36 @@ export const getQuote = async (
 ): Promise<QuoteResponse> => {
   const response = await publicApi.post('/reservations/quote', payload)
   return response.data.data || response.data
+}
+
+export const lookupGuest = async (
+  email?: string,
+  phoneNumber?: string
+): Promise<GuestDetails> => {
+  const response = await publicApi.post('/reservations/public/guest-lookup', {
+    email,
+    phoneNumber,
+  })
+  return response.data.data
+}
+
+export const lookupPublicReservation = async (
+  code: string,
+  contact: string
+): Promise<PublicReservationResponse> => {
+  const response = await publicApi.post('/reservations/public/lookup', {
+    code,
+    contact
+  })
+  return response.data.data
+}
+
+export const downloadInvoice = async (reservationId: string): Promise<Blob> => {
+  const response = await publicApi.get(`/billing/reservation/${reservationId}/download`, {
+    responseType: 'blob',
+    headers: {
+      Accept: 'application/pdf',
+    },
+  })
+  return response.data
 }

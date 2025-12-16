@@ -21,6 +21,7 @@ router.post('/:id/send-invoice', billingController.sendInvoice.bind(billingContr
 
 // Invoice & Export
 router.get('/:id/download', billingController.downloadInvoice.bind(billingController))
+router.get('/reservation/:reservationId/download', billingController.downloadInvoiceByReservation.bind(billingController))
 router.get('/export/all', billingController.exportBillings.bind(billingController))
 
 // Administrative

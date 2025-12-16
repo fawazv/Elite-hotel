@@ -26,6 +26,36 @@ export async function initGuestRpcServer() {
             correlationId: msg.properties.correlationId,
           }
         )
+      } else if (req.action === 'lookupGuest') {
+        const guest = await repo.findByEmailOrPhone(req.email, req.phoneNumber)
+        ch.sendToQueue(
+          msg.properties.replyTo,
+          Buffer.from(JSON.stringify(guest)),
+          {
+            correlationId: msg.properties.correlationId,
+          }
+        )
+      } else if (req.action === 'findOrCreateGuest') {
+        const { firstName, lastName, email, phoneNumber } = req.details
+        let guest: any = await repo.findByEmailOrPhone(email, phoneNumber)
+        if (!guest) {
+          guest = await repo.create({
+            firstName,
+            lastName,
+            email,
+            phoneNumber,
+            password: 'guest-placeholder-password', // Or handle appropriately
+            role: 'guest',
+            isEmailVerified: false,
+          } as any)
+        }
+        ch.sendToQueue(
+          msg.properties.replyTo,
+          Buffer.from(JSON.stringify(guest)),
+          {
+            correlationId: msg.properties.correlationId,
+          }
+        )
       } else {
         const payload = null
         ch.sendToQueue(

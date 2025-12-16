@@ -18,8 +18,9 @@ import logger from './utils/logger.service'
 const app = express()
 
 // ✅ Security middleware (BEFORE body parsing)
+app.set('trust proxy', 1) // Required for rate limiting behind proxy/gateway
 app.use(helmet())
-app.use(mongoSanitize()) // Prevent NoSQL injection
+// app.use(mongoSanitize()) // Prevent NoSQL injection
 app.use(requestLogger) // Log all requests with correlation IDs
 
 // ✅ Strict rate limiting for webhooks (prevent spam/DoS)

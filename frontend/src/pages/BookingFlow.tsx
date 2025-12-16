@@ -24,7 +24,7 @@ interface BookingFormData {
 }
 
 type BookingStep = 'review' | 'guest-details' | 'payment' | 'confirmation'
-type PaymentProvider = 'stripe' | 'razorpay'
+type PaymentProvider = 'Stripe' | 'Razorpay'
 
 interface RazorpayResponse {
   razorpay_payment_id: string
@@ -153,7 +153,7 @@ const BookingFlow: React.FC = () => {
     phoneNumber: '',
     specialRequests: '',
   })
-  const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>('stripe')
+  const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>('Stripe')
   const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null)
   const [paymentOrder, setPaymentOrder] = useState<any>(null)
   const [reservationCode, setReservationCode] = useState<string | null>(null)
@@ -256,10 +256,10 @@ const BookingFlow: React.FC = () => {
 
       setReservationCode(reservation.code)
 
-      if (paymentProvider === 'stripe') {
+      if (paymentProvider === 'Stripe') {
         setPaymentClientSecret(reservation.paymentClientSecret || null)
         setCurrentStep('payment')
-      } else if (paymentProvider === 'razorpay') {
+      } else if (paymentProvider === 'Razorpay') {
         setPaymentOrder(reservation.paymentOrder)
         handleRazorpayPayment(reservation.paymentOrder)
       }
@@ -626,9 +626,9 @@ const BookingFlow: React.FC = () => {
               {/* Payment Provider Selection */}
               <div className="grid grid-cols-2 gap-4">
                 <button
-                  onClick={() => setPaymentProvider('stripe')}
+                  onClick={() => setPaymentProvider('Stripe')}
                   className={`p-6 border-2 rounded-lg transition-all ${
-                    paymentProvider === 'stripe'
+                    paymentProvider === 'Stripe'
                       ? 'border-primary-600 bg-primary-50'
                       : 'border-gray-300 hover:border-gray-400'
                   }`}
@@ -645,9 +645,9 @@ const BookingFlow: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => setPaymentProvider('razorpay')}
+                  onClick={() => setPaymentProvider('Razorpay')}
                   className={`p-6 border-2 rounded-lg transition-all ${
-                    paymentProvider === 'razorpay'
+                    paymentProvider === 'Razorpay'
                       ? 'border-primary-600 bg-primary-50'
                       : 'border-gray-300 hover:border-gray-400'
                   }`}
@@ -662,7 +662,7 @@ const BookingFlow: React.FC = () => {
               </div>
 
               {/* Stripe Payment Form (shown only if Stripe selected and not initiated) */}
-              {paymentProvider === 'stripe' && !paymentClientSecret && (
+              {paymentProvider === 'Stripe' && !paymentClientSecret && (
                 <button
                   onClick={handleInitiatePayment}
                   disabled={isLoading}
@@ -673,7 +673,7 @@ const BookingFlow: React.FC = () => {
               )}
 
               {/* Stripe Elements (shown when clientSecret is available) */}
-              {paymentProvider === 'stripe' && paymentClientSecret && (
+              {paymentProvider === 'Stripe' && paymentClientSecret && (
                 <Elements stripe={stripePromise}>
                   <StripePaymentForm
                     amount={quote.total * 100} // Convert to cents
@@ -685,7 +685,7 @@ const BookingFlow: React.FC = () => {
               )}
 
               {/* Razorpay Payment */}
-              {paymentProvider === 'razorpay' && (
+              {paymentProvider === 'Razorpay' && (
                 <button
                   onClick={handleInitiatePayment}
                   disabled={isLoading}

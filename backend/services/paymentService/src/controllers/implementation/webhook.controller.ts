@@ -205,7 +205,7 @@ export class WebhookController {
         }
 
         case 'payment.failed': {
-          const { payment_id, notes } = evt.payload.payment.entity
+          const { payment_id, notes, error_description, error_code } = evt.payload.payment.entity
           const paymentId = notes?.paymentId
 
           if (!paymentId) {
@@ -217,11 +217,14 @@ export class WebhookController {
 
           await this.svc.updatePaymentStatus(paymentId, 'failed', {
             razorpayPaymentId: payment_id,
+            error: error_description || error_code || 'Payment failed',
           })
 
           logger.warn('Razorpay payment failed', {
             paymentId,
             razorpayPaymentId: payment_id,
+            error: error_description,
+            code: error_code
           })
           break
         }
