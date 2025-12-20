@@ -45,7 +45,7 @@ const ReservationSchema = new Schema<ReservationDocument>(
     },
     source: {
       type: String,
-      enum: ['Online', 'FrontDesk', 'OTA'],
+      enum: ['Online', 'FrontDesk', 'OTA', 'Admin'],
       default: 'FrontDesk',
     },
     notes: { type: String, maxlength: 5000 },
@@ -59,7 +59,7 @@ const ReservationSchema = new Schema<ReservationDocument>(
     requiresPrepayment: { type: Boolean, default: false },
     paymentProvider: {
       type: String,
-      enum: ['Stripe', 'Razorpay'],
+      enum: ['Stripe', 'Razorpay', 'Offline'],
       required: false,
     },
     paymentIntentId: { type: String },

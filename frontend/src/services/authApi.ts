@@ -15,7 +15,8 @@ export const signUpRequest = async (
   email: string,
   password: string,
   role: string,
-  phoneNumber: string
+  phoneNumber: string,
+  avatar?: { publicId: string; url: string }
 ) => {
   const response = await api.post('/signup', {
     email,
@@ -23,6 +24,7 @@ export const signUpRequest = async (
     role,
     fullName,
     phoneNumber,
+    avatar,
   })
   return response.data
 }
@@ -39,6 +41,11 @@ export const otpVerify = async (email: string, otp: string, type: string) => {
 export const resendOtp = async (email: string) => {
   const response = await api.post('/otp-resend', { email })
   return response
+}
+
+export const verifyLoginOtpRequest = async (email: string, otp: string) => {
+  const response = await api.post('/verify-login-otp', { email, otp })
+  return response.data
 }
 
 export const googleSignIn = async (

@@ -12,6 +12,7 @@ import {
 } from '../../utils/token.util'
 import { IAuthService } from '../interface/IAuth.service'
 import bcrypt from 'bcryptjs'
+import { Setting } from '../../models/setting.model'
 
 interface PasswordUpdate {
   currentPassword: string
@@ -33,13 +34,18 @@ export class AuthService implements IAuthService {
     email: string,
     phoneNumber: string,
     password: string,
-    role: string
+    role: string,
+    avatar?: { publicId: string; url: string }
   ) {
     try {
       const existingEmail = await this.userRepository.findByEmail(email)
-
       if (existingEmail && existingEmail.isVerified) {
         throw new CustomError('Email already exists', HttpStatus.ALREADYEXISTS)
+      }
+
+      const existingPhone = await this.userRepository.findByPhoneNumber(phoneNumber)
+      if (existingPhone && existingPhone.isVerified) {
+        throw new CustomError('Phone number already exists', HttpStatus.ALREADYEXISTS)
       }
 
       const hashedPassword = await hashPassword(password)
@@ -50,21 +56,32 @@ export class AuthService implements IAuthService {
         password: hashedPassword,
         role: role as 'receptionist' | 'housekeeper' | 'admin',
         isVerified: false,
+        avatar,
       }
 
-      if (!existingEmail) {
+      if (!existingEmail && !existingPhone) {
         await this.userRepository.create(userData)
-      } else {
+      } else if (existingEmail && !existingEmail.isVerified) {
         await this.userRepository.updateByEmail(email, {
           ...userData,
           isVerified: false,
         })
         await this.otpRepository.deleteOtp(email)
+      } else if (existingPhone && !existingPhone.isVerified) {
+        // Handle case where phone exists but not verified (maybe update that user record?)
+        // For now, assuming email is the primary key for updates in this flow
+         await this.userRepository.updateByEmail(existingPhone.email, {
+          ...userData,
+          isVerified: false,
+        })
+        await this.otpRepository.deleteOtp(existingPhone.email)
       }
 
       const otp = generateOtp()
       await sentOTPEmail(email, otp)
-      await this.otpRepository.create({ email, otp })
+      
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes from now
+      await this.otpRepository.create({ email, otp, expiresAt })
     } catch (error) {
       throw error
     }
@@ -124,7 +141,8 @@ export class AuthService implements IAuthService {
     try {
       const otp = generateOtp()
       await sentOTPEmail(email, otp)
-      await this.otpRepository.create({ email, otp })
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000)
+      await this.otpRepository.create({ email, otp, expiresAt })
       return { success: true, message: 'Resend otp passed to user' }
     } catch (error) {
       throw error
@@ -145,6 +163,25 @@ export class AuthService implements IAuthService {
       const passwordCheck = await bcrypt.compare(password, checkUser.password)
       if (!passwordCheck) {
         throw new CustomError('Invalid credentials!', HttpStatus.UNAUTHORIZED)
+      }
+
+      // Check for 2FA if user is admin
+      if (role === 'admin') {
+        const setting = await Setting.findOne({ key: 'security.2fa' });
+        if (setting && setting.value === true) {
+          const otp = generateOtp()
+          await sentOTPEmail(email, otp)
+          
+          const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+          await this.otpRepository.create({ email, otp, expiresAt })
+
+          return {
+            success: true,
+            message: '2FA verification required',
+            require2fa: true,
+            data: { email }
+          }
+        }
       }
 
       const accessToken = generateAccessToken({
@@ -246,7 +283,8 @@ export class AuthService implements IAuthService {
       const otp = generateOtp()
 
       await sentOTPEmail(email, otp)
-      await this.otpRepository.create({ email, otp })
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000)
+      await this.otpRepository.create({ email, otp, expiresAt })
       return { success: true, message: 'OTP send to user email' }
     } catch (error) {
       throw error
@@ -302,6 +340,62 @@ export class AuthService implements IAuthService {
         throw new CustomError('Password update failed', HttpStatus.INTERNAL_SERVER_ERROR)
       }
       return { success: true, message: 'updated' }
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async verifyLoginOtp(email: string, otp: string) {
+    try {
+      const otpRecords = await this.otpRepository.findOtpByEmail(email)
+      
+      const verified = otpRecords?.find(record => record.otp === otp)
+
+      if (!verified) {
+         return {
+            success: false,
+            message: "Invalid OTP",
+         }
+      }
+
+      const user = await this.userRepository.findByEmail(email)
+      if (!user) {
+        throw new CustomError('User not found', HttpStatus.NOTFOUND)
+      }
+
+      // Generate tokens
+      const accessToken = generateAccessToken({ 
+          id: (user._id as unknown as string), 
+          email: user.email, 
+          role: user.role 
+      })
+
+      const refreshToken = generateRefreshToken({ 
+          id: (user._id as unknown as string), 
+          email: user.email, 
+          role: user.role 
+      })
+
+      return {
+        success: true,
+        message: 'Login successful',
+        data: {
+            user,
+            accessToken,
+            refreshToken
+        },
+        refreshToken 
+      }
+
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async getUsersByRole(role: string) {
+    try {
+      const users = await this.userRepository.findAllByRole(role)
+      return { success: true, data: users }
     } catch (error) {
       throw error
     }

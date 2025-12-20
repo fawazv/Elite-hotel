@@ -103,6 +103,7 @@ export class ReservationController implements IReservationController {
       const isOwner = r.createdBy?.toString() === user?.id
 
       if (!isStaff && !isOwner) {
+        console.warn(`[Access Denied] User: ${user?.id}, Role: ${user?.role}, Reservation Owner: ${r.createdBy}`)
         return next({
            message: 'You are not authorized to view this reservation',
            status: HttpStatus.FORBIDDEN

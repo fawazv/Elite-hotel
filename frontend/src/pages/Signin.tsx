@@ -15,7 +15,8 @@ import { signInSchema, type signInSchemaType } from '@/validators/authValidator'
 import { useDispatch } from 'react-redux'
 import type { AppDispatch } from '@/redux/store/store'
 import { login } from '@/redux/slices/authSlice'
-import { signInRequest } from '@/services/authApi'
+
+import { signInRequest, verifyLoginOtpRequest } from '@/services/authApi'
 import type { ServerErrorResponse } from '@/utils/serverErrorResponse'
 import { toast } from 'sonner'
 
@@ -26,6 +27,9 @@ export default function Signin() {
   const [role, setRole] = useState<UserRole>('receptionist')
   const [error, setError] = useState<string>('')
   const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [showOtp, setShowOtp] = useState<boolean>(false)
+  const [loginEmail, setLoginEmail] = useState<string>('')
+  const [otp, setOtp] = useState<string>('')
 
   const handleRoleChange = (selectedRole: UserRole) => {
     setRole(selectedRole)
@@ -54,22 +58,31 @@ export default function Signin() {
       const { email, password } = data
       const response = await signInRequest(email, password, role)
 
-      if (response.success) {
+      if (response.require2fa) {
+        setLoginEmail(email)
+        setShowOtp(true)
+        toast.info('Please enter the OTP sent to your email')
+      } else if (response.success) {
         const { user, accessToken } = response.data
-        const { fullName, phoneNumber, role } = user
-        const reduxData = { fullName, email, role, phoneNumber }
-        localStorage.setItem('accessToken', accessToken)
-        const id = user._id
-
-        // Assuming the response contains user data
+        localStorage.setItem('token', accessToken)
         dispatch(
           login({
             token: accessToken,
-            user: { ...reduxData, id },
+            user: { ...user, id: user._id },
           })
         )
         toast.success(response.message || 'Signed in successfully')
-        navigate('/')
+        
+        // Redirect based on role
+        if (user.role === 'admin') {
+          navigate('/admin/dashboard')
+        } else if (user.role === 'receptionist') {
+          navigate('/receptionist/dashboard')
+        } else if (user.role === 'housekeeper') {
+          navigate('/housekeeper/dashboard')
+        } else {
+          navigate('/')
+        }
       } else {
         setError(response.message || 'Failed to sign in')
       }
@@ -92,6 +105,53 @@ export default function Signin() {
       }
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setIsLoading(true)
+
+    try {
+        const response = await verifyLoginOtpRequest(loginEmail, otp)
+        if (response.success) {
+            // Check nested data structure depending on API response
+            const userData = response.data?.user || response.data?.data?.user || response.data
+            const token = response.data?.accessToken || response.data?.data?.accessToken
+
+            if (token && userData) {
+                localStorage.setItem('token', token)
+                dispatch(
+                  login({
+                    token: token,
+                    user: { ...userData, id: userData._id },
+                  })
+                )
+                toast.success('2FA Verified Successfully')
+                
+                // Redirect based on role (defaulting to admin since this is usually admin feature)
+                const userRole = userData.role || 'admin'
+                if (userRole === 'admin') {
+                  navigate('/admin/dashboard')
+                } else if (userRole === 'receptionist') {
+                  navigate('/receptionist/dashboard')
+                } else if (userRole === 'housekeeper') {
+                  navigate('/housekeeper/dashboard')
+                } else {
+                   navigate('/') 
+                }
+            } else {
+                 setError('Invalid response from server')
+            }
+        } else {
+             setError(response.message || 'Invalid OTP')
+        }
+    } catch (err: any) {
+        console.error("OTP Error", err)
+         setError(err?.response?.data?.message || 'Failed to verify OTP')
+    } finally {
+        setIsLoading(false)
     }
   }
 
@@ -231,6 +291,7 @@ export default function Signin() {
             </motion.div>
           )}
 
+          {!showOtp ? (
           <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-1">
               <Label htmlFor="email" className="text-sm font-medium">
@@ -314,6 +375,44 @@ export default function Signin() {
               {isLoading ? 'Signing In...' : 'Sign In'}
             </Button>
           </form>
+          ) : (
+            <form className="space-y-5" onSubmit={handleOtpSubmit}>
+                <div className="text-center mb-4">
+                    <p className="text-sm text-gray-600">Enter the verification code sent to {loginEmail}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="otp" className="text-sm font-medium">
+                    One-Time Password
+                  </Label>
+                  <Input
+                    id="otp"
+                    type="text"
+                    placeholder="Enter 6-digit code"
+                    className="py-6 rounded-xl bg-gray-50 border-gray-200 focus:border-[#8b4513] focus:ring-[#8b4513]/10 text-center text-lg tracking-widest"
+                    required
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    maxLength={6}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full py-6 bg-gradient-to-r from-[#8b4513] to-[#6d3510] hover:opacity-90 text-white rounded-xl transition-all text-base font-medium"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Verifying...' : 'Verify & Login'}
+                </Button>
+                <div className="text-center mt-4">
+                    <button 
+                        type="button" 
+                        onClick={() => setShowOtp(false)}
+                        className="text-sm text-gray-500 hover:text-gray-700 underline"
+                    >
+                        Back to Login
+                    </button>
+                </div>
+            </form>
+          )}
 
           <p className="text-center text-sm text-gray-500 mt-6">
             Don't have an account?{' '}

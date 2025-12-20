@@ -18,13 +18,14 @@ export class AuthController implements IAuthController {
 
   async signup(req: Request, res: Response, next: NextFunction) {
     try {
-      const { fullName, email, phoneNumber, password, role } = req.body
+      const { fullName, email, phoneNumber, password, role, avatar } = req.body
       const response = await this.authService.signUp(
         fullName,
         email,
         phoneNumber,
         password,
-        role
+        role,
+        avatar
       )
 
       return successResponse(
@@ -73,7 +74,32 @@ export class AuthController implements IAuthController {
       const { email, password, role } = req.body
       const response = await this.authService.signIn(email, password, role)
 
+      if (response?.require2fa) {
+        return successResponse(res, HttpStatus.OK, '2FA verification required', {
+          require2fa: true,
+          email: response.data?.user ? (response.data.user as any).email : email
+        })
+      }
+
       setRefreshTokenCookie(res, response?.data?.refreshToken!, role)
+      return successResponse(res, HttpStatus.OK, response?.message!, {
+        data: response?.data,
+      })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+
+  async verifyLoginOtp(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, otp, role } = req.body
+      const response = await this.authService.verifyLoginOtp(email, otp)
+      
+      // Default role to admin if not provided, though it should be in response
+      const userRole = role || (response?.data?.user as any)?.role || 'admin'
+
+      setRefreshTokenCookie(res, response?.data?.refreshToken!, userRole)
       return successResponse(res, HttpStatus.OK, response?.message!, {
         data: response?.data,
       })
@@ -214,6 +240,21 @@ export class AuthController implements IAuthController {
       return res
         .status(HttpStatus.OK)
         .json({ success: true, message: 'Logged out successfully' })
+    } catch (error) {
+      next(error)
+    }
+  }
+  async getUsersByRole(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const { role } = req.query
+      if (!role || typeof role !== 'string') {
+        throw new CustomError('Role is required', HttpStatus.BAD_REQUEST)
+      }
+
+      const response = await this.authService.getUsersByRole(role)
+      return successResponse(res, HttpStatus.OK, 'Users fetched successfully', {
+        data: response.data,
+      })
     } catch (error) {
       next(error)
     }

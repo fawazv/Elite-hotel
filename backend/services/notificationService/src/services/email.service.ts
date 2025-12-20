@@ -1,6 +1,7 @@
 // notification-service/src/services/email.service.ts
 import nodemailer from 'nodemailer'
 import logger from '../utils/logger.service'
+import { settingsProvider } from './settings.provider'
 
 export class EmailService {
   private transporter: nodemailer.Transporter
@@ -31,6 +32,13 @@ export class EmailService {
     html?: string
     attachments?: { filename: string; content: Buffer }[]
   }) {
+    // Check if email notifications are enabled
+    const isEnabled = await settingsProvider.isEmailEnabled();
+    if (!isEnabled) {
+      logger.info('Email notifications are disabled in settings. Skipping email.', { to, subject });
+      return;
+    }
+
     if (!to) {
       logger.warn('Email recipient missing, skipping email send')
       return

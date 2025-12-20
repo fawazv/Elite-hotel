@@ -139,6 +139,34 @@ export class UserService implements IUserService {
     return uploaded
   }
 
+  async uploadPublicAvatar(
+    file: Express.Multer.File
+  ): Promise<{ publicId: string; url: string }> {
+    if (!file) throw new CustomError('No file uploaded', HttpStatus.BAD_REQUEST)
+
+    if (file.size > MAX_AVATAR_SIZE) {
+      throw new CustomError(
+        `File size exceeds maximum allowed size of ${MAX_AVATAR_SIZE / 1024 / 1024}MB`,
+        HttpStatus.BAD_REQUEST
+      )
+    }
+
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg']
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new CustomError(
+        'Invalid file type. Only JPEG, PNG, and WebP images are allowed',
+        HttpStatus.BAD_REQUEST
+      )
+    }
+
+    const uploaded = await this.mediaService.uploadImage(
+      file.buffer,
+      file.originalname,
+      process.env.AWS_S3_FOLDER || 'user/avatars'
+    )
+    return uploaded
+  }
+
   async removeAvatar(id: string): Promise<void> {
     const existing = await this.userRepo.findById(id)
     if (!existing) throw new CustomError('User not found', HttpStatus.NOT_FOUND)

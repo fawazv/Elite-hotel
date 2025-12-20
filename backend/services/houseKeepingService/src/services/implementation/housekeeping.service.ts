@@ -247,9 +247,9 @@ export class HousekeepingService implements IHousekeepingService {
     roomId?: string
     reservationId?: string
     assignedTo?: string
-    status?: 'pending' | 'in-progress' | 'completed' | 'cancelled'
-    taskType?: 'cleaning' | 'maintenance' | 'inspection' | 'turndown'
-    priority?: 'low' | 'normal' | 'high' | 'urgent'
+    status?: 'pending' | 'in-progress' | 'completed' | 'cancelled' | string[]
+    taskType?: 'cleaning' | 'maintenance' | 'inspection' | 'turndown' | string[]
+    priority?: 'low' | 'normal' | 'high' | 'urgent' | string[]
     completedBy?: string
     dateFrom?: string | Date
     dateTo?: string | Date
@@ -264,9 +264,18 @@ export class HousekeepingService implements IHousekeepingService {
     if (query.roomId) filter.roomId = query.roomId
     if (query.reservationId) filter.reservationId = query.reservationId
     if (query.assignedTo) filter.assignedTo = query.assignedTo
-    if (query.status) filter.status = query.status
-    if (query.taskType) filter.taskType = query.taskType
-    if (query.priority) filter.priority = query.priority
+    
+    // Handle array or string for filters
+    if (query.status) {
+      filter.status = Array.isArray(query.status) ? { $in: query.status } : query.status
+    }
+    if (query.taskType) {
+      filter.taskType = Array.isArray(query.taskType) ? { $in: query.taskType } : query.taskType
+    }
+    if (query.priority) {
+      filter.priority = Array.isArray(query.priority) ? { $in: query.priority } : query.priority
+    }
+    
     if (query.completedBy) filter.completedBy = query.completedBy
     
     if (query.dateFrom || query.dateTo) {

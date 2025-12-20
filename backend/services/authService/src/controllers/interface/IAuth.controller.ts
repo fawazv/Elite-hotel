@@ -9,6 +9,7 @@ export interface IAuthController {
   verifyOtp(req: Request, res: Response, next: NextFunction): Promise<void>;
   resendOtp(req: Request, res: Response, next: NextFunction): Promise<void>;
   signin(req: Request, res: Response, next: NextFunction): Promise<void>;
+  verifyLoginOtp(req: Request, res: Response, next: NextFunction): Promise<void>;
   googleLogin(req: Request, res: Response, next: NextFunction): Promise<void>;
   forgetPassword(
     req: Request,

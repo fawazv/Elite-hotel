@@ -79,3 +79,13 @@ export const updateGuest = async (id: string, data: Partial<Guest>): Promise<Gue
 export const deleteGuest = async (id: string): Promise<void> => {
   await privateApi.delete(`/guests/${id}`)
 }
+
+export const updateGuestIdProofImage = async (id: string, file: File): Promise<Guest> => {
+  const formData = new FormData()
+  formData.append('image', file)
+  
+  const response = await privateApi.post(`/guests/${id}/id-proof`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+  return response.data.data || response.data
+}

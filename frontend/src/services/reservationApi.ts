@@ -13,3 +13,8 @@ export const getReservationById = async (id: string): Promise<Reservation> => {
   const response = await privateApi.get(`/reservations/${id}`)
   return response.data.data
 }
+
+export const createReservation = async (data: any): Promise<Reservation> => {
+  const response = await privateApi.post('/reservations', data)
+  return response.data.data
+}

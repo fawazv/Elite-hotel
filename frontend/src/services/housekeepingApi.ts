@@ -65,6 +65,11 @@ export const housekeepingApi = {
     return response.data
   },
 
+  reportIssue: async (data: { roomId: string; description: string; priority: string }) => {
+    const response = await privateApi.post<HousekeepingTask>('/housekeeping/tasks/report', data)
+    return response.data
+  },
+
   updateTaskStatus: async (id: string, status: string) => {
     const response = await privateApi.patch<HousekeepingTask>(`/housekeeping/tasks/${id}/status`, { status })
     return response.data

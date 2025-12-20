@@ -16,31 +16,32 @@ const authenticateToken = (
         .json({ message: 'Access denied . No token provided' })
     }
     const newToken = token?.split(' ')[1]
-    const secret = process.env.ACCESS_TOKEN_SECRET
-    jwt.decode(newToken, { complete: true })
+    // Debugging Secret Loading
+    const secret = process.env.ACCESS_TOKEN_SECRET || "";
 
     if (!secret) {
+      console.error('[AuthMiddleware] No secret defined! Checks ACCESS_TOKEN_SECRET and JWT_SECRET');
       throw new Error('Access token secret is not defined')
     }
 
-    jwt.verify(newToken, secret, async (err, user) => {
+    jwt.verify(newToken, secret, (err, user) => {
       if (err) {
-        return res.status(401).json({ message: 'Invalid token' })
+        console.error('[AuthMiddleware] Token verification failed:', err.message);
+        console.error('[AuthMiddleware] Token part:', newToken.substring(0, 10) + '...');
+        return res.status(401).json({ message: 'Invalid token', error: err.message })
       }
       req.user = user as JwtPayload
-      const userId = req.user.id
-      if (!userId) {
+      
+      if (!req.user.id) {
+        console.error('[AuthMiddleware] Token valid but no user ID');
         return res.status(401).json({ message: 'Unauthorized' })
-      }
-      const userData = await User.findById(userId)
-      if (!userData) {
-        return res.status(404).json({ message: 'User not found' })
       }
 
       next()
     })
   } catch (error) {
-    console.error('Error founded in authenticate token', error)
+    console.error('Error found in authenticate token', error)
+    return res.status(500).json({ message: 'Internal Server Error' }) // Return json response on crash
   }
 }
 

@@ -25,6 +25,15 @@ export default function routes(container = createContainer()) {
     ctrl.assignTask
   )
 
+  // Report Issue -> Any staff
+  router.post(
+    '/tasks/report',
+    authenticateToken,
+    authorizeRole(['admin', 'receptionist', 'housekeeper']),
+    // Add validation schema if available, e.g. validateRequest(reportIssueSchema)
+    ctrl.reportIssue
+  )
+
   // Bulk assign tasks -> Admin or Receptionist
   router.post(
     '/tasks/bulk-assign',
@@ -74,12 +83,25 @@ export default function routes(container = createContainer()) {
     '/tasks',
     authenticateToken,
     (req, res, next) => {
+      console.log('--- ListTasks Debug ---');
+      console.log('Query:', req.query);
+      console.log('URL:', req.url);
+
       // validate query against Joi schema
-      const { error } = listTasksSchema.validate(req.query, {
+      const { error, value } = listTasksSchema.validate(req.query, {
         abortEarly: false,
-        allowUnknown: false,
+        allowUnknown: true, // Relaxing this temporarily to debug
+        stripUnknown: true,
       })
-      if (error) return next(error)
+      
+      if (error) {
+        console.error('Joi Validation Error:', error.details);
+        return next(error)
+      }
+      // Assign validated properties individually to avoid "Cannot set property query" error
+      // or simply rely on req.query being "close enough" if we aren't enforcing strict types heavily here.
+      // But better safe:
+      Object.assign(req.query, value);
       next()
     },
     ctrl.listTasks

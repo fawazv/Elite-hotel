@@ -48,13 +48,13 @@ privateApi.interceptors.response.use(
         const response = await privateApi.get('/auth/refresh-token')
         if (response.status === 200) {
           const newAccessToken = response.data.accessToken
-          localStorage.setItem('accessToken', newAccessToken)
+          localStorage.setItem('token', newAccessToken)
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
           return privateApi(originalRequest)
         }
       } catch (refreshError: any) {
         if (refreshError.response?.status === 403) {
-          localStorage.removeItem('accessToken')
+          localStorage.removeItem('token')
 
           // Dispatch the logout action from the auth slice
           store.dispatch(logout())

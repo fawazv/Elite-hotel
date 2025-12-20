@@ -1,4 +1,6 @@
 import { NavLink } from 'react-router-dom'
+import { useSelector } from 'react-redux'
+import type { RootState } from '@/redux/store/store'
 import {
   LayoutDashboard,
   Users,
@@ -21,19 +23,29 @@ interface AdminSidebarProps {
 }
 
 const navItems = [
-  { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/admin/users', icon: Users, label: 'Users' },
-  { to: '/admin/guests', icon: UserCheck, label: 'Guests' },
-  { to: '/admin/rooms', icon: DoorClosed, label: 'Rooms' },
-  { to: '/admin/reservations', icon: CalendarCheck, label: 'Reservations' },
-  { to: '/admin/billing', icon: DollarSign, label: 'Billing' },
-  { to: '/admin/payments', icon: CreditCard, label: 'Payments' },
-  { to: '/admin/housekeeping', icon: Sparkles, label: 'Housekeeping' },
-  { to: '/admin/communications', icon: MessageSquare, label: 'Communications' },
-  { to: '/admin/settings', icon: Settings, label: 'Settings' },
+  { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'receptionist', 'housekeeper'] },
+  { to: '/admin/users', icon: Users, label: 'Users', roles: ['admin'] },
+  { to: '/admin/guests', icon: UserCheck, label: 'Guests', roles: ['admin', 'receptionist'] },
+  { to: '/admin/rooms', icon: DoorClosed, label: 'Rooms', roles: ['admin', 'receptionist', 'housekeeper'] },
+  { to: '/admin/reservations', icon: CalendarCheck, label: 'Reservations', roles: ['admin', 'receptionist'] },
+  { to: '/admin/billing', icon: DollarSign, label: 'Billing', roles: ['admin', 'receptionist'] },
+  { to: '/admin/payments', icon: CreditCard, label: 'Payments', roles: ['admin', 'receptionist'] },
+  { to: '/admin/housekeeping', icon: Sparkles, label: 'Housekeeping', roles: ['admin', 'housekeeper', 'receptionist'] },
+  { to: '/admin/communications', icon: MessageSquare, label: 'Communications', roles: ['admin', 'receptionist'] },
+  { to: '/admin/settings', icon: Settings, label: 'Settings', roles: ['admin'] },
 ]
 
 const AdminSidebar = ({ isOpen, onToggle }: AdminSidebarProps) => {
+  const { user } = useSelector((state: RootState) => state.auth)
+  const userRole = user?.role?.toLowerCase() || 'admin'
+  
+  // Determine the base path prefix (e.g., /admin or /receptionist)
+  // If the user is a receptionist, we use the /receptionist prefix. 
+  // For admin (or others accessing admin view), keep /admin.
+  const prefix = userRole === 'receptionist' ? '/receptionist' : '/admin'
+
+  const filteredNavItems = navItems.filter(item => item.roles.includes(userRole))
+
   return (
     <aside
       className={cn(
@@ -59,10 +71,15 @@ const AdminSidebar = ({ isOpen, onToggle }: AdminSidebarProps) => {
 
       {/* Navigation */}
       <nav className="mt-6 px-3">
-        {navItems.map((item) => (
+        {filteredNavItems.map((item) => {
+           // Replace '/admin' in the item.to with the dynamic prefix
+           // e.g. /admin/dashboard -> /receptionist/dashboard
+           const linkPath = item.to.replace('/admin', prefix)
+           
+           return (
           <NavLink
             key={item.to}
-            to={item.to}
+            to={linkPath}
             className={({ isActive }) =>
               cn(
                 'flex items-center gap-3 px-4 py-3 mb-2 rounded-lg transition-all duration-200',
@@ -94,7 +111,8 @@ const AdminSidebar = ({ isOpen, onToggle }: AdminSidebarProps) => {
               </>
             )}
           </NavLink>
-        ))}
+           )
+        })}
       </nav>
 
       {/* User Info at Bottom */}

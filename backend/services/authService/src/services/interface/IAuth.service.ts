@@ -14,7 +14,9 @@ type ApiResponse = {
   refreshToken?: string
   accessToken?: string
   exist?: boolean
+
   user?: object
+  require2fa?: boolean
 }
 
 export interface IAuthService {
@@ -23,12 +25,17 @@ export interface IAuthService {
     email: string,
     phoneNumber: string,
     password: string,
-    role: string
+    role: string,
+    avatar?: { publicId: string; url: string }
   ): Promise<void>
   verifySignUpOtp(
     email: string,
     otp: string,
     type: string
+  ): Promise<ApiResponse | undefined>
+  verifyLoginOtp(
+    email: string,
+    otp: string
   ): Promise<ApiResponse | undefined>
   resendOtpWork(email: string): Promise<ApiResponse | undefined>
   signIn(
@@ -48,5 +55,6 @@ export interface IAuthService {
     password: string,
     confirmPassword: string
   ): Promise<ApiResponse | undefined>
-  passwordUpdate(id: string, data: object): Promise<ApiResponse | undefined>
+  passwordUpdate(id: string, data: any): Promise<{ success: boolean; message: string }>
+  getUsersByRole(role: string): Promise<{ success: boolean; data: any[] }>
 }

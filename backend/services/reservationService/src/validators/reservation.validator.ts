@@ -27,10 +27,10 @@ export const createReservationSchema = Joi.object({
   adults: Joi.number().integer().min(1).required(),
   children: Joi.number().integer().min(0).optional(),
   notes: Joi.string().max(5000).optional(),
-  source: Joi.string().valid('Online', 'FrontDesk', 'OTA').optional(),
+  source: Joi.string().valid('Online', 'FrontDesk', 'OTA', 'Admin').optional(),
   requiresPrepayment: Joi.boolean().optional(),
   paymentProvider: Joi.string()
-    .valid('Stripe', 'Razorpay')
+    .valid('Stripe', 'Razorpay', 'Offline')
     .when('requiresPrepayment', { is: true, then: Joi.required() }),
   currency: Joi.string().length(3).uppercase().optional(),
 }).or('guestId', 'guestDetails')

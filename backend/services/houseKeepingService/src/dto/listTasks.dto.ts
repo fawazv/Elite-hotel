@@ -6,7 +6,10 @@ export const listTasksSchema = Joi.object({
   roomId: Joi.string().optional(),
   reservationId: Joi.string().optional(),
   assignedTo: Joi.string().optional(),
-  status: Joi.string().valid('pending', 'in-progress', 'completed').optional(),
+  status: Joi.alternatives().try(
+    Joi.string().valid('pending', 'in-progress', 'completed', 'urgent', 'cancelled'),
+    Joi.array().items(Joi.string().valid('pending', 'in-progress', 'completed', 'urgent', 'cancelled'))
+  ).optional(),
   dateFrom: Joi.date().iso().optional(),
   dateTo: Joi.date().iso().optional(),
   sortBy: Joi.string()

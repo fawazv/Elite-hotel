@@ -42,6 +42,15 @@ router.post(
   userController.updateAvatar.bind(userController)
 )
 
+
+
+// public avatar upload (signup)
+router.post(
+  '/public/upload-avatar',
+  upload.single('avatar'),
+  userController.uploadPublic.bind(userController)
+)
+
 router.delete(
   '/:id/avatar',
   authenticateToken,

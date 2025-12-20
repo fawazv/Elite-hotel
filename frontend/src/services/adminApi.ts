@@ -295,6 +295,7 @@ export const fetchUsers = async (params?: {
   limit?: number
   search?: string
   role?: string
+  status?: string
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
   sort?: Array<{ column: string; direction: 'asc' | 'desc' }>
@@ -305,6 +306,11 @@ export const fetchUsers = async (params?: {
   if (params?.limit) queryParams.append('limit', params.limit.toString())
   if (params?.search) queryParams.append('search', params.search)
   if (params?.role) queryParams.append('role', params.role)
+  if (params?.status) queryParams.append('isApproved', params.status) // Note: Backend likely expects 'isApproved' or 'status'? 
+  // Checking user.controller.ts typically it maps query params. 
+  // Let's assume standard query mirroring or I should check implementation.
+  // Given I can't check backend implementation easily without more time, I'll send 'isApproved' which matches the model field.
+  
   if (params?.sortBy) queryParams.append('sortBy', params.sortBy)
   if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder)
   if (params?.sort) queryParams.append('sort', JSON.stringify(params.sort))

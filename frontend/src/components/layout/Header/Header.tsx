@@ -14,6 +14,8 @@ const Header: React.FC = () => {
   const { user, isAuthenticated } = useSelector(
     (state: RootState) => state.auth
   )
+  
+  console.log("Header User Data:", user)
 
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -39,7 +41,7 @@ const Header: React.FC = () => {
   const logoutUser = async () => {
     try {
       // Clear any stored tokens
-      localStorage.removeItem('accessToken')
+      localStorage.removeItem('token')
       dispatch(logout())
       setDropdownOpen(false)
       // Show success message if you have a toast system
@@ -130,7 +132,7 @@ const Header: React.FC = () => {
           onLogout={logoutUser}
           isAdmin={isAdmin}
           userName={user?.fullName}
-          profilePicture={user?.profileImage || '/default-avatar.png'}
+          profilePicture={user?.avatar?.url || user?.profileImage || '/default-avatar.png'}
         />
 
         {/* Desktop Menu */}
@@ -139,9 +141,16 @@ const Header: React.FC = () => {
             Browse all rooms
           </NavButton>
 
-          {isAdmin && (
-            <NavButton href="/admin" scrolled={isScrolledState}>
-              Admin
+          {user?.role && ['admin', 'receptionist', 'housekeeper'].includes(user.role) && (
+            <NavButton 
+              href={
+                user.role === 'admin' ? '/admin/dashboard' : 
+                user.role === 'receptionist' ? '/receptionist/dashboard' :
+                user.role === 'housekeeper' ? '/housekeeper/dashboard' : '/'
+              } 
+              scrolled={isScrolledState}
+            >
+              Dashboard
             </NavButton>
           )}
 
@@ -167,7 +176,7 @@ const Header: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <div className="relative w-8 h-8 rounded-full overflow-hidden">
                     <img
-                      src={user?.profileImage || '/default-avatar.png'}
+                      src={user?.avatar?.url || user?.profileImage || '/default-avatar.png'}
                       alt="Profile"
                       className="w-full h-full object-cover"
                     />

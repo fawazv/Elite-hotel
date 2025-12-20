@@ -5,9 +5,6 @@ import AdminProtectedRoute from '@/layouts/AdminProtectedRoute'
 
 // Lazy load admin components
 const Dashboard = React.lazy(() => import('@pages/Admin/Dashboard'))
-const ReceptionistDashboard = React.lazy(() => import('@pages/Admin/ReceptionistDashboard'))
-const HousekeeperDashboard = React.lazy(() => import('@pages/Admin/HousekeeperDashboard'))
-const RoleBasedDashboard = React.lazy(() => import('@/components/shared/RoleBasedDashboard'))
 const AdminRooms = React.lazy(() => import('@pages/Admin/Rooms'))
 const AdminReservations = React.lazy(() => import('@pages/Admin/Reservations'))
 const AdminUsers = React.lazy(() => import('@pages/Admin/Users'))
@@ -20,6 +17,7 @@ const Payments = React.lazy(() => import('@/pages/Admin/Payments'))
 const Housekeeping = React.lazy(() => import('@/pages/Admin/Housekeeping'))
 const Communications = React.lazy(() => import('@/pages/Admin/CommunicationsDashboard'))
 const Profile = React.lazy(() => import('@/pages/Admin/Profile'))
+const DeskBooking = React.lazy(() => import('@/pages/Admin/DeskBooking'))
 
 // Loading component
 const LoadingSpinner = () => (
@@ -30,18 +28,14 @@ const LoadingSpinner = () => (
 
 const AdminRoute: React.FC = () => {
   return (
-    <AdminProtectedRoute>
+    <AdminProtectedRoute allowedRoles={['admin']}>
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
           <Route path="/" element={<AdminLayout />}>
             {/* Role-based dashboard - automatically renders correct dashboard based on user role */}
-            <Route index element={<RoleBasedDashboard />} />
-            <Route path="dashboard" element={<RoleBasedDashboard />} />
-            
-            {/* Specific dashboard routes (for direct navigation if needed) */}
-            <Route path="dashboard/admin" element={<Dashboard />} />
-            <Route path="dashboard/receptionist" element={<ReceptionistDashboard />} />
-            <Route path="dashboard/housekeeper" element={<HousekeeperDashboard />} />
+            <Route index element={<Dashboard />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="desk-booking" element={<DeskBooking />} />
             
             <Route path="rooms" element={<AdminRooms />} />
             <Route path="rooms/new" element={<RoomForm />} />

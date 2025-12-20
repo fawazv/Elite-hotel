@@ -185,7 +185,7 @@ const Housekeeping = () => {
                     Loading...
                   </td>
                 </tr>
-              ) : tasks.length === 0 ? (
+              ) : !tasks || tasks?.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="h-24 text-center text-muted-foreground">
                     No tasks found

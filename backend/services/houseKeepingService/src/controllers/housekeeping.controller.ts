@@ -12,6 +12,23 @@ export class HousekeepingController {
     res.status(201).json({ success: true, data: task })
   })
 
+  reportIssue = asyncHandler(async (req: CustomeRequest, res: Response) => {
+    const { roomId, description, priority } = req.body
+    const reportedBy = req.user?.id
+    
+    // Create a maintenance task
+    const task = await this.svc.assignTask({
+      roomId,
+      taskType: 'maintenance',
+      priority: priority || 'high',
+      notes: `Reported by ${req.user?.role || 'staff'}: ${description}`,
+      // Optionally assign to maintenance team or leave unassigned
+      assignedTo: undefined, 
+    })
+    
+    res.status(201).json({ success: true, data: task, message: 'Issue reported successfully' })
+  })
+
   completeTask = asyncHandler(async (req: CustomeRequest, res: Response) => {
     const taskId = req.params.id
     const { notes, actualDuration, checklist, images } = req.body

@@ -5,6 +5,7 @@ import express from 'express'
 import cors from 'cors'
 import connectMongodb from './config/db.config'
 import userRoute from './routes/user.route'
+import settingRoute from './routes/setting.route'
 import errorHandler from './middleware/errorHandler'
 import helmet from 'helmet'
 import morgan from 'morgan'
@@ -72,6 +73,7 @@ app.use(compression())
 // Security: Input sanitization to prevent NoSQL injection
 app.use(sanitizeInput)
 
+app.use('/settings', settingRoute)
 app.use('/', userRoute)
 
 // global error handler

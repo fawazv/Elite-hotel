@@ -98,6 +98,17 @@ export class ReservationService implements IReservationService {
     const nights = this.diffNights(checkIn, checkOut)
     if (nights < 1)
       throw new CustomError('Minimum 1 night', HttpStatus.BAD_REQUEST)
+    if (!input.guestId && input.guestDetails) {
+      try {
+        const guest = await this.guestRpc.findOrCreateGuest(input.guestDetails)
+        if (guest && guest._id) {
+          input.guestId = guest._id
+        }
+      } catch (err) {
+        // Fall through; subsequent checks will fail if guestId is still missing
+      }
+    }
+
     if (!input.guestId)
       throw new CustomError('guestId required', HttpStatus.BAD_REQUEST)
     if (!input.roomId)

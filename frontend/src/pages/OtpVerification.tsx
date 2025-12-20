@@ -211,16 +211,13 @@ export default function OTPVerification() {
       if (response.success) {
         if (type === 'signup') {
           const { user, accessToken } = response.data
-          const reduxData = { fullName, email, role, phoneNumber }
-          localStorage.setItem('accessToken', accessToken)
-          const id = user._id
-
-          dispatch(
-            login({
-              token: accessToken,
-              user: { ...reduxData, id },
-            })
-          )
+          localStorage.setItem('token', accessToken)
+            dispatch(
+              login({
+                token: accessToken,
+                user: { ...user, id: user._id },
+              })
+            )
 
           toast.success('Verification successful! Redirecting...')
           navigate('/')

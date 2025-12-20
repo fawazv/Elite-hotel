@@ -95,6 +95,17 @@ const ReceptionistDashboard: React.FC = () => {
         </div>
       )}
 
+      {/* New Action Button */}
+      <div className="flex justify-start">
+         <button
+            onClick={() => window.location.href = '/admin/desk-booking'}
+            className="flex items-center gap-2 bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors shadow-sm"
+          >
+            <Clock className="w-5 h-5" />
+            New Desk Booking
+          </button>
+      </div>
+
       {/* Today's Activity */}
       <section>
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Today's Activity</h2>

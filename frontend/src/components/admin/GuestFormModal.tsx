@@ -80,7 +80,7 @@ const GuestFormModal = ({ isOpen, onClose, onSuccess, guest }: GuestFormModalPro
 
     try {
       if (guest) {
-        // Edit mode - use JSON
+        // Edit mode - use JSON for text updates
         const payload: any = {
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -90,6 +90,7 @@ const GuestFormModal = ({ isOpen, onClose, onSuccess, guest }: GuestFormModalPro
           notes: formData.notes,
         }
 
+        // Include ID proof details if provided
         if (formData.idProofType || formData.idProofNumber) {
           payload.idProof = {
             type: formData.idProofType,
@@ -97,9 +98,18 @@ const GuestFormModal = ({ isOpen, onClose, onSuccess, guest }: GuestFormModalPro
           }
         }
 
-        await updateGuest(guest._id, payload)
+        // Parallel requests: Update details + Update image (if new file selected)
+        const promises = [updateGuest(guest._id, payload)]
+        
+        if (idCardFile) {
+          // Temporarily bypassing type check since we just added the function
+          const { updateGuestIdProofImage } = await import('@/services/guestApi')
+          promises.push(updateGuestIdProofImage(guest._id, idCardFile))
+        }
+
+        await Promise.all(promises)
       } else {
-        // Create mode - use FormData for file upload
+        // Create mode - use FormData for everything
         const formDataToSend = new FormData()
         formDataToSend.append('firstName', formData.firstName)
         if (formData.lastName) formDataToSend.append('lastName', formData.lastName)
@@ -123,6 +133,7 @@ const GuestFormModal = ({ isOpen, onClose, onSuccess, guest }: GuestFormModalPro
       onSuccess()
       onClose()
     } catch (err: any) {
+      console.error('Error saving guest:', err)
       setError(err.response?.data?.message || 'Failed to save guest')
     } finally {
       setLoading(false)
@@ -260,12 +271,11 @@ const GuestFormModal = ({ isOpen, onClose, onSuccess, guest }: GuestFormModalPro
             </div>
           </div>
 
-          {/* ID Card Image Upload (only for Add mode) */}
-          {!guest && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                ID Card Image
-              </label>
+          {/* ID Card Image Upload (Visible for both Add and Edit) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              ID Card Image
+            </label>
               {!idCardPreview ? (
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
                   <input
@@ -302,7 +312,7 @@ const GuestFormModal = ({ isOpen, onClose, onSuccess, guest }: GuestFormModalPro
                 </div>
               )}
             </div>
-          )}
+
 
           {/* Notes */}
           <div>

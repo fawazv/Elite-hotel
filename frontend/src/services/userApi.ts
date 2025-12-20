@@ -60,8 +60,33 @@ export const uploadAvatar = async (
 }
 
 /**
+ * Upload public avatar (for signup)
+ */
+export const uploadPublicAvatar = async (
+  file: File
+): Promise<{ publicId: string; url: string }> => {
+  const formData = new FormData()
+  formData.append('avatar', file)
+
+  const response = await privateApi.post('/users/public/upload-avatar', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+  return response.data.data
+}
+
+/**
  * Remove user avatar
  */
 export const removeAvatar = async (id: string): Promise<void> => {
   await privateApi.delete(`/users/${id}/avatar`)
+}
+
+/**
+ * Get users by role
+ */
+export const getUsersByRole = async (role: string): Promise<UserProfile[]> => {
+  const response = await privateApi.get(`/auth/users?role=${role}`)
+  return response.data.data
 }

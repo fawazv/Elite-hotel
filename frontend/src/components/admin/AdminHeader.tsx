@@ -61,8 +61,16 @@ const AdminHeader = ({ onMenuClick }: AdminHeaderProps) => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-                {user?.fullName?.charAt(0).toUpperCase() || 'A'}
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold overflow-hidden">
+                {user?.avatar?.url ? (
+                  <img 
+                    src={user.avatar.url} 
+                    alt={user.fullName || 'User'} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  user?.fullName?.charAt(0).toUpperCase() || 'A'
+                )}
               </div>
               <div className="hidden lg:block text-left">
                 <p className="text-sm font-semibold text-gray-800">{user?.fullName || 'Admin'}</p>
@@ -73,7 +81,7 @@ const AdminHeader = ({ onMenuClick }: AdminHeaderProps) => {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate('/profile')}>
+            <DropdownMenuItem onClick={() => navigate('/admin/profile')}>
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>

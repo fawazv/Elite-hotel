@@ -80,6 +80,11 @@ const signUpSchema = Joi.object({
       'any.only': 'Role must be one of [receptionist, housekeeper]',
       'any.required': 'Role is a required field',
     }),
+
+  avatar: Joi.object({
+    publicId: Joi.string().required(),
+    url: Joi.string().required(),
+  }).optional(),
 })
 
 const signInSchema = Joi.object({

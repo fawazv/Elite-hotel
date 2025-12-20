@@ -8,12 +8,19 @@ import { User } from '../models/user.model'
 
 // repositories
 const userRepository = new UserRepository(User)
+import { Setting } from '../models/setting.model'
+import { SettingRepository } from '../repositories/implementation/setting.repository'
+const settingRepository = new SettingRepository(Setting)
 
 // services
 const mediaService = new MediaService()
 const userService = new UserService(userRepository, mediaService)
+import { SettingService } from '../services/implementation/setting.service'
+const settingService = new SettingService(settingRepository)
 
 // controllers
 const userController = new UserController(userService)
+import { SettingController } from '../controllers/implementation/setting.controller'
+const settingController = new SettingController(settingService)
 
-export { userRepository, userService, userController, mediaService }
+export { userRepository, userService, userController, mediaService, settingController }

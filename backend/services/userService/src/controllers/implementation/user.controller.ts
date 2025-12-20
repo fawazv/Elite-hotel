@@ -70,6 +70,18 @@ export class UserController implements IUserController {
     }
   }
 
+  async uploadPublic(req: Request, res: Response, next: NextFunction) {
+    try {
+      const file = (req as any).file as Express.Multer.File | undefined
+      const uploaded = await this.userService.uploadPublicAvatar(file!)
+      return successResponse(res, HttpStatus.OK, 'Avatar uploaded', {
+        data: uploaded,
+      })
+    } catch (err) {
+      next(err)
+    }
+  }
+
   async removeAvatar(req: Request, res: Response, next: NextFunction) {
     try {
       await this.userService.removeAvatar(req.params.id)

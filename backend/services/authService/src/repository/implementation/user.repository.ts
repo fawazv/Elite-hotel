@@ -18,7 +18,7 @@ export class UserRepository
   async updateUserField(
     email: string,
     field: string,
-    value: string
+    value: string | boolean
   ): Promise<IUser | null> {
     const update = { $set: { [field]: value } }
     return await User.findOneAndUpdate({ email }, update, { new: true })
@@ -39,5 +39,9 @@ export class UserRepository
     ).lean()
 
     return updatedUser
+  }
+
+  async findAllByRole(role: string): Promise<IUser[]> {
+    return await User.find({ role }).select('-password')
   }
 }

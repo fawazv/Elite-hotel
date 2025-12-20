@@ -1,6 +1,7 @@
 // notification-service/src/services/sms.service.ts
 import twilio, { Twilio } from 'twilio'
 import logger from '../utils/logger.service'
+import { settingsProvider } from './settings.provider'
 
 export class SmsService {
   private client: Twilio
@@ -21,6 +22,13 @@ export class SmsService {
   }
 
   async sendSms({ to, body }: { to: string; body: string }) {
+    // Check if SMS notifications are enabled
+    const isEnabled = await settingsProvider.isSmsEnabled();
+    if (!isEnabled) {
+      logger.info('SMS notifications are disabled in settings. Skipping SMS.', { to });
+      return;
+    }
+
     if (!to) {
       logger.warn('SMS recipient missing, skipping SMS send')
       return

@@ -22,5 +22,8 @@ export interface IUserService {
     id: string,
     file: Express.Multer.File
   ): Promise<{ publicId: string; url: string }>
+  uploadPublicAvatar(
+    file: Express.Multer.File
+  ): Promise<{ publicId: string; url: string }>
   removeAvatar(id: string): Promise<void>
 }

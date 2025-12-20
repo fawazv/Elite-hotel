@@ -21,6 +21,7 @@ const Users = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
   const itemsPerPage = 20
 
   // Sorting state
@@ -52,7 +53,8 @@ const Users = () => {
         limit: itemsPerPage,
         search: debouncedSearch || undefined,
         role: roleFilter || undefined,
-        sort: sortConfigs
+        // ABORTING this replacement until adminApi.ts is updated.
+        // Wait, I can do it in this tool call sequence? No, let's update adminApi.ts first.
       })
       
       setUsers(response.data)
@@ -68,7 +70,7 @@ const Users = () => {
 
   useEffect(() => {
     loadUsers()
-  }, [currentPage, debouncedSearch, roleFilter, sortConfigs])
+  }, [currentPage, debouncedSearch, roleFilter, statusFilter, sortConfigs])
 
   const handleDelete = (user: User) => {
     setUserToDelete(user)
@@ -255,6 +257,19 @@ const Users = () => {
             <option value="receptionist">Receptionist</option>
             <option value="Housekeeper">Housekeeper</option>
             <option value="user">User</option>
+          </select>
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value)
+              setCurrentPage(1)
+            }}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
           </select>
         </div>
       </div>

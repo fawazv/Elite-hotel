@@ -23,7 +23,7 @@ export default interface IReservation {
   adults: number
   children?: number
   status: ReservationStatus
-  source?: 'Online' | 'FrontDesk' | 'OTA'
+  source?: 'Online' | 'FrontDesk' | 'OTA' | 'Admin'
   notes?: string
 
   // pricing

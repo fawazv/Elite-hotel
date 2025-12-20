@@ -1,9 +1,9 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { RootState } from '@/store/store';
+import type { RootState } from "@/redux/store/store";
 import AdminDashboard from '@/pages/Admin/Dashboard';
 import ReceptionistDashboard from '@/pages/Admin/ReceptionistDashboard';
-import HousekeeperDashboard from '@/pages/Admin/HousekeeperDashboard';
+import HousekeeperDashboard from '@/pages/Housekeeper/Dashboard';
 
 /**
  * Role-based dashboard router
