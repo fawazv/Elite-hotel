@@ -8,7 +8,7 @@ interface IUserRepository extends IBaseRepository<IUser> {
     field: string,
     value: string | boolean
   ): Promise<IUser | null>
-  findAllByRole(role: string): Promise<IUser[]>
+  findAllByRole(role: string, options?: { page: number; limit: number }): Promise<IUser[]>
   findByPhoneNumber(phoneNumber: string): Promise<IUser | null>
   updateByEmail(
     email: string,

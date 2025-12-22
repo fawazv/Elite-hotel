@@ -86,7 +86,11 @@ export const removeAvatar = async (id: string): Promise<void> => {
 /**
  * Get users by role
  */
-export const getUsersByRole = async (role: string): Promise<UserProfile[]> => {
-  const response = await privateApi.get(`/auth/users?role=${role}`)
+export const getUsersByRole = async (
+  role: string,
+  page: number = 1,
+  limit: number = 20
+): Promise<UserProfile[]> => {
+  const response = await privateApi.get(`/auth/users?role=${role}&page=${page}&limit=${limit}`)
   return response.data.data
 }

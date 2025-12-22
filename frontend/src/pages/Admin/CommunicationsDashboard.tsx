@@ -1,10 +1,5 @@
-/**
- * Communications Dashboard (Admin)
- * Manage chatbot conversations and video calls
- */
-
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Video, BarChart3, Clock, Users, Phone } from 'lucide-react';
+import { MessageSquare, Video, BarChart3, Clock, Users, Phone, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   getConversations,
   getCallHistory,
@@ -24,22 +19,50 @@ export const CommunicationsDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedConversation, setSelectedConversation] = useState<IConversation | null>(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 20;
+
+  useEffect(() => {
+    // Reset page to 1 on tab change
+    setCurrentPage(1); 
+  }, [activeTab]);
+
   useEffect(() => {
     loadData();
-  }, [activeTab]);
+  }, [activeTab, currentPage]);
 
   const loadData = async () => {
     setLoading(true);
     try {
       if (activeTab === 'conversations') {
-        const { conversations: convos } = await getConversations(50);
-        setConversations(convos);
+        const response = await getConversations(currentPage, itemsPerPage);
+        setConversations(response.conversations);
+        if (response.pagination) {
+            setTotalItems(response.pagination.total);
+            setTotalPages(response.pagination.pages);
+        } else {
+            // Fallback if pagination is missing from response structure but logic expects it
+             setTotalItems(response.conversations.length);
+             setTotalPages(1);
+        }
       } else if (activeTab === 'calls') {
-        const { calls: callHistory } = await getCallHistory();
-        setCalls(callHistory);
+        const response = await getCallHistory(currentPage, itemsPerPage);
+        setCalls(response.calls);
         
-        const { calls: activeCallList } = await getAllActiveCalls();
-        setActiveCalls(activeCallList);
+        // Parallel fetch for active calls if on calls tab
+        const activeResponse = await getAllActiveCalls();
+        setActiveCalls(activeResponse.calls);
+
+        if (response.pagination) {
+             setTotalItems(response.pagination.total);
+             setTotalPages(response.pagination.pages);
+        } else {
+             setTotalItems(response.calls.length);
+             setTotalPages(1);
+        }
       }
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -76,7 +99,7 @@ export const CommunicationsDashboard: React.FC = () => {
     const colors: Record<string, string> = {
       active: 'bg-green-100 text-green-800',
       handoff: 'bg-yellow-100 text-yellow-800',
-      closed: '​bg-gray-100 text-gray-800',
+      closed: 'bg-gray-100 text-gray-800',
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
@@ -87,6 +110,41 @@ export const CommunicationsDashboard: React.FC = () => {
     const secs = seconds % 60;
     return `${mins}m ${secs}s`;
   };
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+    return (
+      <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-b-lg">
+         <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-700">
+                Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalItems)}</span> of <span className="font-medium">{totalItems}</span> results
+              </p>
+            </div>
+            <div>
+              <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="sr-only">Previous</span>
+                  <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                </button>
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="sr-only">Next</span>
+                  <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </nav>
+            </div>
+         </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -221,6 +279,7 @@ export const CommunicationsDashboard: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+              {renderPagination()}
             </div>
           )}
 
@@ -291,67 +350,70 @@ export const CommunicationsDashboard: React.FC = () => {
                   <Clock className="w-5 h-5" />
                   Call History
                 </h2>
-                <div className="bg-white rounded-lg shadow overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Caller
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Receiver
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Duration
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Date
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {calls.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                            No call history found
-                          </td>
-                        </tr>
-                      ) : (
-                        calls.map((call) => (
-                          <tr key={call.sessionId} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-gray-900">
-                                {call.callerId.substring(0, 8)} ({call.callerType})
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">
-                                {call.receiverId.substring(0, 8)} ({call.receiverType})
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {formatDuration(call.duration)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span
-                                className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getCallStatusBadge(
-                                  call.status
-                                )}`}
-                              >
-                                {call.status}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {new Date(call.createdAt).toLocaleString()}
-                            </td>
+                <div className="bg-white rounded-lg shadow">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Caller
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Receiver
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Duration
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Status
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Date
+                            </th>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {calls.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                                No call history found
+                              </td>
+                            </tr>
+                          ) : (
+                            calls.map((call) => (
+                              <tr key={call.sessionId} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {call.callerId.substring(0, 8)} ({call.callerType})
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900">
+                                    {call.receiverId.substring(0, 8)} ({call.receiverType})
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {formatDuration(call.duration)}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span
+                                    className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getCallStatusBadge(
+                                      call.status
+                                    )}`}
+                                  >
+                                    {call.status}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  {new Date(call.createdAt).toLocaleString()}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    {renderPagination()}
                 </div>
               </div>
             </div>

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Plus, Search, Filter } from 'lucide-react'
+import { Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   housekeepingApi,
   type HousekeepingTask,
-  type TaskFilters,
   type CreateTaskData,
 } from '@/services/housekeepingApi'
 import HousekeepingStats from '@/components/admin/housekeeping/HousekeepingStats'
@@ -42,10 +41,26 @@ const Housekeeping = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const itemsPerPage = 20
+
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery)
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+      setCurrentPage(1)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   // Modals
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false)
@@ -59,11 +74,16 @@ const Housekeeping = () => {
         housekeepingApi.getTasks({
           status: statusFilter !== 'all' ? statusFilter : undefined,
           priority: priorityFilter !== 'all' ? priorityFilter : undefined,
+          page: currentPage,
+          limit: itemsPerPage,
+          search: debouncedSearch || undefined
         }),
         housekeepingApi.getStats(),
       ])
 
       setTasks(tasksRes.tasks)
+      setTotalItems(tasksRes.pagination?.total || 0)
+      setTotalPages(tasksRes.pagination?.pages || 1)
       setStats(statsRes)
     } catch (err) {
       console.error('Failed to fetch housekeeping data:', err)
@@ -75,7 +95,7 @@ const Housekeeping = () => {
 
   useEffect(() => {
     fetchData()
-  }, [statusFilter, priorityFilter])
+  }, [statusFilter, priorityFilter, currentPage, debouncedSearch])
 
   const handleAssignTask = async (data: CreateTaskData) => {
     try {
@@ -165,6 +185,11 @@ const Housekeeping = () => {
       </div>
 
       <div className="rounded-md border bg-card">
+        {error && (
+          <div className="p-4 text-red-600 bg-red-50 border-b border-red-200">
+            {error}
+          </div>
+        )}
         <div className="relative w-full overflow-auto">
           <table className="w-full caption-bottom text-sm text-left">
             <thead className="[&_tr]:border-b">
@@ -231,6 +256,59 @@ const Housekeeping = () => {
           </table>
         </div>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl border border-gray-200">
+          <div className="text-sm text-gray-600">
+            Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
+            {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} tasks
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Previous
+            </Button>
+            <div className="flex items-center gap-2">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum = i + 1;
+                if (totalPages > 5) {
+                   if (currentPage > 3) pageNum = currentPage - 2 + i;
+                   if (pageNum > totalPages) pageNum = totalPages - 4 + i;
+                }
+                // Determine visible pages logic similar to other pages or simplify
+                // For simplicity, let's use a basic range or just Previous/Next if complex.
+                // Reusing other page logic:
+                return (pageNum > 0 && pageNum <= totalPages) ? pageNum : null;
+              }).filter(Boolean).map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => typeof page === 'number' && setCurrentPage(page)}
+                  className="w-8 h-8 p-0"
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       <AssignTaskModal 
         isOpen={isAssignModalOpen}

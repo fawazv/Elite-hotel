@@ -56,5 +56,5 @@ export interface IAuthService {
     confirmPassword: string
   ): Promise<ApiResponse | undefined>
   passwordUpdate(id: string, data: any): Promise<{ success: boolean; message: string }>
-  getUsersByRole(role: string): Promise<{ success: boolean; data: any[] }>
+  getUsersByRole(role: string, page?: number, limit?: number): Promise<{ success: boolean; data: any[] }>
 }

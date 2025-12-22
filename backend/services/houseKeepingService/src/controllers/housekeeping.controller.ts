@@ -108,6 +108,7 @@ export class HousekeepingController {
       completedBy: req.query.completedBy as string | undefined,
       dateFrom: req.query.dateFrom as string | undefined,
       dateTo: req.query.dateTo as string | undefined,
+      search: req.query.search as string | undefined,
       sortBy: (req.query.sortBy as any) || 'createdAt',
       sortOrder: (req.query.sortOrder as any) || 'desc',
     }

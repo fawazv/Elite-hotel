@@ -253,6 +253,7 @@ export class HousekeepingService implements IHousekeepingService {
     completedBy?: string
     dateFrom?: string | Date
     dateTo?: string | Date
+    search?: string
     sortBy?: 'createdAt' | 'updatedAt' | 'status' | 'priority'
     sortOrder?: 'asc' | 'desc'
   }) {
@@ -284,6 +285,15 @@ export class HousekeepingService implements IHousekeepingService {
         filter.createdAt.$gte = dayjs(query.dateFrom).startOf('day').toDate()
       if (query.dateTo)
         filter.createdAt.$lte = dayjs(query.dateTo).endOf('day').toDate()
+    }
+
+    if (query.search) {
+      const searchRegex = new RegExp(query.search, 'i')
+      filter.$or = [
+        { roomId: searchRegex },
+        { notes: searchRegex },
+        // We can create a more complex search if needed, but this covers basics
+      ]
     }
 
     const sortField = (query.sortBy || 'createdAt') as string

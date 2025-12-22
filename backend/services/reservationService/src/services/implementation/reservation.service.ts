@@ -536,7 +536,34 @@ export class ReservationService implements IReservationService {
       this.repo.findAll(filter, { skip, limit, sort }),
       this.repo.count(filter),
     ])
-    return { data, total, page, limit }
+
+    // Enrich with room details
+    try {
+      const allRooms = await this.roomLookup.getAllRooms()
+      const roomMap = new Map(allRooms.map((r: any) => [r.id.toString(), r]))
+
+      const enrichedData = data.map((reservation) => {
+        const rObj = reservation.toObject()
+        const roomDetails = roomMap.get(rObj.roomId.toString())
+        
+        if (roomDetails) {
+          // Attach the room object instead of just the ID
+          rObj.roomId = {
+            _id: roomDetails.id,
+            number: roomDetails.number,
+            type: roomDetails.type,
+            // Add other fields if necessary
+          } as any
+        }
+        return rObj
+      })
+
+      return { data: enrichedData, total, page, limit }
+    } catch (err) {
+      console.error('Failed to enrich reservations with room details', err)
+      // Fallback to sending without room details if room service fails
+      return { data, total, page, limit }
+    }
   }
 
   async patch(id: string, payload: Partial<ReservationDocument>) {

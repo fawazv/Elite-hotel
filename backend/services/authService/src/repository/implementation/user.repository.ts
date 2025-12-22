@@ -41,7 +41,15 @@ export class UserRepository
     return updatedUser
   }
 
-  async findAllByRole(role: string): Promise<IUser[]> {
-    return await User.find({ role }).select('-password')
+  async findAllByRole(
+    role: string,
+    options: { page: number; limit: number } = { page: 1, limit: 20 }
+  ): Promise<IUser[]> {
+    const { page, limit } = options
+    const skip = (page - 1) * limit
+    return await User.find({ role })
+      .select('-password')
+      .skip(skip)
+      .limit(limit)
   }
 }

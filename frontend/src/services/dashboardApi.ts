@@ -67,7 +67,13 @@ export const dashboardApi = {
           revenueByPeriod: revenueData.revenueByPeriod || { today: 0, week: 0, month: 0, year: 0 }
         } : null,
         billingStatus: billingData || null,
-        occupancyMetrics: occupancyData || null,
+        occupancyMetrics: occupancyData ? {
+          ...occupancyData,
+          totalRooms: inventoryData?.totalRooms || occupancyData.totalRooms,
+          availableRooms: inventoryData?.totalRooms 
+            ? inventoryData.totalRooms - (occupancyData.occupiedRooms || 0) - (occupancyData.maintenanceRooms || 0)
+            : occupancyData.availableRooms
+        } : null,
         roomInventory: inventoryData || null,
         userMetrics: userData || null,
         housekeepingStatus: housekeepingData || null,
@@ -190,6 +196,19 @@ export const dashboardApi = {
       return data.data; // Returns { date: string, amount: number }[]
     } catch (error) {
       console.error('Error fetching revenue chart data:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get Recent Activity Data
+   */
+  getRecentActivity: async () => {
+    try {
+      const { data } = await privateApi.get('/reservations/analytics/recent-activity');
+      return data.data; // Returns Activity[]
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
       return [];
     }
   }

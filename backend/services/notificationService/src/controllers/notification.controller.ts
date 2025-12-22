@@ -21,9 +21,14 @@ export const getNotifications = async (req: AuthenticatedRequest, res: Response)
       ],
     }
 
+    const page = parseInt(req.query.page as string) || 1
+    const limit = parseInt(req.query.limit as string) || 20
+    const skip = (page - 1) * limit
+
     const notifications = await Notification.find(query)
       .sort({ createdAt: -1 })
-      .limit(50)
+      .skip(skip)
+      .limit(limit)
 
     const unreadCount = await Notification.countDocuments({
       ...query,

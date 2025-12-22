@@ -251,7 +251,10 @@ export class AuthController implements IAuthController {
         throw new CustomError('Role is required', HttpStatus.BAD_REQUEST)
       }
 
-      const response = await this.authService.getUsersByRole(role)
+      const page = req.query.page ? Number(req.query.page) : 1
+      const limit = req.query.limit ? Number(req.query.limit) : 20
+
+      const response = await this.authService.getUsersByRole(role, page, limit)
       return successResponse(res, HttpStatus.OK, 'Users fetched successfully', {
         data: response.data,
       })

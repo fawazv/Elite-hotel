@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Eye, CheckCircle, XCircle, Edit, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Eye, CheckCircle, XCircle, Edit, Search, ChevronLeft, ChevronRight, DoorOpen, LogOut } from 'lucide-react'
 import {
   fetchReservations,
   confirmReservation,
   cancelReservation,
+  checkInReservation,
+  checkOutReservation,
   type Reservation,
 } from '@/services/adminApi'
 import DeleteConfirmModal from '@/components/admin/DeleteConfirmModal'
@@ -23,12 +25,13 @@ const Reservations = () => {
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
   const [debouncedSearch, setDebouncedSearch] = useState(searchQuery)
+  const [statusFilter, setStatusFilter] = useState<string>('all')
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
-  const itemsPerPage = 10
+  const itemsPerPage = 20
 
   // Modals
   const [cancelModalOpen, setCancelModalOpen] = useState(false)
@@ -59,6 +62,11 @@ const Reservations = () => {
     return () => clearTimeout(timer)
   }, [searchQuery])
 
+  // Reset page when filter changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [statusFilter])
+
   // Fetch reservations from API
   const loadReservations = async () => {
     try {
@@ -68,6 +76,7 @@ const Reservations = () => {
         page: currentPage,
         limit: itemsPerPage,
         search: debouncedSearch || undefined,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
         sort: sortConfigs
       })
       setReservations(response.data)
@@ -83,7 +92,7 @@ const Reservations = () => {
 
   useEffect(() => {
     loadReservations()
-  }, [currentPage, debouncedSearch, sortConfigs])
+  }, [currentPage, debouncedSearch, statusFilter, sortConfigs])
 
   const handleConfirm = async (id: string) => {
     try {
@@ -93,6 +102,30 @@ const Reservations = () => {
     } catch (err: any) {
       console.error('Error confirming reservation:', err)
       alert(err.response?.data?.message || 'Failed to confirm reservation')
+    }
+  }
+
+  const handleCheckIn = async (id: string) => {
+    if (!window.confirm('Are you sure you want to check in this guest?')) return
+    try {
+      await checkInReservation(id)
+      loadReservations()
+      alert('Guest checked in successfully')
+    } catch (err: any) {
+      console.error('Error checking in:', err)
+      alert(err.response?.data?.message || 'Failed to check in guest')
+    }
+  }
+
+  const handleCheckOut = async (id: string) => {
+    if (!window.confirm('Are you sure you want to check out this guest?')) return
+    try {
+      await checkOutReservation(id)
+      loadReservations()
+      alert('Guest checked out successfully')
+    } catch (err: any) {
+      console.error('Error checking out:', err)
+      alert(err.response?.data?.message || 'Failed to check out guest')
     }
   }
 
@@ -251,9 +284,8 @@ const Reservations = () => {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <div className="relative">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
@@ -263,6 +295,18 @@ const Reservations = () => {
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white min-w-[200px]"
+        >
+          <option value="all">All Status</option>
+          <option value="Confirmed">Confirmed</option>
+          <option value="PendingPayment">Pending Payment</option>
+          <option value="CheckedIn">Checked In</option>
+          <option value="CheckedOut">Checked Out</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
       </div>
 
       {/* Pagination Info */}
@@ -372,6 +416,30 @@ const Reservations = () => {
                         >
                           <Edit size={18} />
                         </button>
+                        
+                        {/* Check-In Action: Only for Confirmed reservations */}
+                        {reservation.status === 'Confirmed' && (
+                          <button 
+                            onClick={() => handleCheckIn(reservation._id)}
+                            className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors" 
+                            title="Check In"
+                          >
+                            <DoorOpen size={18} />
+                          </button>
+                        )}
+
+                        {/* Check-Out Action: Only for CheckedIn reservations */}
+                        {reservation.status === 'CheckedIn' && (
+                          <button 
+                            onClick={() => handleCheckOut(reservation._id)}
+                            className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors" 
+                            title="Check Out"
+                          >
+                            <LogOut size={18} />
+                          </button>
+                        )}
+
+                        {/* Confirmation Action: Only for PendingPayment */}
                         {reservation.status === 'PendingPayment' && (
                           <button 
                             onClick={() => handleConfirm(reservation._id)}
@@ -381,6 +449,8 @@ const Reservations = () => {
                             <CheckCircle size={18} />
                           </button>
                         )}
+
+                        {/* Cancel Action: For Confirmed or PendingPayment */}
                         {(reservation.status === 'Confirmed' || reservation.status === 'PendingPayment') && (
                           <button 
                             onClick={() => handleCancel(reservation)}

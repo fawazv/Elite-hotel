@@ -248,4 +248,68 @@ export class ReservationAnalyticsController {
       next(err);
     }
   }
+  /**
+   * GET /analytics/recent-activity
+   * Returns a feed of recent activities (Created, CheckedIn, CheckedOut, Cancelled)
+   */
+  async getRecentActivity(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      // Fetch latest 10 reservations sorted by createdAt or updatedAt
+      // Ideally we want "event time" but createdAt is good for "New Bookings"
+      // For check-ins/outs, we'd need to sort by checkIn/checkOut time if we want a unified feed.
+      // For simplicity/robustness, let's fetch the last 10 updated reservations which acts as a "Latest Activity" feed.
+      
+      const recentDocs = await this.reservationModel.find({})
+        .sort({ updatedAt: -1 })
+        .limit(10)
+        .lean();
+
+      const enrichReservation = async (r: any) => {
+        let roomDetails: any = null;
+        let guestDetails: any = null;
+
+        // Fetch Room
+        if (r.roomId) {
+            try {
+                const allRooms = await this.roomLookup.getAllRooms();
+                roomDetails = allRooms.find((rm: any) => String(rm.id) === String(r.roomId));
+            } catch (e) {
+                console.warn(`Failed to fetch room ${r.roomId}`, e);
+            }
+        }
+
+        // Fetch Guest
+        guestDetails = {
+            email: r.guestContact?.email,
+            phone: r.guestContact?.phoneNumber,
+        };
+        
+        // Determine "Type" based on status or recent action
+        // This is a heuristic. In a real event-sourced system we'd have explicit events.
+        let type = 'booking';
+        if (r.status === 'CheckedIn') type = 'check-in';
+        if (r.status === 'CheckedOut') type = 'check-out';
+        if (r.status === 'Cancelled') type = 'cancellation';
+        
+        return {
+          _id: r._id,
+          guestName: guestDetails?.email || 'Guest',
+          roomNumber: roomDetails?.number || 'TBD',
+          status: r.status,
+          amount: r.totalAmount || 0,
+          createdAt: r.updatedAt || r.createdAt, // Use update time for activity feed
+          type
+        };
+      };
+
+      const activities = await Promise.all(recentDocs.map((r: any) => enrichReservation(r)));
+
+      res.json({
+        success: true,
+        data: activities
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
 }

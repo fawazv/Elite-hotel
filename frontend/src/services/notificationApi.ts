@@ -1,40 +1,21 @@
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
-
-// Ensure we don't duplicate /api if it's already in the base URL
-const cleanBaseUrl = API_BASE_URL.replace(/\/api\/?$/, '');
-const apiClient = axios.create({
-  baseURL: `${cleanBaseUrl}/api/notifications`,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import { privateApi } from '@/services/instances/axiosConfig';
 
 export const getNotifications = async (role?: string) => {
-  const response = await apiClient.get('/', { params: { role } });
+  const response = await privateApi.get('/notifications/', { params: { role } });
   return response.data;
 };
 
 export const markAsRead = async (id: string) => {
-  const response = await apiClient.put(`/${id}/read`);
+  const response = await privateApi.put(`/notifications/${id}/read`);
   return response.data;
 };
 
 export const markAllAsRead = async () => {
-  const response = await apiClient.put('/read-all');
+  const response = await privateApi.put('/notifications/read-all');
   return response.data;
 };
 
 export const deleteNotification = async (id: string) => {
-  const response = await apiClient.delete(`/${id}`);
+  const response = await privateApi.delete(`/notifications/${id}`);
   return response.data;
 };

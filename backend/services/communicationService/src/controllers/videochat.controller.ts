@@ -75,7 +75,7 @@ export class VideoChatController {
   async getCallHistory(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const userId = req.user!.userId
-      const limit = parseInt(req.query.limit as string) || 50
+      const limit = parseInt(req.query.limit as string) || 20
 
       const history = await videoChatService.getCallHistory(userId, limit)
 

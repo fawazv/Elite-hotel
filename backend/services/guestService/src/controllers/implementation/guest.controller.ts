@@ -39,8 +39,8 @@ export class GuestController implements IGuestController {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
       const q = {
-        page: req.query.page ? Number(req.query.page) : undefined,
-        limit: req.query.limit ? Number(req.query.limit) : undefined,
+        page: req.query.page ? Number(req.query.page) : 1,
+        limit: req.query.limit ? Number(req.query.limit) : 20,
         search: (req.query.search as string) || undefined,
         isBlacklisted:
           req.query.isBlacklisted != null

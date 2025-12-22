@@ -392,9 +392,9 @@ export class AuthService implements IAuthService {
     }
   }
 
-  async getUsersByRole(role: string) {
+  async getUsersByRole(role: string, page: number = 1, limit: number = 20) {
     try {
-      const users = await this.userRepository.findAllByRole(role)
+      const users = await this.userRepository.findAllByRole(role, { page, limit })
       return { success: true, data: users }
     } catch (error) {
       throw error

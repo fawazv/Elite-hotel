@@ -123,6 +123,7 @@ const reservationAnalyticsController = new ReservationAnalyticsController(Reserv
 
 router.get('/analytics/occupancy', reservationAnalyticsController.getOccupancyMetrics.bind(reservationAnalyticsController));
 router.get('/analytics/today-activity', reservationAnalyticsController.getTodayActivity.bind(reservationAnalyticsController));
+router.get('/analytics/recent-activity', reservationAnalyticsController.getRecentActivity.bind(reservationAnalyticsController));
 router.get('/analytics/room-context', reservationAnalyticsController.getRoomContext.bind(reservationAnalyticsController));
 
 export default router

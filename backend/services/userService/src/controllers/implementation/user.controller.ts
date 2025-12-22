@@ -25,8 +25,8 @@ export class UserController implements IUserController {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
       const q = {
-        page: req.query.page ? Number(req.query.page) : undefined,
-        limit: req.query.limit ? Number(req.query.limit) : undefined,
+        page: req.query.page ? Number(req.query.page) : 1,
+        limit: req.query.limit ? Number(req.query.limit) : 20,
         search: req.query.search as string | undefined,
         role: req.query.role as string | undefined,
         sort: req.query.sort ? JSON.parse(req.query.sort as string) : undefined,

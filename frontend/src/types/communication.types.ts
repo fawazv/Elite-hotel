@@ -143,6 +143,13 @@ export interface ICallErrorEvent {
 // API Request/Response Types
 // ============================================
 
+export interface IPagination {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}
+
 export interface ICreateConversationRequest {
   context?: IConversationContext;
 }
@@ -167,6 +174,7 @@ export interface IGetConversationsResponse {
   message: string;
   count: number;
   conversations: IConversation[];
+  pagination?: IPagination;
 }
 
 export interface IGetConversationByIdResponse {
@@ -185,6 +193,7 @@ export interface IUpdateContextResponse {
 
 export interface IHandoffToAgentRequest {
   conversationId: string;
+  _id?: string; // Optional if needed for some calls
 }
 
 export interface IHandoffToAgentResponse {
@@ -225,6 +234,7 @@ export interface IGetCallHistoryResponse {
   message: string;
   count: number;
   calls: IVideoChatSession[];
+  pagination?: IPagination;
 }
 
 export interface IGetActiveCallResponse {

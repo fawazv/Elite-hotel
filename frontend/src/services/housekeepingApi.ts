@@ -38,6 +38,10 @@ export interface TaskFilters {
   startDate?: string
   endDate?: string
   page?: number
+  startDate?: string
+  endDate?: string
+  search?: string
+  page?: number
   limit?: number
 }
 

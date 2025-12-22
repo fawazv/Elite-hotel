@@ -138,8 +138,8 @@ export class ReservationController implements IReservationController {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await this.svc.list({
-        page: req.query.page ? Number(req.query.page) : undefined,
-        limit: req.query.limit ? Number(req.query.limit) : undefined,
+        page: req.query.page ? Number(req.query.page) : 1,
+        limit: req.query.limit ? Number(req.query.limit) : 20,
         status: (req.query.status as string) || undefined,
         guestId: (req.query.guestId as string) || undefined,
         roomId: (req.query.roomId as string) || undefined,

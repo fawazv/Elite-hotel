@@ -10,7 +10,12 @@ import notificationRoutes from './routes/notification.routes'
 import logger from './utils/logger.service'
 
 const app = express()
-app.use(cors({ origin: true, credentials: true }))
+app.use(
+    cors({
+      origin: 'http://localhost:5173',
+      credentials: true,
+    })
+  )
 app.use(express.json())
 
 // Routes

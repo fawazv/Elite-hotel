@@ -23,6 +23,7 @@ import type {
   IGetCallHistoryResponse,
   IGetActiveCallResponse,
   IGetAllActiveCallsResponse,
+  IVideoChatSession,
 } from '../types/communication.types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
@@ -88,10 +89,10 @@ export const createConversation = async (
 /**
  * Get all conversations for the current user
  */
-export const getConversations = async (limit: number = 20): Promise<IGetConversationsResponse> => {
+export const getConversations = async (page: number = 1, limit: number = 20): Promise<IGetConversationsResponse> => {
   const response = await apiClient.get<IGetConversationsResponse>(
     `${CHATBOT_API}/conversations`,
-    { params: { limit } }
+    { params: { page, limit } }
   );
   return response.data;
 };
@@ -194,9 +195,10 @@ export const updateCallStatus = async (
 /**
  * Get call history for current user
  */
-export const getCallHistory = async (): Promise<IGetCallHistoryResponse> => {
+export const getCallHistory = async (page: number = 1, limit: number = 20): Promise<IGetCallHistoryResponse> => {
   const response = await apiClient.get<IGetCallHistoryResponse>(
-    `${VIDEOCHAT_API}/history`
+    `${VIDEOCHAT_API}/history`,
+    { params: { page, limit } }
   );
   return response.data;
 };

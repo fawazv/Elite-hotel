@@ -53,8 +53,7 @@ const Users = () => {
         limit: itemsPerPage,
         search: debouncedSearch || undefined,
         role: roleFilter || undefined,
-        // ABORTING this replacement until adminApi.ts is updated.
-        // Wait, I can do it in this tool call sequence? No, let's update adminApi.ts first.
+        status: statusFilter || undefined,
       })
       
       setUsers(response.data)

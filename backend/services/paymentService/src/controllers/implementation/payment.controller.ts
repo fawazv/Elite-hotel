@@ -67,8 +67,8 @@ export class PaymentController implements IPaymentController {
       } = req.query
 
       const result = await this.svc.list({
-        page: page ? parseInt(page as string) : undefined,
-        limit: limit ? parseInt(limit as string) : undefined,
+        page: page ? parseInt(page as string) : 1,
+        limit: limit ? parseInt(limit as string) : 20,
         status: status as any,
         provider: provider as any,
         minAmount: minAmount ? parseFloat(minAmount as string) : undefined,
