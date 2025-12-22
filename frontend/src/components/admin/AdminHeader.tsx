@@ -1,4 +1,4 @@
-import { Menu, Bell, Search, LogOut, User } from 'lucide-react'
+import { Menu, LogOut, User } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState } from '@/redux/store/store'
@@ -11,6 +11,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+
+
+import { NotificationBell } from '@/components/shared/NotificationBell'
+import { GlobalSearch } from '@/components/admin/GlobalSearch'
 
 interface AdminHeaderProps {
   onMenuClick: () => void
@@ -39,23 +43,14 @@ const AdminHeader = ({ onMenuClick }: AdminHeaderProps) => {
         </button>
 
         {/* Search Bar */}
-        <div className="hidden md:flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-lg w-96">
-          <Search size={20} className="text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search anything..."
-            className="bg-transparent outline-none text-sm flex-1"
-          />
-        </div>
+        {/* Search Bar */}
+        <GlobalSearch />
       </div>
 
       {/* Right Section */}
       <div className="flex items-center gap-4">
         {/* Notifications */}
-        <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
-          <Bell size={22} className="text-gray-600" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-        </button>
+        <NotificationBell />
 
         {/* User Dropdown */}
         <DropdownMenu>
@@ -81,7 +76,10 @@ const AdminHeader = ({ onMenuClick }: AdminHeaderProps) => {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate('/admin/profile')}>
+            <DropdownMenuItem onClick={() => {
+              const baseRoute = user?.role === 'receptionist' ? '/receptionist' : '/admin'
+              navigate(`${baseRoute}/profile`)
+            }}>
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>

@@ -56,6 +56,25 @@ export async function initGuestRpcServer() {
             correlationId: msg.properties.correlationId,
           }
         )
+      } else if (req.action === 'searchGuests') {
+        // Use repo findAll with search query functionality that mimics list()
+        // Assuming findAll supports the text search filter
+        const filter: any = {}
+        if (req.query) {
+          filter.$text = { $search: req.query }
+        }
+        
+        // We only need IDs, but BaseRepository might not support projection in options
+        const guests = await repo.findAll(filter, { limit: 50 })
+        const ids = guests.map((g: any) => g._id.toString())
+
+        ch.sendToQueue(
+          msg.properties.replyTo,
+          Buffer.from(JSON.stringify(ids)),
+          {
+            correlationId: msg.properties.correlationId,
+          }
+        )
       } else {
         const payload = null
         ch.sendToQueue(

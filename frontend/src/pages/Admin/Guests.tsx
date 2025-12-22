@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Trash2, CheckCircle, XCircle, Star, Shield, Plus, Eye, Edit, Search, ChevronLeft, ChevronRight, Filter } from 'lucide-react'
 import { fetchGuests, deleteGuest, updateGuest, type Guest } from '@/services/guestApi'
 import GuestFormModal from '@/components/admin/GuestFormModal'
@@ -10,28 +11,39 @@ import SortableTableHeader from '@/components/admin/SortableTableHeader'
 import { useSorting } from '@/Hooks/useSorting'
 
 const Guests = () => {
+  const [searchParams] = useSearchParams()
   const [guests, setGuests] = useState<Guest[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery)
   
-  // Pagination state
+  // Pagination
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [blacklistFilter, setBlacklistFilter] = useState<string>('')
-  const itemsPerPage = 20
+  const itemsPerPage = 10
 
-  // Sorting state
-  const { sortConfigs, handleSort } = useSorting([], 'guests')
-  
-  // Modal states
-  const [formModalOpen, setFormModalOpen] = useState(false)
-  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  // Filters
+  const [blacklistFilter, setBlacklistFilter] = useState<string | undefined>(undefined)
+
+  // Modals
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-  const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null)
   const [guestToDelete, setGuestToDelete] = useState<Guest | null>(null)
+  const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null)
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [formModalOpen, setFormModalOpen] = useState(false)
+
+  // Sorting
+  const { sortConfigs, handleSort } = useSorting([{ column: 'createdAt', direction: 'desc' }])
+
+  // Update searchQuery when URL changes (if navigated to with new params)
+  useEffect(() => {
+    const query = searchParams.get('search')
+    if (query) {
+      setSearchQuery(query)
+    }
+  }, [searchParams])
 
   // Debounce search query
   useEffect(() => {

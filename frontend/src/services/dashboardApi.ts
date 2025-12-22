@@ -175,6 +175,24 @@ export const dashboardApi = {
     const { data } = await privateApi.post('/dashboard/cache/clear');
     return data;
   },
+
+  /**
+   * Get Revenue Chart Data
+   * @param startDate ISO date string
+   * @param endDate ISO date string
+   * @param interval 'day' | 'month' (default: 'day')
+   */
+  getRevenueChartData: async (startDate: string, endDate: string, interval: 'day' | 'month' = 'day') => {
+    try {
+      const { data } = await privateApi.get('/payments/analytics/revenue/chart', {
+        params: { startDate, endDate, interval }
+      });
+      return data.data; // Returns { date: string, amount: number }[]
+    } catch (error) {
+      console.error('Error fetching revenue chart data:', error);
+      return [];
+    }
+  }
 };
 
 // TypeScript interfaces for dashboard data

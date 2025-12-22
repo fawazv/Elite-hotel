@@ -177,9 +177,9 @@ export class ReservationService implements IReservationService {
     // Prepayment hook (Stripe/Razorpay) - create intent/order
     let paymentClientSecret: string | undefined
     let paymentOrder: any | undefined
-    if (input.requiresPrepayment && input.paymentProvider) {
+    if (input.requiresPrepayment && input.paymentProvider && input.paymentProvider !== 'Offline') {
       const pay = await this.payments.createPaymentIntent({
-        provider: input.paymentProvider,
+        provider: input.paymentProvider as 'Stripe' | 'Razorpay',
         amount: doc.totalAmount,
         currency: doc.currency,
         reservationCode: doc.code,
@@ -323,9 +323,9 @@ export class ReservationService implements IReservationService {
         let paymentClientSecret: string | undefined
         let paymentOrder: any | undefined
 
-        if (input.requiresPrepayment && input.paymentProvider) {
+        if (input.requiresPrepayment && input.paymentProvider && input.paymentProvider !== 'Offline') {
           const pay = await this.payments.createPaymentIntent({
-            provider: input.paymentProvider,
+            provider: input.paymentProvider as 'Stripe' | 'Razorpay',
             amount: pendingMatch.totalAmount,
             currency: pendingMatch.currency,
             reservationCode: pendingMatch.code,
@@ -403,9 +403,9 @@ export class ReservationService implements IReservationService {
     // Payment (Stripe / Razorpay)
     let paymentClientSecret: string | undefined
     let paymentOrder: any | undefined
-    if (input.requiresPrepayment && input.paymentProvider) {
+    if (input.requiresPrepayment && input.paymentProvider && input.paymentProvider !== 'Offline') {
       const pay = await this.payments.createPaymentIntent({
-        provider: input.paymentProvider,
+        provider: input.paymentProvider as 'Stripe' | 'Razorpay',
         amount: doc.totalAmount,
         currency: doc.currency,
         reservationCode: doc.code,
@@ -507,7 +507,21 @@ export class ReservationService implements IReservationService {
       if (q.dateTo) filter.checkIn.$lte = q.dateTo
     }
     if (q.search) {
-      filter.$or = [{ code: { $regex: q.search, $options: 'i' } }]
+      const orConditions: any[] = [
+        { code: { $regex: q.search, $options: 'i' } }
+      ]
+
+      try {
+        // Find matching guests via RPC
+        const guestIds = await this.guestRpc.searchGuests(q.search)
+        if (guestIds.length > 0) {
+          orConditions.push({ guestId: { $in: guestIds } })
+        }
+      } catch (err) {
+        console.warn('Guest search RPC failed, falling back to code only', err)
+      }
+
+      filter.$or = orConditions
     }
 
     let sort: any = { createdAt: -1 }

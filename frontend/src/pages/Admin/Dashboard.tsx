@@ -5,14 +5,12 @@ import {
   BedDouble,
   Calendar,
   Activity,
-  ArrowUpRight,
-  ArrowDownRight,
   Loader2,
   AlertTriangle
 } from 'lucide-react'
-import { useAdminDashboard } from '@/hooks/useDashboardData'
+import { useAdminDashboard } from '@/Hooks/useDashboardData'
 import StatsCard from '@/components/admin/StatsCard'
-import RevenueChart from '@/components/admin/widgets/RevenueChart'
+import RevenueChart from '../../components/admin/widgets/RevenueChart'
 import OccupancyChart from '@/components/admin/widgets/OccupancyChart'
 import RecentActivity from '@/components/admin/widgets/RecentActivity'
 
@@ -44,18 +42,7 @@ const Dashboard: React.FC = () => {
     )
   }
 
-  // Format data for charts (fallback if data is null)
-  const revenueData = data?.financialMetrics?.revenueByPeriod 
-    ? [
-        { date: 'Mon', amount: data.financialMetrics.revenueByPeriod.today * 0.8 }, // Mock historical
-        { date: 'Tue', amount: data.financialMetrics.revenueByPeriod.today * 0.9 },
-        { date: 'Wed', amount: data.financialMetrics.revenueByPeriod.today * 1.1 },
-        { date: 'Thu', amount: data.financialMetrics.revenueByPeriod.today * 0.95 },
-        { date: 'Fri', amount: data.financialMetrics.revenueByPeriod.today * 1.2 },
-        { date: 'Sat', amount: data.financialMetrics.revenueByPeriod.today * 1.5 },
-        { date: 'Today', amount: data.financialMetrics.revenueByPeriod.today },
-      ]
-    : []
+
 
   const occupancyData = [
     { name: 'Occupied', value: data?.occupancyMetrics?.occupiedRooms || 0, color: '#3B82F6' },
@@ -121,7 +108,7 @@ const Dashboard: React.FC = () => {
           change={`${data?.housekeepingStatus?.inProgressRooms ?? 0} In Progress`}
           isPositive={false}
           icon={Activity}
-          color="red"
+          color="orange"
         />
       </div>
 
@@ -168,7 +155,7 @@ const Dashboard: React.FC = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <RevenueChart data={revenueData} />
+          <RevenueChart />
         </div>
         <div className="lg:col-span-1">
           <OccupancyChart data={occupancyData} />

@@ -15,7 +15,12 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { ErrorWidget } from '@/components/shared/ErrorWidget';
 import { LoadingWidget } from '@/components/shared/LoadingWidget';
 
+import { useNavigate } from 'react-router-dom';
+
+import { NotificationBell } from '@/components/shared/NotificationBell';
+
 const ReceptionistDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { data, isLoading, error, refetch } = useReceptionistDashboard();
   
   // Enable real-time updates
@@ -61,7 +66,7 @@ const ReceptionistDashboard: React.FC = () => {
           <p className="text-gray-500 mt-1">Operational command center</p>
         </div>
         <div className="flex items-center gap-2">
-          <Bell className="w-5 h-5 text-gray-400" />
+          <NotificationBell />
           <span className="text-sm text-gray-500">
             {new Date().toLocaleTimeString()}
           </span>
@@ -98,7 +103,7 @@ const ReceptionistDashboard: React.FC = () => {
       {/* New Action Button */}
       <div className="flex justify-start">
          <button
-            onClick={() => window.location.href = '/admin/desk-booking'}
+            onClick={() => navigate('/receptionist/desk-booking')}
             className="flex items-center gap-2 bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors shadow-sm"
           >
             <Clock className="w-5 h-5" />

@@ -98,4 +98,82 @@ export class PaymentAnalyticsController {
       next(err);
     }
   }
+  /**
+   * GET /analytics/revenue/chart
+   * Returns time-series revenue data for charts
+   */
+  async getRevenueTimeSeries(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { startDate, endDate, interval = 'day' } = req.query;
+      
+      if (!startDate || !endDate) {
+        res.status(400).json({ success: false, message: 'Start date and end date are required' });
+        return;
+      }
+
+      const start = new Date(startDate as string);
+      const end = new Date(endDate as string);
+      // Ensure end date includes the full day
+      end.setHours(23, 59, 59, 999);
+
+      // Define grouping format based on interval
+      let groupBy: any = {
+        year: { $year: '$createdAt' },
+        month: { $month: '$createdAt' },
+        day: { $dayOfMonth: '$createdAt' }
+      };
+
+      if (interval === 'month') {
+        groupBy = {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' }
+        };
+      }
+
+      const revenueData = await this.paymentModel.aggregate([
+        {
+          $match: {
+            status: 'succeeded',
+            createdAt: { $gte: start, $lte: end }
+          }
+        },
+        {
+          $group: {
+            _id: groupBy,
+            amount: { $sum: '$amount' }
+          }
+        },
+        { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
+      ]);
+
+      // Format data for frontend
+      const formattedData = revenueData.map((item: any) => {
+        const { year, month, day } = item._id;
+        let dateLabel = '';
+        
+        if (interval === 'month') {
+          // Format as "Jan 2024"
+          const date = new Date(year, month - 1);
+          dateLabel = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        } else {
+          // Format as "Jan 01"
+          const date = new Date(year, month - 1, day);
+          dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+        }
+
+        return {
+          date: dateLabel,
+          amount: item.amount,
+          fullDate: new Date(year, month - 1, day || 1).toISOString()
+        };
+      });
+
+      res.json({
+        success: true,
+        data: formattedData
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
 }

@@ -19,6 +19,7 @@ import { PaymentModel } from '../models/payment.model';
 const paymentAnalyticsController = new PaymentAnalyticsController(PaymentModel);
 
 router.get('/analytics/revenue', paymentAnalyticsController.getRevenueMetrics.bind(paymentAnalyticsController));
+router.get('/analytics/revenue/chart', paymentAnalyticsController.getRevenueTimeSeries.bind(paymentAnalyticsController));
 router.get('/analytics/pending', paymentAnalyticsController.getPendingPayments.bind(paymentAnalyticsController));
 
 export default router

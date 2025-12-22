@@ -1,8 +1,8 @@
-// notification-service/src/services/notification.consumer.ts
 import { ConsumeMessage } from 'amqplib'
 import { getRabbitChannel, initTopology } from '../config/rabbitmq.config'
 import { EmailService } from './email.service'
 import { SmsService } from './sms.service'
+import { Notification as NotificationModel } from '../models/notification.model'
 import dayjs from 'dayjs'
 import {
   handleInvoiceCreated,
@@ -71,6 +71,28 @@ async function handleReservationCreated(data: any) {
     reservationId: data.reservationId,
     code: data.code,
   })
+
+  // ✅ Persist notification for Dashboard (Receptionist/Admin)
+  try {
+    await NotificationModel.create({
+      recipientRole: 'receptionist',
+      title: 'New Reservation Received',
+      message: `New booking ${data.code} for ${data.guestName || 'Guest'} (${data.totalAmount} ${data.currency})`,
+      type: 'info',
+      metadata: { reservationId: data.reservationId, code: data.code }
+    })
+    
+    // Also notify admin
+    await NotificationModel.create({
+      recipientRole: 'admin',
+      title: 'Reservation Created',
+      message: `Reservation ${data.code} confirmed. Total: ${data.totalAmount}`,
+      type: 'success',
+      metadata: { reservationId: data.reservationId, code: data.code }
+    })
+  } catch (err) {
+    logger.error('Failed to save notification to DB', { error: err })
+  }
 
   // send immediate confirmation
   const toEmail = data.guestContact?.email

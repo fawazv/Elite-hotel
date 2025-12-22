@@ -7,6 +7,7 @@ import { logout } from '../../../redux/slices/authSlice'
 import MobileMenuButton from './MobileMenuButton'
 import Sidebar from './Sidebar'
 import NavButton from './NavButton'
+import { NotificationBell } from '@/components/shared/NotificationBell'
 
 const Header: React.FC = () => {
   const dispatch = useDispatch()
@@ -159,7 +160,13 @@ const Header: React.FC = () => {
           </NavButton>
 
           {isAuthenticated ? (
-            <div className="relative account-dropdown">
+            <div className="flex items-center gap-4">
+              {/* Notification Bell */}
+              <div className={isScrolledState ? "text-gray-600" : "text-white"}>
+                <NotificationBell />
+              </div>
+
+              <div className="relative account-dropdown">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className={`
@@ -218,6 +225,7 @@ const Header: React.FC = () => {
                   </button>
                 </div>
               )}
+            </div>
             </div>
           ) : (
             <div className="flex items-center gap-4">

@@ -75,9 +75,15 @@ export class GuestService implements IGuestService {
     if (typeof query.isBlacklisted === 'boolean')
       filter.isBlacklisted = query.isBlacklisted
     
-    // Use text index for better search performance
+    // Use regex for more flexible search (name, email, phone)
     if (query.search) {
-      filter.$text = { $search: query.search }
+      const searchRegex = new RegExp(query.search, 'i')
+      filter.$or = [
+        { firstName: searchRegex },
+        { lastName: searchRegex },
+        { email: searchRegex },
+        { phoneNumber: searchRegex }
+      ]
     }
 
     // Field projection: only select necessary fields for listing
@@ -96,7 +102,7 @@ export class GuestService implements IGuestService {
     }
 
     // Build sort object
-    let sort: any = query.search ? { score: { $meta: 'textScore' } } : { createdAt: -1 }
+    let sort: any = { createdAt: -1 }
     if (query.sort && query.sort.length > 0) {
       sort = {}
       query.sort.forEach((s) => {

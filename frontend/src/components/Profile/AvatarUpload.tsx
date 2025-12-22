@@ -4,6 +4,7 @@ import { uploadAvatar, removeAvatar } from '@/services/userApi'
 import { toast } from 'sonner'
 import { useDispatch } from 'react-redux'
 import { updateAvatar } from '@/redux/slices/authSlice'
+import ImageCropper from '@/components/shared/ImageCropper'
 
 interface AvatarUploadProps {
   userId: string
@@ -17,11 +18,16 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ userId, currentAvatar }) =>
 
   const dispatch = useDispatch()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
   const [preview, setPreview] = useState<string | null>(currentAvatar?.url || null)
   const [isUploading, setIsUploading] = useState(false)
   const [isRemoving, setIsRemoving] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [dragActive, setDragActive] = useState(false)
+
+  // Cropper State
+  const [cropperOpen, setCropperOpen] = useState(false)
+  const [tempImageSrc, setTempImageSrc] = useState<string | null>(null) // For the raw file before crop
 
   const validateFile = (file: File): string | null => {
     const validTypes = ['image/jpeg', 'image/png', 'image/jpg']
@@ -45,12 +51,30 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ userId, currentAvatar }) =>
       return
     }
 
-    setSelectedFile(file)
+    // Instead of setting selectedFile, start cropping flow
     const reader = new FileReader()
     reader.onloadend = () => {
-      setPreview(reader.result as string)
+      setTempImageSrc(reader.result as string)
+      setCropperOpen(true)
     }
     reader.readAsDataURL(file)
+    
+    // Reset input so same file can be selected again if cancelled
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    // Convert Blob back to File
+    const file = new File([croppedBlob], 'avatar.jpg', { type: 'image/jpeg' })
+    
+    setSelectedFile(file)
+    
+    // Create preview from cropped blob
+    const objectUrl = URL.createObjectURL(croppedBlob)
+    setPreview(objectUrl)
+    
+    setCropperOpen(false)
+    setTempImageSrc(null)
   }
 
   const handleDrag = (e: React.DragEvent) => {
@@ -242,6 +266,18 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ userId, currentAvatar }) =>
           )}
         </div>
       </div>
+
+      {/* Image Cropper Modal */}
+      <ImageCropper
+        imageSrc={tempImageSrc}
+        isOpen={cropperOpen}
+        onClose={() => {
+            setCropperOpen(false)
+            setTempImageSrc(null)
+        }}
+        onCropComplete={handleCropComplete}
+        aspectRatio={1} // Square for avatar
+      />
     </div>
   )
 }

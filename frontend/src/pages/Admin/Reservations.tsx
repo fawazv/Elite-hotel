@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Eye, CheckCircle, XCircle, Edit, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   fetchReservations,
@@ -16,28 +17,37 @@ import SortableTableHeader from '@/components/admin/SortableTableHeader'
 import { useSorting } from '@/Hooks/useSorting'
 
 const Reservations = () => {
+  const [searchParams] = useSearchParams()
   const [reservations, setReservations] = useState<Reservation[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
-  // Pagination state
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery)
+
+  // Pagination
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const itemsPerPage = 20
+  const itemsPerPage = 10
 
-  // Sorting state
-  const { sortConfigs, handleSort } = useSorting([], 'reservations')
-  
-  // Modal states
+  // Modals
   const [cancelModalOpen, setCancelModalOpen] = useState(false)
   const [reservationToCancel, setReservationToCancel] = useState<Reservation | null>(null)
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [reservationToEdit, setReservationToEdit] = useState<Reservation | null>(null)
+
+  // Sorting
+  const { sortConfigs, handleSort } = useSorting([{ column: 'createdAt', direction: 'desc' }])
+
+  // Update searchQuery when URL changes
+  useEffect(() => {
+    const query = searchParams.get('search')
+    if (query) {
+      setSearchQuery(query)
+    }
+  }, [searchParams])
 
   // Debounce search query
   useEffect(() => {
@@ -135,12 +145,12 @@ const Reservations = () => {
       
       const formatted = formatDataForExport(dataToExport, {
         'Code': 'code',
-        'Guest Email': (r) => r.guestContact.email,
-        'Room': (r) => `Room ${r.roomId.number} (${r.roomId.type})`,
-        'Check-In': (r) => format(new Date(r.checkIn), 'yyyy-MM-dd'),
-        'Check-Out': (r) => format(new Date(r.checkOut), 'yyyy-MM-dd'),
+        'Guest Email': (r) => r.guestContact?.email || 'N/A',
+        'Room': (r) => r.roomId ? `Room ${r.roomId.number} (${r.roomId.type})` : 'N/A',
+        'Check-In': (r) => r.checkIn ? format(new Date(r.checkIn), 'yyyy-MM-dd') : 'N/A',
+        'Check-Out': (r) => r.checkOut ? format(new Date(r.checkOut), 'yyyy-MM-dd') : 'N/A',
         'Status': 'status',
-        'Total Amount': (r) => `$${r.totalAmount}`,
+        'Total Amount': (r) => `$${r.totalAmount || 0}`,
         'Created At': (r) => r.createdAt ? format(new Date(r.createdAt), 'yyyy-MM-dd HH:mm') : ''
       })
       
@@ -330,22 +340,22 @@ const Reservations = () => {
                 {reservations.map((reservation) => (
                   <tr key={reservation._id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{reservation.code}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{reservation.guestContact.email}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{reservation.guestContact?.email || 'N/A'}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">
-                      Room {reservation.roomId.number} - {reservation.roomId.type}
+                      {reservation.roomId ? `Room ${reservation.roomId.number} - ${reservation.roomId.type}` : 'Room details unavailable'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
-                      {new Date(reservation.checkIn).toLocaleDateString()}
+                      {reservation.checkIn ? new Date(reservation.checkIn).toLocaleDateString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
-                      {new Date(reservation.checkOut).toLocaleDateString()}
+                      {reservation.checkOut ? new Date(reservation.checkOut).toLocaleDateString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(reservation.status)}`}>
                         {reservation.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">${reservation.totalAmount}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">${reservation.totalAmount || 0}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <button 

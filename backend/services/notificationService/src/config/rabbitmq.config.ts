@@ -2,7 +2,7 @@
 import amqplib, { Connection, Channel } from 'amqplib'
 import logger from '../utils/logger.service'
 
-const RABBIT_URL = process.env.RABBITMQ_URL || 'amqp://localhost:5672'
+const RABBIT_URL = process.env.RABBITMQ_URL || 'amqp://127.0.0.1:5672'
 let connection: Connection | null = null
 let channel: Channel | null = null
 

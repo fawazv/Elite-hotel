@@ -2,9 +2,17 @@ import jwt, { JwtPayload, TokenExpiredError, JsonWebTokenError } from 'jsonwebto
 import { Request, Response, NextFunction } from 'express'
 import { User } from '../models/user.model'
 
+
+// Custom UserPayload interface
+export interface UserPayload extends JwtPayload {
+  id: string
+  role: string
+  email?: string
+}
+
 // Extend Express Request interface
 export interface AuthenticatedRequest extends Request {
-  user?: JwtPayload
+  user?: UserPayload
 }
 
 // Simple in-memory cache removed as per request
@@ -66,9 +74,9 @@ const authenticateToken = async (
     }
 
     // 5. Verify JWT token (async/await instead of callback)
-    let decoded: JwtPayload
+    let decoded: UserPayload
     try {
-      decoded = jwt.verify(token, secret) as JwtPayload
+      decoded = jwt.verify(token, secret) as UserPayload
     } catch (error) {
       if (error instanceof TokenExpiredError) {
         res.status(401).json({ 
@@ -92,7 +100,7 @@ const authenticateToken = async (
     }
 
     // 6. Validate token payload
-    if (!decoded.id) {
+    if (!decoded.id || !decoded.role) {
       res.status(401).json({ 
         success: false,
         message: 'Invalid token payload',

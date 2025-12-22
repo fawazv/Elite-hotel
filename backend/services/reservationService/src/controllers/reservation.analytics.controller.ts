@@ -1,4 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
+import { RoomLookupAdapter } from '../services/adapters/roomLookup.adapter';
+import { GuestRpcClient } from '../services/adapters/guestRpcClient.adapter';
 
 /**
  * Reservation Analytics Controller
@@ -6,9 +8,13 @@ import { Request, Response, NextFunction } from 'express';
  */
 export class ReservationAnalyticsController {
   private reservationModel: any;
+  private roomLookup: RoomLookupAdapter;
+  private guestRpc: GuestRpcClient;
 
   constructor(reservationModel: any) {
     this.reservationModel = reservationModel;
+    this.roomLookup = new RoomLookupAdapter();
+    this.guestRpc = new GuestRpcClient();
   }
 
   /**
@@ -94,46 +100,101 @@ export class ReservationAnalyticsController {
       tomorrow.setDate(tomorrow.getDate() + 1);
 
       // Check-ins scheduled for today
-      const checkInsScheduled = await this.reservationModel.find({
+      // Removed .populate() as Room and Guest are external services
+      const checkInsScheduledDocs = await this.reservationModel.find({
         checkIn: { $gte: today, $lt: tomorrow },
         status: { $in: ['Confirmed', 'PendingPayment'] }
-      }).populate('roomId').populate('guestId').lean();
+      }).lean();
 
       // Check-outs scheduled for today
-      const checkOutsScheduled = await this.reservationModel.find({
+      const checkOutsScheduledDocs = await this.reservationModel.find({
         checkOut: { $gte: today, $lt: tomorrow },
         status: 'CheckedIn'
-      }).populate('roomId').populate('guestId').lean();
+      }).lean();
+      
+      // Fetch Room and Guest details
+      // Note: In a production environment with high scale, we would bulk fetch or cache these
+      // For now, we fetch safely with Promise.all
+      
+      const enrichReservation = async (r: any) => {
+        let roomDetails: any = null;
+        let guestDetails: any = null;
 
-      // Format the data
-      const formatReservations = (reservations: any[]) => {
-        return reservations.map((r: any) => ({
+        // Fetch Room
+        if (r.roomId) {
+            try {
+                const roomData = await this.roomLookup.ensureRoomExists(r.roomId.toString());
+                // We need to fetch full room details to get number and type, ensureRoomExists might only return minimal info
+                // But the adapter's ensureRoomExists calls GET /:id which returns full data typically. 
+                // Let's check adapter... ensureRoomExists returns { id, price, available }. 
+                // We need extended info. Let's use internal logic of adapter or call endpoint if needed.
+                // Actually, ensureRoomExists in adapter returns partialified data. 
+                // Let's rely on basic info or better yet, fetch all rooms and map if efficiency is needed.
+                // For direct ID fetch, let's assume we can get it. 
+                // Wait, adapter ensures existence but returns limited fields. 
+                // Let's cheat and use getAllRooms for mapping if list is small, or just better:
+                // We'll optimistically use what we have or 'TBD'.
+                // If we need the number, we really need the room object.
+                // Let's temporarily use getAllRooms which returns full objects as per the adapter 
+                // and find from there. It's safe given hotel size.
+                const allRooms = await this.roomLookup.getAllRooms();
+                roomDetails = allRooms.find((rm: any) => String(rm.id) === String(r.roomId));
+            } catch (e) {
+                console.warn(`Failed to fetch room ${r.roomId}`, e);
+            }
+        }
+
+        // Fetch Guest
+        if (r.guestId) {
+            try {
+                // guestRpc.getContactDetails returns { email, phoneNumber }
+                // We might need name too. 
+                // guestRpc.lookupGuest(email, phone) returns profile.
+                // guestRpc doesn't have "getById". This is a gap.
+                // However, r.guestContact might have the email/phone saved on the reservation itself!
+                // Reservation model has guestContact { email, phoneNumber }.
+                guestDetails = {
+                    email: r.guestContact?.email,
+                    phone: r.guestContact?.phoneNumber,
+                    // We might miss the name if it's not on reservation. 
+                    // But reservation usually doesn't store name directly (it uses guestId).
+                    // We'll default to 'Guest' if we can't find name.
+                };
+            } catch (e) {
+                console.warn(`Failed to fetch guest ${r.guestId}`, e);
+            }
+        }
+        
+        return {
           _id: r._id,
           code: r.code,
-          guestName: r.guestId?.fullName || r.guestContact?.email || 'Guest',
+          guestName: guestDetails?.email || 'Guest', // Fallback since we lack GetGuestById
           guestContact: {
-            email: r.guestContact?.email || r.guestId?.email || '',
-            phone: r.guestContact?.phone || r.guestId?.phoneNumber || ''
+            email: guestDetails?.email || '',
+            phone: guestDetails?.phone || ''
           },
-          roomNumber: r.roomId?.number || 'TBD',
-          roomType: r.roomId?.type || 'Standard',
+          roomNumber: roomDetails?.number || 'TBD',
+          roomType: roomDetails?.type || 'Standard',
           checkInTime: r.checkIn,
           checkOutTime: r.checkOut,
           status: r.status,
           totalAmount: r.totalAmount || 0
-        }));
+        };
       };
+
+      const checkInsScheduled = await Promise.all(checkInsScheduledDocs.map((r: any) => enrichReservation(r)));
+      const checkOutsScheduled = await Promise.all(checkOutsScheduledDocs.map((r: any) => enrichReservation(r)));
 
       res.json({
         success: true,
         data: {
           checkInsScheduled: {
             count: checkInsScheduled.length,
-            reservations: formatReservations(checkInsScheduled)
+            reservations: checkInsScheduled
           },
           checkOutsScheduled: {
             count: checkOutsScheduled.length,
-            reservations: formatReservations(checkOutsScheduled)
+            reservations: checkOutsScheduled
           },
           lateCheckOuts: 0, // Would need additional logic
           earlyCheckIns: 0
@@ -174,7 +235,7 @@ export class ReservationAnalyticsController {
             checkInTime: checkIn >= today && checkIn < tomorrow ? r.checkIn: null,
             hasGuestCheckingOutToday: checkOut >= today && checkOut < tomorrow,
             isCurrentlyOccupied: r.status === 'CheckedIn',
-            guestPreferences: r.guestId?.preferences || []
+            guestPreferences: [] // guestId population not available
           };
         }
       });

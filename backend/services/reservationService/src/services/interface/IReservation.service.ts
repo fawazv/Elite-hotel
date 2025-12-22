@@ -21,7 +21,7 @@ export type CreateReservationInput = {
   notes?: string
   source?: 'Online' | 'FrontDesk' | 'OTA'
   requiresPrepayment?: boolean
-  paymentProvider?: 'Stripe' | 'Razorpay'
+  paymentProvider?: 'Stripe' | 'Razorpay' | 'Offline'
   currency?: string
   guestDetails?: {
     firstName: string
