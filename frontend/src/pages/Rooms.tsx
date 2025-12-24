@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchPublicRooms } from '@/services/publicApi'
+import { SearchX, WifiOff } from 'lucide-react'
+import EmptyState from '@/components/common/EmptyState'
+import { LoadingWidget } from '@/components/shared/LoadingWidget'
 
 // Type definitions
 interface Room {
@@ -682,21 +685,20 @@ const RoomsBrowser: React.FC = () => {
 
           {/* Error State */}
           {error && (
-            <div className="flex flex-col justify-center items-center py-10">
-               <p className="text-red-500 mb-4">{error}</p>
-                <button
-                onClick={() => window.location.reload()}
-                className="bg-primary-600 text-white px-6 py-2 rounded-lg"
-              >
-                Retry
-              </button>
+            <div className="py-10">
+               <EmptyState
+                 title="Failed to load rooms"
+                 description={error}
+                 icon={WifiOff}
+                 action={{ label: "Retry", onClick: () => window.location.reload() }}
+               />
             </div>
           )}
 
           {/* Loading State */}
           {isLoading ? (
-            <div className="flex justify-center items-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+            <div className="py-10">
+               <LoadingWidget variant="grid" count={6} />
             </div>
           ) : (
             <>
@@ -713,9 +715,13 @@ const RoomsBrowser: React.FC = () => {
               </div>
               
               {displayedRooms.length === 0 && !isLoading && !error && (
-                  <div className="text-center py-20">
-                      <p className="text-gray-500 text-lg">No rooms found matching your criteria.</p>
-                      <button onClick={handleClearFilters} className="mt-4 text-primary-600 hover:underline">Clear Filters</button>
+                  <div className="py-20">
+                      <EmptyState
+                        title="No rooms found"
+                        description="We couldn't find any rooms matching your current filters."
+                        icon={SearchX}
+                        action={{ label: "Clear Filters", onClick: handleClearFilters }}
+                      />
                   </div>
               )}
 

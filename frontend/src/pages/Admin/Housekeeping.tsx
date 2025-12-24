@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Search, ChevronLeft, ChevronRight, AlertTriangle, ClipboardList } from 'lucide-react'
+import { TableSkeleton } from '@/components/common/LoadingSkeleton'
+import EmptyState from '@/components/common/EmptyState'
 import {
   housekeepingApi,
   type HousekeepingTask,
@@ -186,9 +188,14 @@ const Housekeeping = () => {
 
       <div className="rounded-md border bg-card">
         {error && (
-          <div className="p-4 text-red-600 bg-red-50 border-b border-red-200">
-            {error}
-          </div>
+           <div className="p-8 flex justify-center">
+              <EmptyState 
+                 title="Error loading tasks"
+                 description={error}
+                 icon={AlertTriangle}
+                 action={{ label: "Retry", onClick: fetchData }}
+              />
+           </div>
         )}
         <div className="relative w-full overflow-auto">
           <table className="w-full caption-bottom text-sm text-left">
@@ -206,14 +213,16 @@ const Housekeeping = () => {
             <tbody className="[&_tr:last-child]:border-0">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="h-24 text-center">
-                    Loading...
-                  </td>
+                   <td colSpan={7} className="p-0"><TableSkeleton rows={5} /></td>
                 </tr>
               ) : !tasks || tasks?.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="h-24 text-center text-muted-foreground">
-                    No tasks found
+                  <td colSpan={7} className="p-8">
+                     <EmptyState
+                        title={searchQuery || statusFilter !== 'all' || priorityFilter !== 'all' ? 'No tasks found' : 'No housekeeping tasks'}
+                        description="Tasks will appear here once assigned."
+                        icon={ClipboardList}
+                     />
                   </td>
                 </tr>
               ) : (

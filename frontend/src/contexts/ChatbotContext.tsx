@@ -12,6 +12,7 @@ interface ChatbotContextType {
   unreadCount: number;
   currentConversation: IConversation | null;
   
+  
   openWidget: () => void;
   closeWidget: () => void;
   toggleWidget: () => void;
@@ -85,12 +86,14 @@ export const ChatbotProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('chatbotWidgetState', JSON.stringify({ isOpen }));
   }, [isOpen]);
 
+
+
+
   const value: ChatbotContextType = {
     isOpen,
     isMinimized,
     unreadCount,
     currentConversation,
-    
     openWidget,
     closeWidget,
     toggleWidget,

@@ -6,6 +6,8 @@ interface SocketContextType {
   socket: Socket | null;
   isConnected: boolean;
   iceServers: IICEServer[];
+  connect: () => void;
+  disconnect: () => void;
 }
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -18,17 +20,32 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [isConnected, setIsConnected] = useState(false);
   const [iceServers, setIceServers] = useState<IICEServer[]>([]);
 
-  useEffect(() => {
+  const connect = () => {
     // Get token from storage
-    // Also support guest tokens which might be stored separately or same key
-    // For now we assume standard auth token or a guest token is in 'token' or 'guestToken'
-    const authList = [localStorage.getItem('token'), localStorage.getItem('guestToken')];
+    const authList = [localStorage.getItem('token'), localStorage.getItem('guest_token')];
     const validToken = authList.find(t => t);
 
+    // If socket exists
+    if (socket) {
+        console.log('Socket connect called. Current socket connected:', socket.connected, 'ID:', socket.id);
+        
+        // Check if token changed (simple comparison if possible, or assume valid if connected)
+        // Accessing socket.auth might act weird if it was mutated. 
+        // But we can check if we are connected.
+        if (socket.connected) {
+             const currentToken = (socket.auth as any)?.token;
+             if (currentToken === validToken) {
+                 console.log('Socket already connected with same token. Skipping reconnect.');
+                 return;
+             }
+             console.log('Token changed. Disconnecting old socket...');
+             socket.disconnect();
+        }
+    }
+
     if (!validToken) {
-      // If no token, we don't connect yet. 
-      // The ChatWidget will likely trigger a guest token generation if needed.
-      return;
+        console.warn('Socket connect called but no token found.');
+        return;
     }
 
     const socketInstance = io(SOCKET_URL, {
@@ -61,15 +78,25 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     });
 
     setSocket(socketInstance);
+  };
 
+  const disconnect = () => {
+    if (socket) {
+        socket.disconnect();
+        setSocket(null);
+        setIsConnected(false);
+    }
+  };
+
+  useEffect(() => {
+    connect();
     return () => {
-      socketInstance.disconnect();
+      if (socket) socket.disconnect();
     };
-  }, []); // Depend on token changes? Ideally yes, but for now mount/unmount is safer to avoid thrashing.
-  // We might want to expose a "connect" function to manually trigger connection after login/guest token gen.
+  }, []);
 
   return (
-    <SocketContext.Provider value={{ socket, isConnected, iceServers }}>
+    <SocketContext.Provider value={{ socket, isConnected, iceServers, connect, disconnect }}>
       {children}
     </SocketContext.Provider>
   );

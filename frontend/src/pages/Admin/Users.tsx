@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Eye, Edit, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Eye, Edit, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, Users as UsersIcon } from 'lucide-react'
+import { TableSkeleton } from '@/components/common/LoadingSkeleton'
+import EmptyState from '@/components/common/EmptyState'
 import { fetchUsers, deleteUser, type User } from '@/services/adminApi'
 import DeleteConfirmModal from '@/components/admin/DeleteConfirmModal'
 import UserDetailModal from '@/components/admin/UserDetailModal'
@@ -194,23 +196,18 @@ const Users = () => {
   }
 
   if (loading && users.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    )
+    return <TableSkeleton rows={10} />
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-red-600 text-lg">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Retry
-        </button>
+      <div className="h-64 flex items-center justify-center">
+        <EmptyState 
+           title="Unable to load users" 
+           description={error || "Something went wrong while fetching the user list."}
+           icon={AlertTriangle}
+           action={{ label: "Retry", onClick: () => loadUsers() }}
+        />
       </div>
     )
   }
@@ -281,11 +278,13 @@ const Users = () => {
       )}
 
       {users.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-          <p className="text-gray-500 text-lg">
-            {searchQuery ? 'No users found matching your search' : 'No users found'}
-          </p>
-        </div>
+        <EmptyState
+          title={searchQuery || roleFilter || statusFilter ? 'No users found' : 'No users created'}
+          description={searchQuery 
+             ? `No users found matching your search criteria.` 
+             : "Users will appear here once they register or are added."}
+          icon={UsersIcon}
+        />
       ) : (
         <>
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">

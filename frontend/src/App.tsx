@@ -9,7 +9,8 @@ import HousekeeperRoute from './routes/HousekeeperRoute'
 import { ChatbotProvider } from './contexts/ChatbotContext'
 import { SocketProvider } from './contexts/SocketContext'
 import ChatbotWidget from './components/common/ChatbotWidget'
-import { GlobalCallManager } from './components/common/GlobalCallManager'
+import { GlobalCallManager } from '@/components/common/GlobalCallManager'
+import { Toaster } from 'sonner'
 import './i18n/config'
 
 const App: React.FC = () => {
@@ -28,6 +29,7 @@ const App: React.FC = () => {
             {/* Global Communication Widgets */}
             <ChatbotWidget />
             <GlobalCallManager />
+            <Toaster position="top-right" richColors closeButton />
           </div>
         </Router>
       </ChatbotProvider>

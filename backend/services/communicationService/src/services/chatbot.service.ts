@@ -5,6 +5,7 @@ import geminiService, { ChatContext } from './gemini.service'
 import { publishEvent } from '../config/rabbitmq.config'
 import { Message } from '../types'
 import jwt from 'jsonwebtoken'
+import mongoose from 'mongoose'
 
 export class ChatbotService {
   async createConversation(
@@ -36,7 +37,7 @@ export class ChatbotService {
     }
   }
 
-  async sendMessage(conversationId: string, userMessage: string): Promise<IConversation> {
+  async sendMessage(conversationId: string, userMessage: string, image?: string): Promise<IConversation> {
     try {
       const conversation = await conversationRepository.findByConversationId(conversationId)
 
@@ -52,6 +53,7 @@ export class ChatbotService {
       const userMsg = {
         sender: 'user' as const,
         content: userMessage,
+        image, // Store image in message history if model supports it (optional, not in schema yet but good to have)
         timestamp: new Date(),
       }
 
@@ -65,14 +67,38 @@ export class ChatbotService {
         reservationId: conversation.context.reservationId?.toString(),
         checkInDate: conversation.context.checkInDate,
         checkOutDate: conversation.context.checkOutDate,
+        currentUrl: conversation.context.currentUrl, // Pass current URL
         conversationHistory: conversation.messages.slice(-10).map((msg) => ({
           role: msg.sender === 'user' ? 'user' : 'model',
-          parts: [{ text: msg.content }],
+          parts: [{ text: msg.content }], // Note: We are not passing history images yet to save tokens/complexity
         })),
       }
 
       // Generate AI response
-      const botResponse = await geminiService.generateResponse(userMessage, chatContext)
+      let botResponse = await geminiService.generateResponse(userMessage, chatContext, image)
+
+      // [SMART WIDGETS] Append widget JSON based on intent
+      let widgetData = null;
+      if (intent === 'room_service' && confidence > 0.7) {
+         widgetData = {
+           type: 'widget',
+           widgetType: 'room_service_menu',
+           data: { category: 'popular', items: ['Burger', 'Pizza', 'Salad'] }
+         };
+      } else if (intent === 'check_out_info' && confidence > 0.8) {
+         widgetData = {
+           type: 'widget',
+           widgetType: 'bill_summary',
+           data: { total: '$450.00', status: 'Pending' }
+         };
+      }
+
+      // If widget exists, append it as a special block or JSON string
+      if (widgetData) {
+        // We append it to content with a delimiter or just purely rely on client parsing.
+        // For robustness, let's append a special delimiter.
+        botResponse += `\n\n[WIDGET_DATA]${JSON.stringify(widgetData)}[/WIDGET_DATA]`;
+      }
 
       // Add bot response
       const botMsg = {
@@ -180,7 +206,7 @@ export class ChatbotService {
 
   async generateGuestToken(name?: string, existingGuestId?: string): Promise<{ token: string, guestId: string, name: string }> {
     try {
-      const guestId = existingGuestId || `guest_${uuidv4()}`
+      const guestId = existingGuestId || new mongoose.Types.ObjectId().toString()
       const guestName = name || 'Anonymous Guest'
       
       const token = jwt.sign(

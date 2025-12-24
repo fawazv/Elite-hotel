@@ -30,7 +30,15 @@ export class ChatbotController {
         return
       }
 
-      const userId = req.user!.userId
+      const decodedUser = req.user as any;
+      const userId = decodedUser.userId || decodedUser.id;
+      
+      if (!userId) {
+        console.error('[ChatbotController] User ID missing from token:', decodedUser);
+        res.status(400).json({ message: 'User identifier missing from authenticated session' });
+        return;
+      }
+
       const userType = req.user!.role === 'admin' || req.user!.role === 'staff' ? 'staff' : 'guest'
       const { context } = req.body
 
@@ -58,13 +66,14 @@ export class ChatbotController {
       )
 
       if (flagged) {
-        console.warn(`[Security] PII detected in message from user ${req.user!.userId}`)
+        console.warn(`[Security] PII detected in message from user ${req.user!.userId || req.user!.id}`)
         // We could block the message here, but for now we proceed with the redacted version
       }
 
       const conversation = await chatbotService.sendMessage(
         validatedData.conversationId,
-        clean
+        clean,
+        req.body.image // Pass image
       )
 
       res.json({
@@ -78,7 +87,14 @@ export class ChatbotController {
 
   async getConversations(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const userId = req.user!.userId
+      const decodedUser = req.user as any;
+      const userId = decodedUser.userId || decodedUser.id;
+      
+      if (!userId) {
+        res.status(400).json({ message: 'User identifier missing' });
+        return;
+      }
+      
       const limit = parseInt(req.query.limit as string) || 20
 
       const conversations = await chatbotService.getConversations(userId, limit)
@@ -202,6 +218,21 @@ export class ChatbotController {
     } catch (error) {
       console.error('Error in getGuestToken:', error)
       res.status(500).json({ message: 'Failed to generate guest token' })
+    }
+  }
+
+  async getAvailableStaff(req: Request, res: Response): Promise<void> {
+    try {
+      // Import dynamically to avoid circular dependencies if any, though socket.config is safe
+      const { getOnlineStaff } = require('../config/socket.config');
+      const staff = getOnlineStaff();
+      res.json({
+        message: 'Available staff fetched successfully',
+        data: staff
+      });
+    } catch (error) {
+      console.error('Error in getAvailableStaff:', error)
+      res.status(500).json({ message: 'Failed to fetch available staff' })
     }
   }
 }

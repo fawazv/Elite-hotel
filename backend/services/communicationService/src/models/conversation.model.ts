@@ -10,16 +10,17 @@ export interface IMessage {
 
 export interface IConversation extends Document {
   conversationId: string
-  userId: mongoose.Types.ObjectId
+  userId: string
   userType: 'guest' | 'staff'
   messages: IMessage[]
   context: {
-    guestId?: mongoose.Types.ObjectId
-    reservationId?: mongoose.Types.ObjectId
+    guestId?: string
+    reservationId?: string
     roomNumber?: string
     userName?: string
     checkInDate?: Date
     checkOutDate?: Date
+    currentUrl?: string
   }
   status: 'active' | 'closed' | 'handoff'
   language: string
@@ -37,6 +38,7 @@ const MessageSchema = new Schema({
     type: String,
     required: true,
   },
+  image: String, // [NEW] Optional image field
   timestamp: {
     type: Date,
     default: Date.now,
@@ -54,7 +56,7 @@ const ConversationSchema: Schema = new Schema(
       index: true,
     },
     userId: {
-      type: Schema.Types.ObjectId,
+      type: String,
       required: true,
       index: true,
     },
@@ -65,12 +67,13 @@ const ConversationSchema: Schema = new Schema(
     },
     messages: [MessageSchema],
     context: {
-      guestId: Schema.Types.ObjectId,
-      reservationId: Schema.Types.ObjectId,
+      guestId: String,
+      reservationId: String,
       roomNumber: String,
       userName: String,
       checkInDate: Date,
       checkOutDate: Date,
+      currentUrl: String, // [NEW]
     },
     status: {
       type: String,

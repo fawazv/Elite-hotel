@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
-import { Settings as SettingsIcon, Bell, Lock, Database, Loader } from 'lucide-react'
+import { Settings as SettingsIcon, Bell, Lock, Database, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
+import { DashboardSkeleton } from '@/components/common/LoadingSkeleton'
+import EmptyState from '@/components/common/EmptyState'
 import { fetchSettings, updateSetting, initializeSettings } from '@/services/settingsApi'
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('general')
   const [settings, setSettings] = useState<Record<string, any>>({})
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadSettings()
@@ -27,6 +30,7 @@ const Settings = () => {
       }
     } catch (error) {
       console.error('Failed to load settings:', error)
+      setError("Failed to load application settings.")
       toast.error('Failed to load settings')
     } finally {
       setLoading(false)
@@ -52,10 +56,19 @@ const Settings = () => {
   ]
 
   if (loading) {
+    return <DashboardSkeleton />
+  }
+
+  if (error) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Loader className="animate-spin text-blue-600" size={32} />
-      </div>
+       <div className="flex items-center justify-center h-96">
+          <EmptyState
+             title="Error loading settings"
+             description={error}
+             icon={AlertTriangle}
+             action={{ label: "Retry", onClick: loadSettings }}
+          />
+       </div>
     )
   }
 

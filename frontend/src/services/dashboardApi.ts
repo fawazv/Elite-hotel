@@ -128,7 +128,7 @@ export const dashboardApi = {
    * Get Housekeeper Dashboard data
    * Task-focused view with assigned tasks
    */
-  getHousekeeperDashboard: async () => {
+  getHousekeeperDashboard: async (): Promise<HousekeeperDashboardData> => {
     // Get current user from store to filter tasks
     const state = (await import('@/redux/store/store')).store.getState();
     const userId = state.auth.user?.id;
@@ -168,7 +168,7 @@ export const dashboardApi = {
         assignedTasks: [],
         myStats: null,
         roomContext: {},
-        serviceHealth: { housekeeping: 'down', reservations: 'unknown' },
+        serviceHealth: { housekeeping: 'down', reservations: 'down' },
         lastUpdated: new Date().toISOString()
       };
     }

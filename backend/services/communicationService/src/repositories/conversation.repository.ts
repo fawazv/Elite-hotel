@@ -8,6 +8,7 @@ export interface ConversationContext {
   userName?: string
   checkInDate?: Date
   checkOutDate?: Date
+  currentUrl?: string
 }
 
 export class ConversationRepository {

@@ -12,7 +12,7 @@ import {
   lookupGuest,
 } from '@/services/publicApi'
 import { toast } from 'sonner'
-import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import { DetailSkeleton } from '@/components/common/LoadingSkeleton'
 import { z } from 'zod'
 import StripePaymentModal from '@/components/shared/StripePaymentModal'
 import { useRazorpay } from '@/Hooks/useRazorpay'
@@ -273,7 +273,13 @@ const Booking: React.FC = () => {
   }
 
   if (isLoading && step === 1 && !room) {
-    return <LoadingSpinner />
+    return (
+        <div className="min-h-screen bg-gray-50 pt-32 pb-12">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                <DetailSkeleton />
+            </div>
+        </div>
+    )
   }
 
   if (!room) return null
@@ -756,7 +762,7 @@ const Booking: React.FC = () => {
                 amount={quote.total}
                 currency={quote.currency}
                 onClose={() => setShowStripeModal(false)}
-                onSuccess={(id) => {
+                onSuccess={() => {
                     setShowStripeModal(false)
                     setStep(4)
                     toast.success('Payment Successful!')

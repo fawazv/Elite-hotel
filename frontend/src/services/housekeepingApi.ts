@@ -35,13 +35,10 @@ export interface TaskFilters {
   taskType?: string
   assignedTo?: string
   roomId?: string
-  startDate?: string
-  endDate?: string
   page?: number
   startDate?: string
   endDate?: string
   search?: string
-  page?: number
   limit?: number
 }
 

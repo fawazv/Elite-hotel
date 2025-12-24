@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { CheckCircle2, AlertCircle, Clock, RefreshCw } from 'lucide-react'
+import { CheckCircle2, AlertCircle, Clock, RefreshCw, ClipboardList } from 'lucide-react'
+import EmptyState from '@/components/common/EmptyState'
 import { format } from 'date-fns'
 import { useHousekeeperDashboard } from '@/Hooks/useDashboardData'
 import { LoadingWidget } from '@/components/shared/LoadingWidget'
@@ -137,8 +138,12 @@ const Dashboard: React.FC = () => {
       {/* Task List */}
       <div className="grid grid-cols-1 gap-4">
         {sortedTasks.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
-            <p className="text-slate-500">No tasks found for this filter.</p>
+          <div className="bg-white rounded-xl border border-dashed border-slate-300 flex justify-center">
+             <EmptyState
+                title="No tasks found"
+                description={filter !== 'all' ? `No ${filter} tasks assigned.` : "You have no assigned tasks."}
+                icon={ClipboardList}
+             />
           </div>
         ) : (
           sortedTasks.map((task: any) => (

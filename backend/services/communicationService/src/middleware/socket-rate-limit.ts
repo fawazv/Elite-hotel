@@ -17,8 +17,11 @@ export const socketRateLimitMiddleware = async (
     return next(new Error('Unauthorized'));
   }
 
+  console.log(`[RateLimit] Processing event: ${eventName} for user: ${userId}`);
+
   try {
     await rateLimiter.consume(userId);
+    console.log(`[RateLimit] User ${userId} permitted for ${eventName}`);
     next();
   } catch (error) {
     socket.emit('rate_limit_exceeded', {

@@ -24,6 +24,7 @@ export interface IConversationContext {
   userName?: string;
   checkInDate?: Date;
   checkOutDate?: Date;
+  currentUrl?: string; // [NEW]
 }
 
 export type ConversationStatus = 'active' | 'closed' | 'handoff';
@@ -163,6 +164,7 @@ export interface ICreateConversationResponse {
 export interface ISendMessageRequest {
   conversationId: string;
   message: string;
+  image?: string; // [NEW]
 }
 
 export interface ISendMessageResponse {

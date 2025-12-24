@@ -5,13 +5,14 @@ import {
   BedDouble,
   Calendar,
   Activity,
-  Loader2,
   AlertTriangle
 } from 'lucide-react'
 import { useAdminDashboard } from '@/Hooks/useDashboardData'
 import StatsCard from '@/components/admin/StatsCard'
 import OccupancyChart from '@/components/admin/widgets/OccupancyChart'
 import RecentActivity from '@/components/admin/widgets/RecentActivity'
+import { DashboardSkeleton } from '@/components/common/LoadingSkeleton'
+import EmptyState from '@/components/common/EmptyState'
 import RevenueChart from '@/components/admin/widgets/RevenueChart'
 import { useState, useEffect } from 'react'
 import { dashboardApi } from '@/services/dashboardApi'
@@ -29,26 +30,18 @@ const Dashboard: React.FC = () => {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="flex bg-white items-center justify-center p-6 h-[400px] rounded-xl shadow-sm border border-gray-100">
-        <Loader2 className="animate-spin text-blue-600" size={32} />
-        <span className="ml-3 text-gray-500 font-medium">Loading dashboard data...</span>
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   if (isError) {
     return (
-      <div className="bg-red-50 p-6 rounded-xl border border-red-200 flex flex-col items-center justify-center text-center">
-        <AlertTriangle className="text-red-500 mb-2" size={32} />
-        <h3 className="text-lg font-semibold text-red-700">Failed to load dashboard</h3>
-        <p className="text-red-600 mb-4">There was a problem fetching the latest data.</p>
-        <button
-          onClick={() => refetch()}
-          className="bg-white px-4 py-2 rounded-lg text-red-600 font-medium border border-red-200 hover:bg-red-50 transition-colors"
-        >
-          Try Again
-        </button>
+      <div className="h-[600px] flex items-center justify-center">
+        <EmptyState 
+           title="Failed to load dashboard" 
+           description="We couldn't fetch the latest data. Please check your connection and try again."
+           icon={AlertTriangle}
+           action={{ label: "Try Again", onClick: () => refetch() }}
+        />
       </div>
     )
   }

@@ -5,8 +5,8 @@ export type UserType = 'guest' | 'staff'
 
 export interface IVideoChatSession extends Document {
   sessionId: string
-  callerId: mongoose.Types.ObjectId
-  receiverId: mongoose.Types.ObjectId
+  callerId: string
+  receiverId: string
   callerType: UserType
   receiverType: UserType
   status: CallStatus
@@ -32,12 +32,12 @@ const VideoChatSessionSchema: Schema = new Schema(
       index: true,
     },
     callerId: {
-      type: Schema.Types.ObjectId,
+      type: String,
       required: true,
       index: true,
     },
     receiverId: {
-      type: Schema.Types.ObjectId,
+      type: String,
       required: true,
       index: true,
     },

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Edit, Trash2, Eye, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Edit, Trash2, Eye, Search, ChevronLeft, ChevronRight, AlertTriangle, FolderOpen } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { fetchRooms, deleteRoom, type Room } from '@/services/adminApi'
 import DeleteConfirmModal from '@/components/admin/DeleteConfirmModal'
@@ -7,6 +7,8 @@ import ExportButton, { type ExportFormat, type ExportScope } from '@/components/
 import { exportToCSV, exportToExcel, formatDataForExport, generateFilename } from '@/utils/exportData'
 import SortableTableHeader from '@/components/admin/SortableTableHeader'
 import { useSorting } from '@/Hooks/useSorting'
+import { TableSkeleton } from '@/components/common/LoadingSkeleton'
+import EmptyState from '@/components/common/EmptyState'
 
 const Rooms = () => {
   const navigate = useNavigate()
@@ -164,23 +166,18 @@ const Rooms = () => {
   }
 
   if (loading && rooms.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    )
+    return <TableSkeleton rows={10} />
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-red-600 text-lg">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Retry
-        </button>
+      <div className="h-64 flex items-center justify-center">
+        <EmptyState 
+           title="Unable to load rooms" 
+           description={error || "Something went wrong while fetching the room list."}
+           icon={AlertTriangle}
+           action={{ label: "Retry", onClick: () => loadRooms() }}
+        />
       </div>
     )
   }
@@ -259,22 +256,18 @@ const Rooms = () => {
         </div>
       )}
 
-      {/* Empty State */}
+  {/* Empty State */}
       {rooms.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-          <p className="text-gray-500 text-lg mb-4">
-            {searchQuery ? 'No rooms found matching your search' : 'No rooms found'}
-          </p>
-          {!searchQuery && (
-            <button
-              onClick={() => navigate('/admin/rooms/new')}
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Plus size={20} />
-              Add Your First Room
-            </button>
-          )}
-        </div>
+        <EmptyState
+          title={searchQuery ? 'No rooms found' : 'No rooms added yet'}
+          description={searchQuery ? `We couldn't find any rooms matching "${searchQuery}"` : "Get started by adding your first room to the inventory."}
+          icon={FolderOpen}
+          action={!searchQuery ? {
+            label: "Add Your First Room",
+            onClick: () => navigate('/admin/rooms/new'),
+            startIcon: Plus
+          } : undefined}
+        />
       ) : (
         <>
           {/* Rooms Table */}

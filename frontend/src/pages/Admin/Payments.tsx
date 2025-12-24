@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { DollarSign, Search, CreditCard, TrendingUp, AlertCircle } from 'lucide-react'
+import { DollarSign, Search, CreditCard, TrendingUp, AlertCircle, AlertTriangle } from 'lucide-react'
+import { TableSkeleton } from '@/components/common/LoadingSkeleton'
+import EmptyState from '@/components/common/EmptyState'
 import { fetchPayments, type Payment } from '@/services/adminApi'
 import { format } from 'date-fns'
 import ExportButton, { type ExportFormat, type ExportScope } from '@/components/admin/ExportButton'
@@ -265,24 +267,30 @@ const Payments = () => {
       </div>
 
       {/* Error State */}
+      {/* Error State */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
-          {error}
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 flex justify-center">
+             <EmptyState
+                title="Error loading payments"
+                description={error}
+                icon={AlertTriangle}
+                action={{ label: "Retry", onClick: loadPayments }}
+             />
         </div>
       )}
 
       {/* Payments Table */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="flex justify-center items-center p-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
+             <TableSkeleton rows={10} />
         ) : payments.length === 0 ? (
-          <div className="text-center p-12">
-            <DollarSign size={48} className="mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-500 text-lg">No payments found</p>
-            <p className="text-gray-400 text-sm mt-1">Try adjusting your filters</p>
-          </div>
+            <EmptyState
+                title={searchQuery || statusFilter || providerFilter ? 'No payments found' : 'No payment history'}
+                description={searchQuery || statusFilter || providerFilter
+                    ? "Try adjusting your filters or search terms."
+                    : "Payment transactions will appear here."}
+                icon={DollarSign}
+            />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">

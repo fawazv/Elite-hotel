@@ -33,6 +33,7 @@ export interface CallInitiateData {
 export interface SocketUser {
   userId: string
   userType: UserType
+  role?: string // 'admin', 'receptionist', 'guest'
   socketId: string
 }
 

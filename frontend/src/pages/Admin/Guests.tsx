@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Trash2, CheckCircle, XCircle, Star, Shield, Plus, Eye, Edit, Search, ChevronLeft, ChevronRight, Filter } from 'lucide-react'
+import { Trash2, CheckCircle, XCircle, Star, Shield, Plus, Eye, Edit, Search, ChevronLeft, ChevronRight, Filter, AlertTriangle, Users } from 'lucide-react'
+import { TableSkeleton } from '@/components/common/LoadingSkeleton'
+import EmptyState from '@/components/common/EmptyState'
 import { fetchGuests, deleteGuest, updateGuest, type Guest } from '@/services/guestApi'
 import GuestFormModal from '@/components/admin/GuestFormModal'
 import GuestDetailModal from '@/components/admin/GuestDetailModal'
@@ -222,23 +224,18 @@ const Guests = () => {
   }
 
   if (loading && guests.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    )
+    return <TableSkeleton rows={10} />
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-red-600 text-lg">{error}</p>
-        <button
-          onClick={loadGuests}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Retry
-        </button>
+      <div className="h-64 flex items-center justify-center">
+        <EmptyState 
+           title="Unable to load guests" 
+           description={error || "Something went wrong while fetching the guest list."}
+           icon={AlertTriangle}
+           action={{ label: "Retry", onClick: () => loadGuests() }}
+        />
       </div>
     )
   }
@@ -306,11 +303,18 @@ const Guests = () => {
       )}
 
       {guests.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-          <p className="text-gray-500 text-lg">
-            {searchQuery ? 'No guests found matching your search' : 'No guests found'}
-          </p>
-        </div>
+        <EmptyState
+           title={searchQuery || blacklistFilter ? 'No guests found' : 'No guests registered'}
+           description={searchQuery 
+              ? `No guests found matching "${searchQuery}"` 
+              : "Guests will appear here once they sign up or are added manually."}
+           icon={Users}
+           action={!searchQuery && !blacklistFilter ? {
+              label: "Add New Guest",
+              onClick: handleAddNew,
+              startIcon: Plus
+           } : undefined}
+        />
       ) : (
         <>
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">

@@ -18,6 +18,7 @@ import { LoadingWidget } from '@/components/shared/LoadingWidget';
 import { useNavigate } from 'react-router-dom';
 
 import { NotificationBell } from '@/components/shared/NotificationBell';
+import EmptyState from '@/components/common/EmptyState';
 
 const ReceptionistDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -152,7 +153,13 @@ const ReceptionistDashboard: React.FC = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-center py-4">No check-ins scheduled</p>
+                  <div className="py-8">
+                    <EmptyState
+                      title="No check-ins"
+                      description="No check-ins scheduled for today."
+                      icon={CheckCircle}
+                    />
+                  </div>
                 )}
               </div>
             </div>
@@ -193,7 +200,13 @@ const ReceptionistDashboard: React.FC = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-center py-4">No check-outs scheduled</p>
+                  <div className="py-8">
+                    <EmptyState
+                      title="No check-outs"
+                      description="No check-outs scheduled for today."
+                      icon={AlertCircle}
+                    />
+                  </div>
                 )}
               </div>
             </div>

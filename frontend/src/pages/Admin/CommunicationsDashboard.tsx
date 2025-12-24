@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Video, BarChart3, Clock, Users, Phone, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useSocket } from '../../contexts/SocketContext';
+import { MessageSquare, Video, BarChart3, Clock, Users, Phone, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { TableSkeleton } from '@/components/common/LoadingSkeleton';
+import EmptyState from '@/components/common/EmptyState';
 import {
   getConversations,
   getCallHistory,
@@ -12,11 +15,13 @@ import type { IConversation, IVideoChatSession } from '../../types/communication
 type TabType = 'conversations' | 'calls' | 'stats';
 
 export const CommunicationsDashboard: React.FC = () => {
+  const { socket } = useSocket();
   const [activeTab, setActiveTab] = useState<TabType>('conversations');
   const [conversations, setConversations] = useState<IConversation[]>([]);
   const [calls, setCalls] = useState<IVideoChatSession[]>([]);
   const [activeCalls, setActiveCalls] = useState<IVideoChatSession[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<IConversation | null>(null);
 
   // Pagination state
@@ -33,6 +38,48 @@ export const CommunicationsDashboard: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [activeTab, currentPage]);
+
+  // Listen for socket events to auto-update
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+        // Simple strategy: Reload data when any call event happens
+        loadData();
+    };
+
+    socket.on('videochat.call.initiated', handleUpdate);
+    socket.on('videochat.call.active', handleUpdate);
+    socket.on('videochat.call.ended', handleUpdate);
+    socket.on('videochat.call.rejected', handleUpdate);
+    
+    // Also listen for raw events if the RabbitMQ events aren't forwarded to this socket
+    // The backend socket.config.ts emits 'call:incoming' to specific users, but 'publishEvent' goes to RMQ.
+    // If the Admin Dashboard relies on 'getActiveCalls', we need to know when that list changes.
+    // Unless we assume the backend broadacsts these events to admins?
+    // Checking socket.config.ts: it does NOT broadcast global events to admins.
+    // It only emits to specific sockets.
+    // So assume we need to poll OR modify backend.
+    // BUT the User Request implies "real time".
+    // Let's add polling as a fallback AND the listeners (in case backend is updated later).
+    // Actually, looking at the logs/code, 'videochat.call.*' are RabbitMQ events. 
+    // Does the socket forward them? Unlikely by default.
+    // I shall add a Polling Interval for the Dashboard specifically, as it's the safest non-invasive fix.
+    // 10 seconds poll?
+    const interval = setInterval(() => {
+        if (activeTab === 'calls') { // Only poll if viewing calls
+            getAllActiveCalls().then(res => setActiveCalls(res.calls)).catch(console.error);
+        }
+    }, 5000); // 5 seconds polling for responsiveness
+
+    return () => {
+        socket.off('videochat.call.initiated', handleUpdate);
+        socket.off('videochat.call.active', handleUpdate);
+        socket.off('videochat.call.ended', handleUpdate);
+        socket.off('videochat.call.rejected', handleUpdate);
+        clearInterval(interval);
+    };
+  }, [socket, activeTab]);
 
   const loadData = async () => {
     setLoading(true);
@@ -66,6 +113,7 @@ export const CommunicationsDashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load data:', error);
+      setError('Failed to load communication data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -191,10 +239,17 @@ export const CommunicationsDashboard: React.FC = () => {
       </div>
 
       {/* Content */}
-      {loading ? (
+      {error ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+           <EmptyState
+             title="Error loading data"
+             description={error}
+             icon={AlertTriangle}
+             action={{ label: 'Retry', onClick: loadData }}
+           />
         </div>
+      ) : loading ? (
+        <TableSkeleton rows={8} />
       ) : (
         <>
           {/* Conversations Tab */}
@@ -227,8 +282,12 @@ export const CommunicationsDashboard: React.FC = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {conversations.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                          No conversations found
+                        <td colSpan={6} className="px-6 py-12">
+                          <EmptyState
+                            title="No conversations found"
+                            description="There are no active conversations at the moment."
+                            icon={MessageSquare}
+                          />
                         </td>
                       </tr>
                     ) : (
@@ -375,8 +434,12 @@ export const CommunicationsDashboard: React.FC = () => {
                         <tbody className="bg-white divide-y divide-gray-200">
                           {calls.length === 0 ? (
                             <tr>
-                              <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                                No call history found
+                              <td colSpan={5} className="px-6 py-12">
+                                <EmptyState
+                                  title="No call history"
+                                  description="No past video calls found."
+                                  icon={Video}
+                                />
                               </td>
                             </tr>
                           ) : (

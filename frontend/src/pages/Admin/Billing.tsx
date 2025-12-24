@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { DollarSign, Filter, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { DollarSign, Filter, Search, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react'
+import { TableSkeleton } from '@/components/common/LoadingSkeleton'
+import EmptyState from '@/components/common/EmptyState'
 import { fetchBillings, type Billing } from '@/services/adminApi'
 import BillingDetailModal from '@/components/admin/BillingDetailModal'
 import ExportButton, { type ExportFormat, type ExportScope } from '@/components/admin/ExportButton'
@@ -155,23 +157,18 @@ const Billing = () => {
   }
 
   if (loading && billings.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    )
+    return <TableSkeleton rows={10} />
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-red-600 text-lg">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Retry
-        </button>
+      <div className="h-64 flex items-center justify-center">
+        <EmptyState 
+           title="Unable to load billings" 
+           description={error || "Something went wrong while fetching the billing records."}
+           icon={AlertTriangle}
+           action={{ label: "Retry", onClick: () => loadBillings() }}
+        />
       </div>
     )
   }
@@ -233,12 +230,13 @@ const Billing = () => {
       )}
 
       {billings.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-          <DollarSign size={48} className="mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-500 text-lg">
-            {searchQuery ? 'No billing records found matching your search' : 'No billing records found'}
-          </p>
-        </div>
+        <EmptyState
+          title={searchQuery || statusFilter ? 'No billing records found' : 'No billings yet'}
+          description={searchQuery || statusFilter
+             ? "Try adjusting your search or filters to find what you're looking for." 
+             : "Billing records will appear here once transactions are created."}
+          icon={DollarSign}
+        />
       ) : (
         <>
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">

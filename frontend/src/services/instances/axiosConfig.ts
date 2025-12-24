@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/api/xiosConfig.ts
 import axios from 'axios'
+import { toast } from 'sonner'
 import { logout } from '@/redux/slices/authSlice'
 import { store } from '@/redux/store/store'
 
@@ -22,8 +23,13 @@ export const privateApi = axios.create({
 privateApi.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token')
+    const guestToken = localStorage.getItem('guest_token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+      console.log('[Axios] Using Staff Token')
+    } else if (guestToken) {
+       config.headers.Authorization = `Bearer ${guestToken}`
+       console.log('[Axios] Using Guest Token')
     }
     return config
   },
@@ -43,6 +49,11 @@ privateApi.interceptors.response.use(
       error.response.status === 401 &&
       !originalRequest._retry
     ) {
+      // Skip refresh for guest tokens or if no user token exists
+      if (!localStorage.getItem('token') && localStorage.getItem('guest_token')) {
+        return Promise.reject(error)
+      }
+
       originalRequest._retry = true
       try {
         const response = await privateApi.get('/auth/refresh-token')
@@ -63,6 +74,11 @@ privateApi.interceptors.response.use(
         throw error
       }
     }
-    return Promise.reject(error)
-  }
-)
+    
+    // Global Network Error Handling
+     if (error.message === 'Network Error' || error.code === 'ERR_NETWORK') {
+        toast.error("Network Error: Unable to connect to server. Please check your internet connection.")
+     }
+     return Promise.reject(error)
+   }
+ )

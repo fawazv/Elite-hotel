@@ -1,0 +1,304 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Mic, MicOff, Video, VideoOff, PhoneOff, Minimize2, Loader2, User } from 'lucide-react'; 
+import { useSocket } from '@/contexts/SocketContext';
+import { toast } from 'sonner';
+
+interface VideoCallModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  mode: 'guest' | 'staff';
+  sessionId: string | null; // Null for guest initially
+  targetName?: string; 
+  targetUserId?: string; // Explicit ID of the other user
+  initiate?: boolean;
+}
+
+export const VideoCallModal: React.FC<VideoCallModalProps> = ({
+  isOpen,
+  onClose,
+  mode,
+  sessionId: initialSessionId,
+  targetName,
+  targetUserId,
+  initiate
+}) => {
+  const { socket } = useSocket();
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(initialSessionId);
+  const [targetId, setTargetId] = useState<string | null>(targetUserId || null);
+  
+  // Call State
+  const [status, setStatus] = useState<'initializing' | 'calling' | 'connected' | 'reconnecting' | 'rejected' | 'ended'>('initializing');
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isVideoOff, setIsVideoOff] = useState(false);
+
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const peerConnection = useRef<RTCPeerConnection | null>(null);
+
+
+  // Initialize Media and Call
+  useEffect(() => {
+    if (!isOpen || !socket) return;
+    
+    let isMounted = true;
+
+    const initializeMedia = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            if (isMounted) setLocalStream(stream);
+            
+            // Setup WebRTC
+            const pc = new RTCPeerConnection({
+                iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] // Use Google STUN
+            });
+            peerConnection.current = pc;
+
+            stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+            pc.ontrack = (event) => {
+                if (event.streams && event.streams[0]) {
+                    setRemoteStream(event.streams[0]);
+                    setStatus('connected');
+                }
+            };
+
+            pc.onicecandidate = (event) => {
+                if (event.candidate && sessionId && targetId) {
+                    socket.emit('call:signal', {
+                        targetId: targetId,
+                        type: 'ice-candidate',
+                        signal: event.candidate
+                    });
+                }
+            };
+            
+            // Initiate Flow (Guest)
+            if (mode === 'guest' && initiate) {
+                setStatus('calling');
+                const guestName = localStorage.getItem('guest_name') || 'Guest';
+                socket.emit('call:initiate', { guestName });
+            } 
+            // Staff Flow (Accepting)
+            else if (mode === 'staff' && sessionId) {
+                 // Staff simply joins and waits for signals or offers from Guest side if protocol defines it, 
+                 // or effectively just gets ready for WebRTC negotiation driven by the caller.
+            }
+
+        } catch (err) {
+            console.error("Media Access Error", err);
+            toast.error("Could not access camera/microphone");
+            onClose();
+        }
+    };
+
+    initializeMedia();
+
+    return () => {
+        isMounted = false;
+        localStream?.getTracks().forEach(track => track.stop());
+        peerConnection.current?.close();
+    };
+  }, [isOpen, socket]); // Run once on open
+
+
+  // Socket Events
+  useEffect(() => {
+      if (!socket) return;
+
+      // Guest: Call Accepted
+      socket.on('call:accepted', async (data: { sessionId: string, staffId: string, staffName: string }) => {
+          if (mode === 'guest') {
+              setSessionId(data.sessionId);
+              setTargetId(data.staffId);
+              // Staff accepted, so Guest (Caller) creates Offer
+              const pc = peerConnection.current;
+              if (pc) {
+                  const offer = await pc.createOffer();
+                  await pc.setLocalDescription(offer);
+                  socket.emit('call:signal', {
+                      targetId: data.staffId,
+                      type: 'offer',
+                      signal: offer
+                  });
+              }
+          }
+      });
+
+      // Staff: We rely on `call:signal` handling for negotiation.
+
+      socket.on('call:signal', async (data: { senderId: string, type: 'offer' | 'answer' | 'ice-candidate', signal: any }) => {
+          const pc = peerConnection.current;
+          if (!pc) return;
+
+          setTargetId(data.senderId); // Lock onto sender
+
+          if (data.type === 'offer') {
+              await pc.setRemoteDescription(new RTCSessionDescription(data.signal));
+              const answer = await pc.createAnswer();
+              await pc.setLocalDescription(answer);
+              socket.emit('call:signal', {
+                  targetId: data.senderId,
+                  type: 'answer',
+                  signal: answer
+              });
+          } else if (data.type === 'answer') {
+              await pc.setRemoteDescription(new RTCSessionDescription(data.signal));
+          } else if (data.type === 'ice-candidate') {
+              await pc.addIceCandidate(new RTCIceCandidate(data.signal));
+          }
+      });
+      
+      socket.on('call:rejected', () => {
+          setStatus('rejected');
+          toast.error("Staff is currently busy.");
+          setTimeout(onClose, 3000);
+      });
+
+      socket.on('call:ended', () => {
+          setStatus('ended');
+          toast.info("Call ended.");
+          setTimeout(onClose, 2000);
+      });
+
+      socket.on('call:error', (err) => {
+         toast.error(err.message || "Call failed");
+         onClose();
+      });
+
+      return () => {
+          socket.off('call:accepted');
+          socket.off('call:signal');
+          socket.off('call:rejected');
+          socket.off('call:ended');
+          socket.off('call:error');
+      };
+  }, [socket, mode, sessionId]);
+
+  useEffect(() => {
+    if (localVideoRef.current && localStream) localVideoRef.current.srcObject = localStream;
+  }, [localStream, isMinimized]);
+
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) remoteVideoRef.current.srcObject = remoteStream;
+  }, [remoteStream, isMinimized]);
+
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md"
+      >
+        <motion.div 
+            initial={{ scale: 0.95, y: 10 }}
+            animate={{ scale: 1, y: 0 }}
+            className={`transition-all duration-500 overflow-hidden relative
+                ${isMinimized ? 'w-48 h-64 fixed bottom-6 right-6 rounded-2xl border border-white/20 shadow-2xl z-50 bg-gray-900' : 'w-full max-w-5xl h-[85vh] bg-gray-900 rounded-3xl border border-white/10 shadow-2xl'}
+            `}
+        >
+            {/* Header */}
+            {!isMinimized && (
+                <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-start z-20 bg-gradient-to-b from-black/80 to-transparent">
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-sm border border-white/5">
+                                <User className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                                <h2 className="text-white text-xl font-bold tracking-tight">{targetName || (mode === 'guest' ? 'Elite Staff' : 'Guest')}</h2>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <span className={`w-2 h-2 rounded-full ${status === 'connected' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-yellow-500 animate-pulse'}`} />
+                                    <p className="text-white/60 text-xs font-medium uppercase tracking-wider">{status === 'calling' ? 'Calling...' : status}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button onClick={() => setIsMinimized(true)} className="p-2.5 bg-white/5 hover:bg-white/10 text-white rounded-full backdrop-blur-md transition-all">
+                        <Minimize2 className="w-5 h-5" />
+                    </button>
+                </div>
+            )}
+
+            {/* Remote Video (Main) */}
+            <div className="relative w-full h-full bg-black flex items-center justify-center">
+                {remoteStream ? (
+                    <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-contain bg-black" />
+                ) : (
+                    <div className="flex flex-col items-center justify-center text-white/50 gap-6">
+                        <div className="relative">
+                            <div className="w-24 h-24 rounded-full border-2 border-white/10 flex items-center justify-center">
+                                <Loader2 className="w-8 h-8 animate-spin text-white/30" />
+                            </div>
+                            <div className="absolute inset-0 rounded-full border-t-2 border-blue-500 animate-spin" style={{ animationDuration: '1.5s' }}/>
+                        </div>
+                        <p className="text-lg font-light tracking-wide text-white/40">
+                           {status === 'calling' ? 'Waiting for response...' : 'Connecting...'}
+                        </p>
+                    </div>
+                )}
+
+                {/* Local Video (PIP) */}
+                <motion.div 
+                    layout
+                    drag
+                    dragConstraints={{ top: 0, left: 0, right: 0, bottom: 0 }} 
+                    className={`absolute overflow-hidden shadow-2xl border border-white/20 bg-gray-800 z-30 cursor-move group
+                        ${isMinimized ? 'inset-0 border-0 pointer-events-none' : 'bottom-8 right-8 w-64 h-40 rounded-2xl'}
+                    `}
+                >
+                    <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                    {!localStream && <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">No Camera</div>}
+                </motion.div>
+            </div>
+
+            {/* Controls */}
+            {!isMinimized && (
+                <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-6 z-20">
+                    <button 
+                        onClick={() => {
+                             if (localStream) {
+                                 localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
+                                 setIsMuted(!isMuted);
+                             }
+                        }}
+                        className={`p-4 rounded-full backdrop-blur-2xl border transition-all duration-300 ${isMuted ? 'bg-red-500/90 border-red-500 text-white' : 'bg-black/40 border-white/10 text-white hover:bg-black/60 hover:scale-110'}`}
+                    >
+                        {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                    </button>
+
+                    <button 
+                        onClick={() => {
+                            socket?.emit('call:end', { targetId });
+                            onClose();
+                        }}
+                        className="p-5 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-xl shadow-red-900/30 transition-all hover:scale-110 active:scale-95"
+                    >
+                        <PhoneOff className="w-8 h-8 fill-current" />
+                    </button>
+
+                    <button 
+                        onClick={() => {
+                             if (localStream) {
+                                 localStream.getVideoTracks().forEach(t => t.enabled = !isVideoOff);
+                                 setIsVideoOff(!isVideoOff);
+                             }
+                        }}
+                        className={`p-4 rounded-full backdrop-blur-2xl border transition-all duration-300 ${isVideoOff ? 'bg-red-500/90 border-red-500 text-white' : 'bg-black/40 border-white/10 text-white hover:bg-black/60 hover:scale-110'}`}
+                    >
+                        {isVideoOff ? <VideoOff className="w-6 h-6" /> : <Video className="w-6 h-6" />}
+                    </button>
+                </div>
+            )}
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Eye, CheckCircle, XCircle, Edit, Search, ChevronLeft, ChevronRight, DoorOpen, LogOut } from 'lucide-react'
+import { Eye, CheckCircle, XCircle, Edit, Search, ChevronLeft, ChevronRight, DoorOpen, LogOut, AlertTriangle, Calendar } from 'lucide-react'
+import { TableSkeleton } from '@/components/common/LoadingSkeleton'
+import EmptyState from '@/components/common/EmptyState'
 import {
   fetchReservations,
   confirmReservation,
@@ -248,23 +250,18 @@ const Reservations = () => {
   }
 
   if (loading && reservations.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    )
+    return <TableSkeleton rows={10} />
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-red-600 text-lg">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Retry
-        </button>
+      <div className="h-64 flex items-center justify-center">
+        <EmptyState 
+           title="Unable to load reservations" 
+           description={error || "Something went wrong while fetching the reservation list."}
+           icon={AlertTriangle}
+           action={{ label: "Retry", onClick: () => loadReservations() }}
+        />
       </div>
     )
   }
@@ -317,11 +314,13 @@ const Reservations = () => {
       )}
 
       {reservations.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-          <p className="text-gray-500 text-lg">
-            {searchQuery ? 'No reservations found matching your search' : 'No reservations found'}
-          </p>
-        </div>
+        <EmptyState
+          title={searchQuery || statusFilter !== 'all' ? 'No reservations found' : 'No reservations yet'}
+          description={searchQuery || statusFilter !== 'all' 
+             ? "Try adjusting your search or filters to find what you're looking for." 
+             : "New reservations will appear here once guests start booking."}
+          icon={Calendar}
+        />
       ) : (
         <>
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">

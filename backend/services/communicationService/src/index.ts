@@ -8,7 +8,7 @@ import rateLimit from 'express-rate-limit'
 import connectMongodb from './config/db.config'
 import { rabbitmqConnect } from './config/rabbitmq.config'
 import { initializeSocketIO } from './config/socket.config'
-import videoChatRoute from './routes/videochat.route'
+
 import chatbotRoute from './routes/chatbot.route'
 import errorHandler from './middleware/errorHandler'
 
@@ -55,7 +55,6 @@ const limiter = rateLimit({
   max: 100, // limit each IP to 100 requests per windowMs
   message: 'Too many requests, please try again later',
 })
-app.use('/api/videochat', limiter)
 app.use('/api/chat', limiter)
 
 // Health check
@@ -64,7 +63,7 @@ app.get('/health', (req, res) => {
 })
 
 // Routes
-app.use('/api/videochat', videoChatRoute)
+// Routes
 app.use('/api/chat', chatbotRoute)
 
 // Error handling

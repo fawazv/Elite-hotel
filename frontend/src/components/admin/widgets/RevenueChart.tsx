@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Calendar, ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { dashboardApi } from '@/services/dashboardApi';
@@ -20,6 +20,25 @@ const RevenueChart: React.FC<RevenueChartProps> = () => {
   const [dateRange, setDateRange] = useState<DateRange>({ from: undefined, to: undefined });
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [chartData, setChartData] = useState<any[]>([]);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+        setIsPickerOpen(false);
+      }
+    }
+
+    if (isPickerOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isPickerOpen]);
 
   // Calendar State
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -288,7 +307,7 @@ const RevenueChart: React.FC<RevenueChartProps> = () => {
 
       {/* Custom Date Picker Modal */}
       {isPickerOpen && (
-        <div className="absolute top-16 right-0 z-50 bg-white rounded-xl shadow-2xl border border-gray-100 p-6 w-[340px] animate-in fade-in zoom-in-95 duration-200">
+        <div ref={pickerRef} className="absolute top-16 right-0 z-50 bg-white rounded-xl shadow-2xl border border-gray-100 p-6 w-[340px] animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-800">Select Range</h3>
                 <button onClick={() => setIsPickerOpen(false)} className="text-gray-400 hover:text-gray-600">

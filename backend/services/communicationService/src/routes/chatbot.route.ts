@@ -4,10 +4,16 @@ import { authenticateToken } from '../middleware/auth.middleware'
 
 const router = express.Router()
 
-// All routes require authentication
+// Guest token generation (Public)
+router.post('/guest-token', (req, res) => chatbotController.getGuestToken(req, res))
+
+// Available Staff (Public/Guest)
+router.get('/available-staff', (req, res) => chatbotController.getAvailableStaff(req, res))
+
+// All routes AFTER this require authentication
 router.use(authenticateToken)
 
-// Conversation management
+// conversation management
 router.post('/conversation', (req, res) => chatbotController.createConversation(req, res))
 router.get('/conversations', (req, res) => chatbotController.getConversations(req, res))
 router.get('/conversation/:conversationId', (req, res) =>

@@ -51,15 +51,29 @@ export class VideoChatRepository {
   }
 
   async findActiveCall(userId: string): Promise<IVideoChatSession | null> {
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+    
     return await VideoChatSession.findOne({
-      $or: [{ callerId: userId }, { receiverId: userId }],
-      status: { $in: ['pending', 'active'] },
+      $and: [
+        { $or: [{ callerId: userId }, { receiverId: userId }] },
+        { 
+          $or: [
+            { status: 'active' },
+            { status: 'pending', startTime: { $gt: twoMinutesAgo } }
+          ]
+        }
+      ]
     })
   }
 
   async findAllActiveCalls(): Promise<IVideoChatSession[]> {
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+
     return await VideoChatSession.find({
-      status: { $in: ['pending', 'active'] },
+      $or: [
+        { status: 'active' },
+        { status: 'pending', startTime: { $gt: twoMinutesAgo } }
+      ]
     }).sort({ startTime: -1 })
   }
 
