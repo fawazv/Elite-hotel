@@ -61,18 +61,13 @@ export const GlobalCallManager: React.FC = () => {
         if (!incomingCall || !socket) return;
         
         stopRingtone();
-        setIsConnecting(true); // Safety Delay State
+        setIsConnecting(true);
 
-        // 1.5s delay to simulate connection stabilization / ensure no race condition
-        await new Promise(resolve => setTimeout(resolve, 1500)); 
-
-        socket.emit('call:accept', { 
-            sessionId: incomingCall.sessionId, 
-            guestId: incomingCall.guestId 
-        });
-
+        // Mount the modal. The VideoCallModal will handle the actual 'call:accept' emission 
+        // once it successfully initializes the media stream (permissions granted).
         setActiveCallSession(incomingCall.sessionId);
         setCurrentGuestId(incomingCall.guestId);
+        
         setIncomingCall(null);
         setIsConnecting(false);
     };

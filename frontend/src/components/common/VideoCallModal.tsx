@@ -28,6 +28,15 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
   const [sessionId, setSessionId] = useState<string | null>(initialSessionId);
   const [targetId, setTargetId] = useState<string | null>(targetUserId || null);
   
+  // Refs for stable access in listeners
+  const sessionIdRef = useRef(initialSessionId);
+  const targetIdRef = useRef(targetUserId || null);
+  const modeRef = useRef(mode);
+
+  useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
+  useEffect(() => { targetIdRef.current = targetId; }, [targetId]);
+  useEffect(() => { modeRef.current = mode; }, [mode]);
+  
   // Call State
   const [status, setStatus] = useState<'initializing' | 'calling' | 'connected' | 'reconnecting' | 'rejected' | 'ended'>('initializing');
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -38,6 +47,11 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const peerConnection = useRef<RTCPeerConnection | null>(null);
+
+
+  // Queue for ICE candidates generated before we have a targetId
+  const iceCandidatesQueue = useRef<RTCIceCandidate[]>([]);
+
 
 
   // Initialize Media and Call
@@ -59,20 +73,39 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
 
             stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
-            pc.ontrack = (event) => {
-                if (event.streams && event.streams[0]) {
-                    setRemoteStream(event.streams[0]);
-                    setStatus('connected');
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    const currentTargetId = targetIdRef.current || targetId;
+                    if (sessionId && currentTargetId) {
+                        socket.emit('call:signal', {
+                            targetId: currentTargetId,
+                            type: 'ice-candidate',
+                            signal: event.candidate
+                        });
+                    } else {
+                        console.log("[VideoCallModal] No targetId yet, queuing ICE candidate");
+                        iceCandidatesQueue.current.push(event.candidate);
+                    }
                 }
             };
 
-            pc.onicecandidate = (event) => {
-                if (event.candidate && sessionId && targetId) {
-                    socket.emit('call:signal', {
-                        targetId: targetId,
-                        type: 'ice-candidate',
-                        signal: event.candidate
-                    });
+            pc.onconnectionstatechange = () => {
+                console.log("[VideoCallModal] Connection State:", pc.connectionState);
+            };
+
+            pc.oniceconnectionstatechange = () => {
+                console.log("[VideoCallModal] ICE Connection State:", pc.iceConnectionState);
+            };
+
+            pc.onsignalingstatechange = () => {
+                console.log("[VideoCallModal] Signaling State:", pc.signalingState);
+            };
+
+            pc.ontrack = (event) => {
+                console.log("[VideoCallModal] Received Remote Track:", event.streams[0].id, event.track.kind);
+                if (event.streams && event.streams[0]) {
+                    setRemoteStream(event.streams[0]);
+                    setStatus('connected');
                 }
             };
             
@@ -83,9 +116,13 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
                 socket.emit('call:initiate', { guestName });
             } 
             // Staff Flow (Accepting)
-            else if (mode === 'staff' && sessionId) {
-                 // Staff simply joins and waits for signals or offers from Guest side if protocol defines it, 
-                 // or effectively just gets ready for WebRTC negotiation driven by the caller.
+            // Emitting 'call:accept' here ensures we only signal readiness AFTER media permissions are granted and PC is set up.
+            if (mode === 'staff' && sessionId && targetId) {
+                 console.log("[VideoCallModal] Media ready. Emitting call:accept to", targetId);
+                 socket.emit('call:accept', { 
+                     sessionId: sessionId, 
+                     guestId: targetId 
+                 });
             }
 
         } catch (err) {
@@ -110,36 +147,89 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
       if (!socket) return;
 
       // Guest: Call Accepted
-      socket.on('call:accepted', async (data: { sessionId: string, staffId: string, staffName: string }) => {
-          if (mode === 'guest') {
+      const handleCallAccepted = async (data: { sessionId: string, staffId: string, staffName: string }) => {
+          console.log("[VideoCallModal] Received call:accepted:", data);
+          
+          if (modeRef.current === 'guest') {
+              console.log("[VideoCallModal] Mode is guest, setting session and target");
               setSessionId(data.sessionId);
               setTargetId(data.staffId);
-              // Staff accepted, so Guest (Caller) creates Offer
+              
+              // Verify PC exists
               const pc = peerConnection.current;
               if (pc) {
-                  const offer = await pc.createOffer();
-                  await pc.setLocalDescription(offer);
-                  socket.emit('call:signal', {
-                      targetId: data.staffId,
-                      type: 'offer',
-                      signal: offer
-                  });
+                  try {
+                    console.log("[VideoCallModal] Creating offer...");
+                    const offer = await pc.createOffer();
+                    console.log("[VideoCallModal] Offer created, setting local description");
+                    await pc.setLocalDescription(offer);
+                    
+                    console.log("[VideoCallModal] Emitting call:signal (offer) to", data.staffId);
+                    socket.emit('call:signal', {
+                        targetId: data.staffId,
+                        type: 'offer',
+                        signal: offer
+                    });
+
+                    // Flush queued ICE candidates AFTER sending offer
+                    if (iceCandidatesQueue.current.length > 0) {
+                        console.log(`[VideoCallModal] Flushing ${iceCandidatesQueue.current.length} queued ICE candidates`);
+                        iceCandidatesQueue.current.forEach(candidate => {
+                            socket.emit('call:signal', {
+                                targetId: data.staffId,
+                                type: 'ice-candidate',
+                                signal: candidate
+                            });
+                        });
+                        iceCandidatesQueue.current = [];
+                    }
+
+                  } catch (err) {
+                    console.error("[VideoCallModal] Error creating offer:", err);
+                  }
+              } else {
+                  console.error("[VideoCallModal] PeerConnection is null! Retrying in 500ms");
+                  // Optional retry logic if needed, but PC should be ready
+                  setTimeout(async () => {
+                       const retryPc = peerConnection.current;
+                       if (retryPc) {
+                           const offer = await retryPc.createOffer();
+                           await retryPc.setLocalDescription(offer);
+                           socket.emit('call:signal', { targetId: data.staffId, type: 'offer', signal: offer });
+                           
+                           // Flush queue in retry too
+                           if (iceCandidatesQueue.current.length > 0) {
+                               iceCandidatesQueue.current.forEach(candidate => {
+                                   socket.emit('call:signal', { targetId: data.staffId, type: 'ice-candidate', signal: candidate });
+                               });
+                               iceCandidatesQueue.current = [];
+                           }
+                       }
+                  }, 500);
               }
           }
-      });
+      };
 
-      // Staff: We rely on `call:signal` handling for negotiation.
-
-      socket.on('call:signal', async (data: { senderId: string, type: 'offer' | 'answer' | 'ice-candidate', signal: any }) => {
+      const handleCallSignal = async (data: { senderId: string, type: 'offer' | 'answer' | 'ice-candidate', signal: any }) => {
           const pc = peerConnection.current;
           if (!pc) return;
 
-          setTargetId(data.senderId); // Lock onto sender
+          console.log(`[VideoCallModal] Received signal ${data.type} from ${data.senderId}`);
+
+          // For Staff, we lock onto the sender if not already set (or if we trust the signal)
+          // For Guest, we expect signal from Staff
+          
+          // Using ref to check if we need to lock target
+          if (!targetIdRef.current && data.senderId) {
+               setTargetId(data.senderId);
+          }
 
           if (data.type === 'offer') {
               await pc.setRemoteDescription(new RTCSessionDescription(data.signal));
               const answer = await pc.createAnswer();
               await pc.setLocalDescription(answer);
+              
+              // Send answer back to SENDER (whoever sent the offer)
               socket.emit('call:signal', {
                   targetId: data.senderId,
                   type: 'answer',
@@ -150,33 +240,40 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
           } else if (data.type === 'ice-candidate') {
               await pc.addIceCandidate(new RTCIceCandidate(data.signal));
           }
-      });
-      
-      socket.on('call:rejected', () => {
+      };
+
+      const handleCallRejected = () => {
           setStatus('rejected');
           toast.error("Staff is currently busy.");
           setTimeout(onClose, 3000);
-      });
+      };
 
-      socket.on('call:ended', () => {
+      const handleCallEnded = () => {
           setStatus('ended');
           toast.info("Call ended.");
           setTimeout(onClose, 2000);
-      });
+      };
 
-      socket.on('call:error', (err) => {
+      const handleCallError = (err: any) => {
          toast.error(err.message || "Call failed");
          onClose();
-      });
+      };
+
+      socket.on('call:accepted', handleCallAccepted);
+      socket.on('call:signal', handleCallSignal);
+      socket.on('call:rejected', handleCallRejected);
+      socket.on('call:ended', handleCallEnded);
+      socket.on('call:error', handleCallError);
 
       return () => {
-          socket.off('call:accepted');
-          socket.off('call:signal');
-          socket.off('call:rejected');
-          socket.off('call:ended');
-          socket.off('call:error');
+          socket.off('call:accepted', handleCallAccepted);
+          socket.off('call:signal', handleCallSignal);
+          socket.off('call:rejected', handleCallRejected);
+          socket.off('call:ended', handleCallEnded);
+          socket.off('call:error', handleCallError);
       };
-  }, [socket, mode, sessionId]);
+      // Minimized dependencies to prevent re-binding
+  }, [socket]);
 
   useEffect(() => {
     if (localVideoRef.current && localStream) localVideoRef.current.srcObject = localStream;

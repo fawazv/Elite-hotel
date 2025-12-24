@@ -51,17 +51,23 @@ export const registerCallHandlers = (io: Server, socket: Socket) => {
         
         const guestSocketUser = getConnectedUser(payload.guestId)
         
+        console.log(`[Call] DEBUG: socketUser in accept:`, JSON.stringify(socketUser))
+        
         if (!guestSocketUser) {
+            console.warn(`[Call] Guest ${payload.guestId} not found`)
             socket.emit('call:error', { message: 'Guest disconnected' })
             return
         }
 
-        // Notify Guest
-        io.to(guestSocketUser.socketId).emit('call:accepted', {
+        const acceptPayload = {
             sessionId: payload.sessionId,
             staffId: socketUser?.userId,
             staffName: socketUser?.name || 'Staff'
-        })
+        }
+        console.log(`[Call] Emitting call:accepted to ${payload.guestId}:`, acceptPayload)
+
+        // Notify Guest
+        io.to(guestSocketUser.socketId).emit('call:accepted', acceptPayload)
         
         // Notify other staff that call is taken (optional, but good for UI)
         // We could broadcast to all staff "call:taken" event here
