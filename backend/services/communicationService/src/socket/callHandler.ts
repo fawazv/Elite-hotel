@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io'
 import { v4 as uuidv4 } from 'uuid'
-import { getOnlineStaff, getConnectedUser } from '../config/socket.config'
+import { getOnlineStaff, getConnectedUser, setActiveCallPair, clearActiveCallPair } from '../config/socket.config'
 
 export const registerCallHandlers = (io: Server, socket: Socket) => {
   const socketUser = socket.data.user
@@ -11,7 +11,7 @@ export const registerCallHandlers = (io: Server, socket: Socket) => {
       console.log(`[Call] Initiate from ${socketUser?.userId} (${payload.guestName})`)
       
       const onlineStaff = getOnlineStaff()
-      // Filter for Admin or Receptionist
+     
       const targetStaff = onlineStaff.filter(s => 
         s.role === 'admin' || s.role === 'receptionist'
       )
@@ -69,8 +69,10 @@ export const registerCallHandlers = (io: Server, socket: Socket) => {
         // Notify Guest
         io.to(guestSocketUser.socketId).emit('call:accepted', acceptPayload)
         
-        // Notify other staff that call is taken (optional, but good for UI)
-        // We could broadcast to all staff "call:taken" event here
+        // Track Active Pair for Disconnection handling
+        if (socketUser?.userId && payload.guestId) {
+             setActiveCallPair(socketUser.userId, payload.guestId);
+        }
         
     } catch (error) {
         console.error('[Call] Accept Error:', error)
@@ -109,14 +111,21 @@ export const registerCallHandlers = (io: Server, socket: Socket) => {
   })
 
   // 5. End Call
-  socket.on('call:end', (payload: { targetId: string }) => {
+  socket.on('call:end', (payload: { targetId: string, sessionId?: string }) => {
       try {
           const targetUser = getConnectedUser(payload.targetId)
           if (targetUser) {
               io.to(targetUser.socketId).emit('call:ended', {
-                  endedBy: socketUser?.userId
+                  endedBy: socketUser?.userId,
+                  sessionId: payload.sessionId
               })
           }
+          
+          // Clear active pair
+          if (socketUser?.userId) {
+              clearActiveCallPair(socketUser.userId);
+          }
+          
       } catch (error) {
           console.error('[Call] End Error:', error)
       }

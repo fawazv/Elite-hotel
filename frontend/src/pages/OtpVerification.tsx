@@ -212,6 +212,8 @@ export default function OTPVerification() {
         if (type === 'signup') {
           const { user, accessToken } = response.data
           localStorage.setItem('token', accessToken)
+          // Notify SocketContext to reconnect
+          window.dispatchEvent(new Event('token-refreshed'))
             dispatch(
               login({
                 token: accessToken,

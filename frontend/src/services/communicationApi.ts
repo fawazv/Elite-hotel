@@ -16,6 +16,8 @@ import type {
   IHandoffToAgentRequest,
   IHandoffToAgentResponse,
   ICloseConversationResponse,
+  IGetCallHistoryResponse,
+  IGetAllActiveCallsResponse,
 } from '../types/communication.types';
 
 const CHATBOT_BASE = '/communication/api/chat';
@@ -135,6 +137,33 @@ export const closeConversation = async (
   );
   return response.data;
 };
+// ============================================
+// Video Chat API
+// ============================================
+
+const VIDEO_BASE = '/communication/api/video';
+
+/**
+ * Get call history
+ */
+export const getCallHistory = async (page: number = 1, limit: number = 20): Promise<IGetCallHistoryResponse> => {
+  const response = await privateApi.get<IGetCallHistoryResponse>(
+    `${VIDEO_BASE}/history`,
+    { params: { page, limit } }
+  );
+  return response.data;
+};
+
+/**
+ * Get all active calls (Admin/Staff)
+ */
+export const getAllActiveCalls = async (): Promise<IGetAllActiveCallsResponse> => {
+  const response = await privateApi.get<IGetAllActiveCallsResponse>(
+    `${VIDEO_BASE}/admin/active-calls`
+  );
+  return response.data;
+};
+
 /**
  * Log a communication event
  */

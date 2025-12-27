@@ -65,6 +65,8 @@ export default function Signin() {
       } else if (response.success) {
         const { user, accessToken } = response.data
         localStorage.setItem('token', accessToken)
+        // Notify SocketContext to reconnect
+        window.dispatchEvent(new Event('token-refreshed'))
         dispatch(
           login({
             token: accessToken,
@@ -122,6 +124,8 @@ export default function Signin() {
 
             if (token && userData) {
                 localStorage.setItem('token', token)
+                // Notify SocketContext to reconnect
+                window.dispatchEvent(new Event('token-refreshed'))
                 dispatch(
                   login({
                     token: token,

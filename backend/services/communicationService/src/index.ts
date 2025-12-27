@@ -10,6 +10,7 @@ import { rabbitmqConnect } from './config/rabbitmq.config'
 import { initializeSocketIO } from './config/socket.config'
 
 import chatbotRoute from './routes/chatbot.route'
+import videoChatRoute from './routes/videochat.route'
 import errorHandler from './middleware/errorHandler'
 
 dotenv.config()
@@ -56,6 +57,7 @@ const limiter = rateLimit({
   message: 'Too many requests, please try again later',
 })
 app.use('/api/chat', limiter)
+app.use('/api/video', limiter)
 
 // Health check
 app.get('/health', (req, res) => {
@@ -65,6 +67,7 @@ app.get('/health', (req, res) => {
 // Routes
 // Routes
 app.use('/api/chat', chatbotRoute)
+app.use('/api/video', videoChatRoute)
 
 // Error handling
 app.use(errorHandler)

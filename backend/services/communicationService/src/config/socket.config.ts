@@ -6,6 +6,20 @@ import { setupRedisAdapter } from './redis-adapter'
 import { registerCallHandlers } from '../socket/callHandler'
 
 const connectedUsers = new Map<string, SocketUser>()
+const activeCallPartners = new Map<string, string>() // Key: UserId, Value: PartnerId
+
+export const setActiveCallPair = (user1: string, user2: string) => {
+    activeCallPartners.set(user1, user2);
+    activeCallPartners.set(user2, user1);
+}
+
+export const clearActiveCallPair = (userId: string) => {
+    const partnerId = activeCallPartners.get(userId);
+    if (partnerId) {
+        activeCallPartners.delete(partnerId);
+        activeCallPartners.delete(userId);
+    }
+}
 
 export const initializeSocketIO = async (httpServer: HTTPServer): Promise<Server> => {
   const io = new Server(httpServer, {
@@ -70,6 +84,22 @@ export const initializeSocketIO = async (httpServer: HTTPServer): Promise<Server
       if (existingUser && existingUser.socketId === socket.id) {
         connectedUsers.delete(userId)
         console.log(`🔌 User disconnected: ${userId}`)
+        
+        // Handle Active Call Disconnect
+        const partnerId = activeCallPartners.get(userId);
+        if (partnerId) {
+            console.log(`[Call] Partner ${userId} disconnected. Ending call for ${partnerId}`);
+            const partnerSocket = connectedUsers.get(partnerId);
+            if (partnerSocket) {
+                io.to(partnerSocket.socketId).emit('call:ended', {
+                    endedBy: userId,
+                    reason: 'Partner disconnected'
+                });
+            }
+            // Clear pair
+            clearActiveCallPair(userId);
+        }
+
       } else {
         // console.log(`🔌 Stale socket disconnected for user: ${userId} (ignored)`)
       }

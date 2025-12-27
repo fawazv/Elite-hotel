@@ -60,6 +60,8 @@ privateApi.interceptors.response.use(
         if (response.status === 200) {
           const newAccessToken = response.data.accessToken
           localStorage.setItem('token', newAccessToken)
+          // Dispatch event so SocketContext can pick it up
+          window.dispatchEvent(new Event('token-refreshed'))
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
           return privateApi(originalRequest)
         }

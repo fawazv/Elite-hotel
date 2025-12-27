@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 import type { IICEServer } from '../types/communication.types';
 
@@ -20,7 +20,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [isConnected, setIsConnected] = useState(false);
   const [iceServers, setIceServers] = useState<IICEServer[]>([]);
 
-  const connect = () => {
+  const connect = useCallback(() => {
     // Get token from storage
     const authList = [localStorage.getItem('token'), localStorage.getItem('guest_token')];
     const validToken = authList.find(t => t);
@@ -29,9 +29,6 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (socket) {
         console.log('Socket connect called. Current socket connected:', socket.connected, 'ID:', socket.id);
         
-        // Check if token changed (simple comparison if possible, or assume valid if connected)
-        // Accessing socket.auth might act weird if it was mutated. 
-        // But we can check if we are connected.
         if (socket.connected) {
              const currentToken = (socket.auth as any)?.token;
              if (currentToken === validToken) {
@@ -78,22 +75,50 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     });
 
     setSocket(socketInstance);
-  };
+  }, [socket]);
 
-  const disconnect = () => {
+  const disconnect = useCallback(() => {
     if (socket) {
         socket.disconnect();
         setSocket(null);
         setIsConnected(false);
     }
-  };
+  }, [socket]);
 
+  // Initial connect
   useEffect(() => {
     connect();
     return () => {
       if (socket) socket.disconnect();
     };
-  }, []);
+  }, []); // Run once on mount? 
+  // Wait, if connect depends on socket, and socket changes, this effect runs again?
+  // No, I want this to run once on mount. 
+  // Actually, keeping the initial effect empty dependency is fine IF I remove 'connect' from it.
+  // But 'connect' is now a dependency.
+  
+  // Let's split the initial connect logic or just ignore the lint warning? 
+  // Better: use a ref for 'hasConnected' or just let it re-run if socket changes?
+  // If I add [connect] to dependency, and connect depends on [socket], then:
+  // 1. Mount -> connect() -> setSocket(s1)
+  // 2. State update -> connect() changes -> Effect runs -> connect() called -> socket is s1 -> logic checks token... -> returns.
+  // This is safe.
+  
+  // Listen for token refresh events
+  useEffect(() => {
+    const handleTokenRefresh = () => {
+         console.log("Token refreshed event received. Reconnecting socket...");
+         connect(); 
+    };
+
+    window.addEventListener('token-refreshed', handleTokenRefresh);
+    window.addEventListener('storage', handleTokenRefresh);
+
+    return () => {
+        window.removeEventListener('token-refreshed', handleTokenRefresh);
+        window.removeEventListener('storage', handleTokenRefresh);
+    };
+  }, [connect]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected, iceServers, connect, disconnect }}>

@@ -584,13 +584,15 @@ export const ChatbotWidget: React.FC = () => {
         )}
       </div>
       
-      <VideoCallModal 
-        isOpen={isVideoCallOpen}
-        onClose={() => setIsVideoCallOpen(false)}
-        mode="guest"
-        sessionId={null} 
-        initiate={true}
-      />
+      {isVideoCallOpen && (
+        <VideoCallModal 
+            isOpen={isVideoCallOpen}
+            onClose={() => setIsVideoCallOpen(false)}
+            mode="guest"
+            sessionId={null} 
+            initiate={true}
+        />
+      )}
     </>
   );
 };
