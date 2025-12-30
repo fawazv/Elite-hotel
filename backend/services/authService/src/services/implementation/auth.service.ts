@@ -13,6 +13,7 @@ import {
 import { IAuthService } from '../interface/IAuth.service'
 import bcrypt from 'bcryptjs'
 import { Setting } from '../../models/setting.model'
+import { UserServiceClient } from '../integration/user.service.client'
 
 interface PasswordUpdate {
   currentPassword: string
@@ -23,10 +24,16 @@ interface PasswordUpdate {
 export class AuthService implements IAuthService {
   private userRepository: IUserRepository
   private otpRepository: OtpRepository
+  private userServiceClient: UserServiceClient
 
-  constructor(userRepository: IUserRepository, otpRepository: OtpRepository) {
+  constructor(
+    userRepository: IUserRepository,
+    otpRepository: OtpRepository,
+    userServiceClient: UserServiceClient
+  ) {
     this.userRepository = userRepository
     this.otpRepository = otpRepository
+    this.userServiceClient = userServiceClient
   }
 
   async signUp(
@@ -60,16 +67,47 @@ export class AuthService implements IAuthService {
       }
 
       if (!existingEmail && !existingPhone) {
-        await this.userRepository.create(userData)
+        // Option A: Call UserService to create the user
+        // Note: UserService creates the user with normalized email/phone
+        // We pass the HASHED password because UserService stores it.
+        const createdUser = await this.userServiceClient.createUser(userData)
+        
+        // Update local cache immediately to prevent race conditions
+        // We ensure we store it locally so findByEmail works for OTP verification
+        await this.userRepository.create({
+            ...userData,
+            _id: createdUser._id // Ensure IDs match!
+        })
+
       } else if (existingEmail && !existingEmail.isVerified) {
+        // Existing unverified user: Update in UserService?
+        // UserService might already have it. If we just update local cache, it might desync?
+        // Ideally we should call userServiceClient.updateUser(existingEmail._id, ...)
+        // But for now, let's keep local logic or try to sync.
+        // If we update locally, the event from UserService (if we called update) would come back.
+        // Let's call UserService to update if possible.
+        // But we don't have updateByEmail in client yet, only update(id).
+        
+        if (existingEmail._id) {
+             await this.userServiceClient.updateUser(existingEmail._id.toString(), {
+                ...userData,
+                isVerified: false
+             })
+        }
+        
         await this.userRepository.updateByEmail(email, {
           ...userData,
           isVerified: false,
         })
         await this.otpRepository.deleteOtp(email)
       } else if (existingPhone && !existingPhone.isVerified) {
-        // Handle case where phone exists but not verified (maybe update that user record?)
-        // For now, assuming email is the primary key for updates in this flow
+         if (existingPhone._id) {
+             await this.userServiceClient.updateUser(existingPhone._id.toString(), {
+                ...userData,
+                isVerified: false
+             })
+        }
+
          await this.userRepository.updateByEmail(existingPhone.email, {
           ...userData,
           isVerified: false,
@@ -112,6 +150,10 @@ export class AuthService implements IAuthService {
           role: checkUser?.role,
         }
       }
+
+      // Update in UserService as verified
+      // We need to fetch the ID first? checkUser has it.
+      await this.userServiceClient.updateUser(checkUser._id.toString(), { isVerified: true })
 
       await this.userRepository.updateUserField(email, 'isVerified', true)
       await this.otpRepository.deleteOtp(email)
@@ -238,15 +280,24 @@ export class AuthService implements IAuthService {
       }
 
       const password = generateRandomPassword()
-
       const hashedPassword = await hashPassword(password)
-      userData = await this.userRepository.create({
+      
+      const newUserData = {
         email,
         fullName: name,
         phoneNumber,
         password: hashedPassword,
         role: role as 'receptionist' | 'housekeeper',
         isVerified: true,
+      }
+
+      // Create in UserService
+      const createdUser = await this.userServiceClient.createUser(newUserData)
+      
+      // Create in local cache
+      userData = await this.userRepository.create({
+        ...newUserData,
+        _id: createdUser._id
       })
 
       await sendUserData('userExchange', userData)

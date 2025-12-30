@@ -3,7 +3,13 @@ import IUser from '../interfaces/IUser'
 
 const userSchema = new Schema<IUser>({
   fullName: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  email: { 
+    type: String, 
+    required: true, 
+    unique: true, 
+    lowercase: true,
+    trim: true
+  },
   phoneNumber: {
     type: String,
     required: true,
@@ -14,7 +20,7 @@ const userSchema = new Schema<IUser>({
       message: (props) => `${props.value} is not a valid phone number!`,
     },
   },
-  password: { type: String, required: true },
+  password: { type: String, required: true, select: false },
   role: { type: String, required: true },
   isVerified: { type: Boolean, required: true, default: false },
   isApproved: {

@@ -99,7 +99,11 @@ async function start() {
 
     // 2.5 Start Consumers
     await startPaymentConsumer()
-    logger.info('✅ Payment Consumer started')
+    
+    const { initUserEventConsumer } = await import('./consumers/user.consumer')
+    await initUserEventConsumer()
+
+    logger.info('✅ User & Payment Consumers started')
 
     // 3. start express server
     const PORT = process.env.PORT || 4005

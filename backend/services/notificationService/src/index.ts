@@ -30,10 +30,13 @@ app.use('/', notificationRoutes)
 
 const PORT = process.env.PORT || 4010
 
+import { initUserEventConsumer } from './consumers/user.consumer'
+
 async function main() {
   await connectDB()
   await initTopology()
   await startNotificationConsumer()
+  await initUserEventConsumer()
   
   app.listen(PORT, () => {
     logger.info(`✅ Notification service started on port ${PORT}`)

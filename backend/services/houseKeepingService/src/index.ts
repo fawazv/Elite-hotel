@@ -23,6 +23,9 @@ async function start() {
   // RabbitMQ topology & consumers
   await initRabbitTopology()
   await startHousekeepingConsumer(container.housekeepingService)
+  
+  const { initUserEventConsumer } = await import('./consumers/user.consumer')
+  await initUserEventConsumer()
 
   // Express
   const app = express()

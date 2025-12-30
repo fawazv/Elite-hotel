@@ -55,6 +55,9 @@ async function start() {
 
     await startReservationSubscriber()
 
+    const { initUserEventConsumer } = await import('./consumers/user.consumer')
+    await initUserEventConsumer()
+
     // 4. start express server
     app.listen(4003, () =>
       console.log(`server running on http://localhost:4003`)

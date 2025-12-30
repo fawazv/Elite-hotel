@@ -10,8 +10,11 @@ dotenv.config()
 
 const app = express()
 
-rabbitmqConnect().then(() => {
+import { initUserEventConsumer } from './consumers/user.consumer'
+
+rabbitmqConnect().then(async () => {
   console.log('rabbitmq connected')
+  await initUserEventConsumer()
 })
 
 connectMongodb().then(() => {

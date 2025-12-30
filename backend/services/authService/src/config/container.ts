@@ -12,7 +12,9 @@ const userRepository = new UserRepository(User);
 const otpRepository = new OtpRepository(Otp);
 
 // Services
-const authService = new AuthService(userRepository, otpRepository);
+import { UserServiceClient } from "../services/integration/user.service.client";
+const userServiceClient = new UserServiceClient();
+const authService = new AuthService(userRepository, otpRepository, userServiceClient);
 console.log("AuthService initialized:", !!authService);
 
 const authController = new AuthController(authService);

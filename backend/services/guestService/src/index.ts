@@ -57,8 +57,13 @@ initGuestRpcServer()
 console.log('✅ Guest RPC server listening on guest.service.rpc')
 
 // connect DB
-connectMongodb()
-console.log('✅ MongoDB connected')
+import { initUserEventConsumer } from './consumers/user.consumer'
+
+// connect DB
+connectMongodb().then(async () => {
+    console.log('✅ MongoDB connected')
+    await initUserEventConsumer()
+})
 
 // start Express server
 app.listen(4004, () =>
