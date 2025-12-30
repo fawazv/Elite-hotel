@@ -14,6 +14,9 @@ import {
   MessageSquare,
   Sparkles,
   CreditCard,
+  LogOut,
+  Shield,
+  Hotel
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -40,8 +43,6 @@ const AdminSidebar = ({ isOpen, onToggle }: AdminSidebarProps) => {
   const userRole = user?.role?.toLowerCase() || 'admin'
   
   // Determine the base path prefix (e.g., /admin or /receptionist)
-  // If the user is a receptionist, we use the /receptionist prefix. 
-  // For admin (or others accessing admin view), keep /admin.
   const prefix = userRole === 'receptionist' ? '/receptionist' : '/admin'
 
   const filteredNavItems = navItems.filter(item => item.roles.includes(userRole))
@@ -49,81 +50,146 @@ const AdminSidebar = ({ isOpen, onToggle }: AdminSidebarProps) => {
   return (
     <aside
       className={cn(
-        'bg-gray-900 text-white transition-all duration-300 ease-in-out relative',
-        isOpen ? 'w-64' : 'w-20'
+        'relative bg-[#0f172a] text-white transition-all duration-300 ease-in-out z-50 flex flex-col border-r border-white/5 shadow-2xl backdrop-blur-xl',
+        isOpen ? 'w-72' : 'w-24'
       )}
     >
-      {/* Logo */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-gray-800">
-        {isOpen && (
-          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            Elite Hotel
-          </h1>
+        {/* Background Gradients */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-0 left-0 w-full h-96 bg-blue-600/5 blur-3xl rounded-full mix-blend-screen -translate-y-1/2"></div>
+            <div className="absolute bottom-0 right-0 w-full h-96 bg-indigo-600/5 blur-3xl rounded-full mix-blend-screen translate-y-1/2"></div>
+        </div>
+
+      {/* Header / Logo */}
+      <div className={cn(
+          "h-24 flex items-center justify-between px-6 border-b border-white/5 relative z-10",
+          !isOpen && "justify-center px-0"
+      )}>
+        {isOpen ? (
+            <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-tr from-blue-600 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/20">
+                    <Hotel size={24} className="text-white" />
+                </div>
+                <div>
+                    <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/70 tracking-tight">
+                        Elite Hotel
+                    </h1>
+                    <span className="text-xs font-medium text-indigo-400 tracking-wider uppercase">Admin Panel</span>
+                </div>
+            </div>
+        ) : (
+            <div className="bg-gradient-to-tr from-blue-600 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/20">
+                <Hotel size={24} className="text-white" />
+            </div>
         )}
-        <button
-          onClick={onToggle}
-          className="p-2 rounded-lg hover:bg-gray-800 transition-colors ml-auto"
-          aria-label="Toggle sidebar"
-        >
-          {isOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
-        </button>
+        
+        {isOpen && (
+            <button
+            onClick={onToggle}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+            aria-label="Toggle sidebar"
+            >
+            <ChevronLeft size={18} />
+            </button>
+        )}
       </div>
 
       {/* Navigation */}
-      <nav className="mt-6 px-3">
-        {filteredNavItems.map((item) => {
-           // Replace '/admin' in the item.to with the dynamic prefix
-           // e.g. /admin/dashboard -> /receptionist/dashboard
-           const linkPath = item.to.replace('/admin', prefix)
-           
-           return (
-          <NavLink
-            key={item.to}
-            to={linkPath}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 px-4 py-3 mb-2 rounded-lg transition-all duration-200',
-                'hover:bg-gray-800 group',
-                isActive && 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg',
-                !isOpen && 'justify-center'
-              )
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <item.icon
-                  size={22}
-                  className={cn(
-                    'transition-colors',
-                    isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'
-                  )}
-                />
-                {isOpen && (
-                  <span
-                    className={cn(
-                      'font-medium transition-colors',
-                      isActive ? 'text-white' : 'text-gray-300 group-hover:text-white'
-                    )}
-                  >
-                    {item.label}
-                  </span>
-                )}
-              </>
+      <nav className="flex-1 px-4 py-8 overflow-y-auto overflow-x-hidden custom-scrollbar relative z-10">
+        <ul className="space-y-2">
+            {!isOpen && (
+                <li className="mb-6 flex justify-center">
+                    <button
+                        onClick={onToggle}
+                        className="p-2 rounded-xl bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all border border-white/5"
+                    >
+                         <ChevronRight size={20} />
+                    </button>
+                </li>
             )}
-          </NavLink>
-           )
-        })}
+            {filteredNavItems.map((item) => {
+            const linkPath = item.to.replace('/admin', prefix)
+            
+            return (
+                <li key={item.to}>
+                    <NavLink
+                        to={linkPath}
+                        className={({ isActive }) =>
+                        cn(
+                            'group flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 relative overflow-hidden',
+                            !isOpen && 'justify-center px-0 py-4',
+                            isActive 
+                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25 ring-1 ring-white/10' 
+                                : 'text-slate-400 hover:text-white hover:bg-white/[0.03]'
+                        )
+                        }
+                    >
+                        {({ isActive }) => (
+                        <>
+                            {/* Active Shine Effect */}
+                            {isActive && (
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] animate-[shimmer_2s_infinite]"></div>
+                            )}
+
+                            <div className={cn(
+                                "relative z-10 transition-transform duration-300 group-hover:scale-110",
+                                isActive ? "text-white" : "text-slate-500 group-hover:text-white"
+                            )}>
+                                <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                            </div>
+                            
+                            {isOpen && (
+                                <span className={cn(
+                                    "font-medium relative z-10",
+                                    isActive ? "text-white" : "text-slate-400 group-hover:text-white"
+                                )}>
+                                    {item.label}
+                                </span>
+                            )}
+                            
+                            {/* Active Indicator Dot */}
+                            {isActive && isOpen && (
+                                <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>
+                            )}
+                        </>
+                        )}
+                    </NavLink>
+                </li>
+            )
+            })}
+        </ul>
       </nav>
 
-      {/* User Info at Bottom */}
-      {isOpen && (
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-800">
-          <div className="text-sm text-gray-400">
-            <p className="font-medium text-white">Admin Panel</p>
-            <p>v1.0.0</p>
-          </div>
+      {/* Footer / User Profile */}
+      <div className="p-4 border-t border-white/5 bg-[#0b1120]/50 backdrop-blur-md relative z-10">
+        <div className={cn(
+            "flex items-center gap-3 p-3 rounded-2xl bg-white/[0.02] border border-white/5 transition-all hover:bg-white/[0.05]",
+            !isOpen && "justify-center p-2 bg-transparent border-0"
+        )}>
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0 shadow-inner ring-2 ring-white/10 overflow-hidden">
+                {user?.avatar?.url ? (
+                    <img src={user.avatar.url} alt={user.fullName || 'User'} className="w-full h-full object-cover" />
+                ) : (
+                    <span className="font-bold text-white text-sm">
+                        {user?.fullName?.[0]?.toUpperCase() || 'A'}
+                    </span>
+                )}
+            </div>
+            
+            {isOpen && (
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white truncate">{user?.fullName || 'Admin User'}</p>
+                    <p className="text-xs text-indigo-400 font-medium truncate capitalize">{userRole}</p>
+                </div>
+            )}
+            
+            {isOpen && (
+                 <div className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 cursor-pointer transition-colors">
+                    <LogOut size={16} />
+                 </div>
+            )}
         </div>
-      )}
+      </div>
     </aside>
   )
 }

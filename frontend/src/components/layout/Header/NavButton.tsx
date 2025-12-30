@@ -14,15 +14,19 @@ const NavButton: React.FC<NavButtonProps> = ({
       to={href}
       onClick={onClick}
       className={`
-        font-medium transition-colors duration-200 hover:scale-105 transform
+        relative group font-medium transition-colors duration-300
         ${
           scrolled
-            ? 'text-gray-800 hover:text-primary'
-            : 'text-white hover:text-white/80'
+            ? 'text-gray-800 hover:text-amber-800'
+            : 'text-white/90 hover:text-white'
         }
       `}
     >
       {children}
+      <span className={`
+        absolute -bottom-1 left-0 w-0 h-0.5 bg-current transition-all duration-300 ease-in-out group-hover:w-full
+        ${scrolled ? 'bg-amber-800' : 'bg-white'}
+      `} />
     </Link>
   )
 }

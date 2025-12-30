@@ -34,6 +34,10 @@ export async function initRabbitMQ(): Promise<Channel> {
     channel = await connection.createChannel()
     // enable direct-reply-to for RPC
     await channel.assertQueue('rpc.user.getContact', { durable: false })
+    
+    // Assert user events exchange
+    await channel.assertExchange('user.events', 'topic', { durable: true })
+    
     return channel
   } catch (err) {
     console.error('[UserService] Failed to create channel', err)

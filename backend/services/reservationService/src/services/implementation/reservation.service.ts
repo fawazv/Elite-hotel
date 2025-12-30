@@ -734,6 +734,11 @@ export class ReservationService implements IReservationService {
       checkedOutAt: new Date(),
     } as any)
 
+    // Update guest last visit
+    this.guestRpc.updateGuestLastVisit(r.guestId.toString()).catch((err) => {
+      console.warn('Failed to update guest last visit', err)
+    })
+
     // Publish RabbitMQ event
     if (updated) {
       const ch = await this.channelP

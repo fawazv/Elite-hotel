@@ -11,59 +11,67 @@ import ScrollIndicator from '../../layout/Hero/ScrollIndicator'
 
 const Hero = () => {
   const plugin = React.useRef(
-    Autoplay({ delay: 4000, stopOnInteraction: false })
+    Autoplay({ delay: 6000, stopOnInteraction: false })
   )
 
   // Enhanced collection of luxury hotel background images
   const backgroundImages = [
     {
       url: '/images/Hero1.avif',
-      title: 'Luxury Hotel Lobby',
+      title: 'Luxury Lobby',
     },
     {
       url: '/images/Hero3.avif',
-      title: 'Hotel Pool Area',
+      title: 'Infinity Pool',
     },
     {
       url: '/images/Hero4.avif',
-      title: 'Modern Hotel Room',
+      title: 'Royal Suite',
     },
     {
       url: '/images/Hero5.avif',
-      title: 'Hotel Restaurant',
+      title: 'Fine Dining',
     },
     {
       url: '/images/Hero6.avif',
-      title: 'Hotel Exterior',
+      title: 'Grand Exterior',
     },
   ]
 
   return (
     <section className="relative h-screen flex flex-col justify-center items-center overflow-hidden">
-      {/* Background Carousel using shadcn */}
+      {/* Background Carousel with Ken Burns Effect */}
       <Carousel
         plugins={[plugin.current]}
         className="absolute inset-0 w-full h-full"
         opts={{
           align: 'start',
           loop: true,
+          duration: 60, 
         }}
       >
         <CarouselContent className="h-full -ml-0">
           {backgroundImages.map((image, index) => (
             <CarouselItem key={index} className="pl-0 basis-full">
-              <div className="relative h-screen w-full">
+              <div className="relative h-screen w-full overflow-hidden">
                 <div
-                  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                  className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-ken-burns"
                   style={{
-                    backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6)), url('${image.url}')`,
+                    backgroundImage: `url('${image.url}')`,
                   }}
                 />
-                {/* Image title overlay (optional) */}
-                <div className="absolute bottom-4 left-4 z-10">
-                  <span className="text-white/70 text-sm font-medium bg-black/20 backdrop-blur-sm px-3 py-1 rounded-full">
-                    {image.title}
-                  </span>
+                {/* Advanced Overlay System */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80" />
+                <div className="absolute inset-0 bg-black/20" /> {/* General dim */}
+                
+                {/* Image title overlay */}
+                <div className="absolute bottom-8 right-8 z-10 hidden md:block">
+                  <div className="flex items-center gap-3">
+                    <span className="h-[1px] w-12 bg-white/50"></span>
+                    <span className="text-white/80 text-sm font-medium tracking-widest uppercase">
+                      {image.title}
+                    </span>
+                  </div>
                 </div>
               </div>
             </CarouselItem>
@@ -72,42 +80,40 @@ const Hero = () => {
       </Carousel>
 
       {/* Content Container */}
-      <div className="relative z-30 flex flex-col justify-center items-center h-full px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero Content */}
-        <HeroContent />
-
-        {/* Room Booking Search */}
-        <RoomBookingSearch />
+      <div className="relative z-30 flex flex-col justify-center items-center h-full px-4 sm:px-6 lg:px-8 w-full max-w-7xl mx-auto pt-16 lg:pt-0">
+        <div className="flex-shrink-0 mb-4 lg:mb-8">
+           <HeroContent />
+        </div>
+        
+        <div className="w-full max-w-6xl pb-8 lg:pb-12">
+           <RoomBookingSearch />
+        </div>
       </div>
 
       {/* Scroll Indicator */}
-      <div className="relative z-30 hidden md:block">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 hidden lg:block animate-bounce opacity-70">
         <ScrollIndicator />
       </div>
 
-      {/* Enhanced Visual Effects */}
+      {/* Atmospheric Effects */}
       <div className="absolute inset-0 z-20 pointer-events-none">
-        {/* Subtle animated overlay for depth */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10" />
-
-        {/* Floating particles effect */}
-        <div className="absolute inset-0 overflow-hidden">
-          {[...Array(8)].map((_, i) => (
+         {/* Particles */}
+         <div className="absolute inset-0 overflow-hidden opacity-30">
+          {[...Array(20)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-1 h-1 bg-white/20 rounded-full animate-pulse"
+              className="absolute w-1 h-1 bg-amber-200 rounded-full animate-float-particle"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                animationDelay: `${i * 0.7}s`,
-                animationDuration: `${3 + Math.random() * 2}s`,
+                animationDelay: `${Math.random() * 5}s`,
+                width: `${Math.random() * 3 + 1}px`,
+                height: `${Math.random() * 3 + 1}px`,
+                opacity: Math.random() * 0.5 + 0.3
               }}
             />
           ))}
         </div>
-
-        {/* Subtle vignette effect */}
-        <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/10" />
       </div>
     </section>
   )

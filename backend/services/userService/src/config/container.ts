@@ -14,7 +14,9 @@ const settingRepository = new SettingRepository(Setting)
 
 // services
 const mediaService = new MediaService()
-const userService = new UserService(userRepository, mediaService)
+import { UserEventPublisher } from '../publishers/user.publisher'
+const userEventPublisher = new UserEventPublisher()
+const userService = new UserService(userRepository, mediaService, userEventPublisher)
 import { SettingService } from '../services/implementation/setting.service'
 const settingService = new SettingService(settingRepository)
 

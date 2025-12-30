@@ -6,6 +6,9 @@ import cors from 'cors'
 import connectMongodb from './config/db.config'
 import userRoute from './routes/user.route'
 import settingRoute from './routes/setting.route'
+import backupRoute from './routes/backup.route'
+import { BackupService } from './services/implementation/backup.service'
+import { BackupScheduler } from './schedulers/backup.scheduler'
 import errorHandler from './middleware/errorHandler'
 import helmet from 'helmet'
 import morgan from 'morgan'
@@ -16,6 +19,11 @@ import { sanitizeInput } from './middleware/sanitization.middleware'
 import { requestTimeout } from './middleware/timeout.middleware'
 
 const app = express()
+
+// Start Backup Scheduler
+const backupService = new BackupService();
+const backupScheduler = new BackupScheduler(backupService);
+backupScheduler.start();
 
 // Request timeout (30 seconds)
 app.use(requestTimeout(30000))
@@ -44,17 +52,12 @@ app.use(
 )
 
 // CORS: Support multiple origins from environment
-const allowedOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(',')
-  : ['http://localhost:5173']
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173']
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, Postman, etc.)
-      if (!origin) return callback(null, true)
-      
-      if (allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true)
       } else {
         callback(new Error('Not allowed by CORS'))
@@ -74,6 +77,7 @@ app.use(compression())
 app.use(sanitizeInput)
 
 app.use('/settings', settingRoute)
+app.use('/backups', backupRoute)
 app.use('/', userRoute)
 
 // global error handler

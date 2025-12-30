@@ -14,7 +14,18 @@ export async function initGuestRpcServer() {
     if (!msg) return
     try {
       const req = JSON.parse(msg.content.toString())
-      if (req.action === 'getContact' && req.guestId) {
+
+      if (req.action === 'updateGuestLastVisit' && req.guestId) {
+        // Direct repo access or ideally via service if we had service instance here
+        // Since we instantiated repo directly:
+        await repo.update(req.guestId, { lastVisit: new Date() } as any)
+        
+        ch.sendToQueue(
+          msg.properties.replyTo,
+          Buffer.from(JSON.stringify({ success: true })),
+          { correlationId: msg.properties.correlationId }
+        )
+      } else if (req.action === 'getContact' && req.guestId) {
         const guest = await repo.findById(req.guestId)
         const payload = guest
           ? { email: guest.email, phoneNumber: guest.phoneNumber }

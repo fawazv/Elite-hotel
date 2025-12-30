@@ -203,4 +203,8 @@ export class GuestService implements IGuestService {
       idProof: payload.idProof || undefined,
     } as any)
   }
+
+  async updateLastVisit(id: string) {
+    await this.guestRepo.update(id, { lastVisit: new Date() } as any)
+  }
 }

@@ -6,7 +6,7 @@ import About from '../components/sections/About/About'
 import Services from '../components/sections/Services/Services'
 import Contact from '../components/sections/Contact/Contact'
 import FeaturedRoomsCarousel from '../components/sections/FeaturedRooms/FeaturedRooms'
-import Testimonials from '@/components/sections/Testimonials/Testimonials'
+import Testimonials from '../components/sections/Testimonials/Testimonials'
 
 const Home: React.FC = () => {
   const { addToRefs } = useMainLayoutContext()
@@ -24,7 +24,7 @@ const Home: React.FC = () => {
       {/* About Section - Responsive height */}
       <div
         ref={addToRefs}
-        className="min-h-screen lg:h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8 py-8 lg:py-12"
+        className="min-h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8 py-12"
       >
         <div className="w-full max-w-7xl">
           <About />
@@ -34,7 +34,7 @@ const Home: React.FC = () => {
       {/* FeaturedRooms Section - Responsive height */}
       <div
         ref={addToRefs}
-        className="min-h-screen lg:h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8 py-8 lg:py-12"
+        className="min-h-screen flex items-center justify-center bg-gray-50/50 px-4 sm:px-6 lg:px-8 py-12"
       >
         <div className="w-full max-w-7xl">
           <FeaturedRoomsCarousel />
@@ -44,7 +44,7 @@ const Home: React.FC = () => {
       {/* Services Section - Responsive height */}
       <div
         ref={addToRefs}
-        className="min-h-screen lg:h-screen flex items-center justify-center bg-white px-4 sm:px-6 lg:px-8 py-8 lg:py-12"
+        className="min-h-screen flex items-center justify-center bg-white px-4 sm:px-6 lg:px-8 py-12"
       >
         <div className="w-full max-w-7xl">
           <Services />
@@ -52,14 +52,14 @@ const Home: React.FC = () => {
       </div>
 
       {/* Testimonials Section - Responsive height */}
-      <div ref={addToRefs} className="min-h-screen lg:h-screen ">
+      <div ref={addToRefs} className="min-h-screen flex items-center justify-center">
         <Testimonials />
       </div>
 
       {/* Contact Section - Responsive height */}
       <div
         ref={addToRefs}
-        className="min-h-screen lg:h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8 py-8 lg:py-12"
+        className="min-h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8 py-12"
       >
         <div className="w-full max-w-7xl">
           <Contact />

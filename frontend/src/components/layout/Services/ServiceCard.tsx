@@ -1,6 +1,8 @@
 // Type definition for ServiceCard component props
+import type { ReactNode } from 'react'
+
 interface ServiceCardProps {
-  icon: string
+  icon: ReactNode
   title: string
   description: string
 }
@@ -11,24 +13,18 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
   description,
 }) => {
   return (
-    <div className="group p-8 rounded-2xl bg-gray-50 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-      <div className="w-16 h-16 bg-primary-700 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-        <svg
-          className="w-8 h-8 text-white"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d={icon}
-          />
-        </svg>
+    <div className="group p-6 rounded-2xl bg-white border border-gray-100 hover:border-amber-100 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 h-full flex flex-col items-center text-center">
+      <div className="w-14 h-14 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+        <div className="text-amber-800 scale-90">
+          {icon}
+        </div>
       </div>
-      <h3 className="text-xl font-semibold text-gray-900 mb-4">{title}</h3>
-      <p className="text-gray-600">{description}</p>
+      <h3 className="text-lg font-serif font-bold text-gray-900 mb-2 group-hover:text-amber-800 transition-colors">
+        {title}
+      </h3>
+      <p className="text-gray-600 text-xs leading-relaxed">
+        {description}
+      </p>
     </div>
   )
 }

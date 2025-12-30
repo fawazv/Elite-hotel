@@ -11,6 +11,15 @@ export class UserController implements IUserController {
     this.userService = userService
   }
 
+  async create(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = await this.userService.create(req.body)
+      return successResponse(res, HttpStatus.CREATED, 'User created', { data: user })
+    } catch (err) {
+      next(err)
+    }
+  }
+
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const user = await this.userService.getById(req.params.id)
@@ -29,6 +38,7 @@ export class UserController implements IUserController {
         limit: req.query.limit ? Number(req.query.limit) : 20,
         search: req.query.search as string | undefined,
         role: req.query.role as string | undefined,
+        isApproved: req.query.isApproved as string | undefined,
         sort: req.query.sort ? JSON.parse(req.query.sort as string) : undefined,
       }
       const result = await this.userService.list(q)

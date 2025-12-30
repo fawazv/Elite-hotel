@@ -10,6 +10,14 @@ import { authorizeOwnerOrAdmin } from '../middleware/authorizeOwnerOrAdmin'
 
 const router = express.Router()
 
+// Create user (called by AuthService or Admin)
+router.post(
+  '/',
+  // authenticateToken, // Allow internal calls or secure via API key/IP whitelist if needed
+  // For now, let's assume it's protected or used by auth service
+  userController.create.bind(userController)
+)
+
 // admin and receptionist can list users; admin-only for delete and update of others
 router.get(
   '/',

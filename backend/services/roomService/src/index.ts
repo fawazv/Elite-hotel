@@ -3,6 +3,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import connectMongodb from './config/db.config'
 import roomRoute from './routes/room.route'
+import roomBackupRoute from './routes/roomBackup.route'
 import errorHandler from './middleware/errorHandler'
 import helmet from 'helmet'
 import morgan from 'morgan'
@@ -23,15 +24,23 @@ app.use(helmet())
 // Security: HTTP Parameter Pollution protection
 app.use(hpp())
 
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173']
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error('Not allowed by CORS'))
+      }
+    },
     credentials: true,
   })
 )
 app.use(morgan('dev'))
 
 app.use('/', roomRoute)
+app.use('/room-backup', roomBackupRoute)
 
 // global error handler
 app.use(errorHandler)

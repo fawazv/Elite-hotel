@@ -9,12 +9,14 @@ export interface IPaginatedUsers {
 }
 
 export interface IUserService {
+  create(data: Partial<IUser>): Promise<IUser>
   getById(id: string): Promise<IUser | null>
   list(query: {
     page?: number
     limit?: number
     search?: string
     role?: string
+    isApproved?: string
   }): Promise<IPaginatedUsers>
   patch(id: string, payload: Partial<IUser>): Promise<IUser | null>
   delete(id: string): Promise<void>

@@ -56,83 +56,7 @@ const RoomBookingSearch = () => {
     { value: '5', label: '5+ Guests' },
   ]
 
-  type InputFieldProps = {
-    type?: string
-    value: string
-    onChange: (
-      e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-    ) => void
-    placeholder?: string
-    label?: string
-    icon?: React.ReactNode
-    options?: { value: string; label: string }[]
-    min?: string
-    error?: string
-    id?: string
-    name?: string
-    autoComplete?: string
-  }
 
-  const InputField = ({
-    type = 'text',
-    value,
-    onChange,
-    placeholder,
-    label,
-    icon,
-    options,
-    min,
-    error,
-    id,
-    name,
-    autoComplete,
-  }: InputFieldProps) => {
-    return (
-      <div className="space-y-2">
-        {label && (
-          <label htmlFor={id} className="block text-sm font-medium text-gray-700">
-            {label}
-          </label>
-        )}
-        <div className="relative">
-          {type === 'select' ? (
-            <select
-              id={id}
-              name={name}
-              value={value}
-              onChange={onChange}
-              autoComplete={autoComplete}
-              className={`w-full px-4 py-3 rounded-lg border ${error ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-amber-800/20 focus:border-amber-800 transition-all appearance-none cursor-pointer bg-white`}
-            >
-              {options?.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <input
-              id={id}
-              name={name}
-              type={type}
-              value={value}
-              onChange={onChange}
-              placeholder={placeholder}
-              min={min}
-              autoComplete={autoComplete}
-              className={`w-full px-4 py-3 rounded-lg border ${error ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-amber-800/20 focus:border-amber-800 transition-all`}
-            />
-          )}
-          {icon && (
-            <div className={`absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none ${error ? 'text-red-400' : 'text-gray-400'}`}>
-              {icon}
-            </div>
-          )}
-        </div>
-        {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
-      </div>
-    )
-  }
 
   const calendarIcon = (
     <svg
@@ -220,72 +144,105 @@ const RoomBookingSearch = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6">
-      <div className="bg-white rounded-xl shadow-2xl p-6 lg:p-8 border border-gray-100">
-        <h2 className="text-xl lg:text-2xl font-serif font-bold mb-4 lg:mb-6 text-center">
-          Find Your Perfect Room
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 w-full">
+      <div 
+        className="bg-white/10 backdrop-blur-xl rounded-xl shadow-2xl p-4 lg:p-6 border border-white/20 relative overflow-hidden group"
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+        
+        <h2 className="text-lg lg:text-2xl font-serif font-bold mb-4 text-center text-white drop-shadow-md">
+          Find Your Perfect Sanctuary
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-          <InputField
-            id="check-in-date"
-            name="checkIn"
-            type="date"
-            value={checkIn}
-            onChange={handleCheckInChange}
-            label="Check-in Date"
-            icon={calendarIcon}
-            min={today}
-            autoComplete="off"
-            error={errors.checkIn}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 relative z-10">
+          <div className="space-y-1.5">
+            <label htmlFor="check-in-date" className="block text-xs font-medium text-white/90 ml-1">Check-in Date</label>
+            <div className="relative group/input">
+              <input
+                id="check-in-date"
+                name="checkIn"
+                type="date"
+                value={checkIn}
+                onChange={handleCheckInChange}
+                min={today}
+                className={`w-full px-3 py-2.5 rounded-lg bg-white/10 border ${errors.checkIn ? 'border-red-400' : 'border-white/20'} text-white placeholder-white/50 text-sm focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/50 focus:bg-white/20 transition-all outline-none backdrop-blur-md`}
+              />
+              {calendarIcon}
+            </div>
+             {errors.checkIn && <p className="text-[10px] text-red-300 mt-1 ml-1">{errors.checkIn}</p>}
+          </div>
 
-          <InputField
-            id="check-out-date"
-            name="checkOut"
-            type="date"
-            value={checkOut}
-            onChange={(e) => {
-              setCheckOut(e.target.value)
-              if (errors.checkOut) setErrors({...errors, checkOut: ''})
-            }}
-            label="Check-out Date"
-            icon={calendarIcon}
-            min={getMinCheckOutDate()}
-            autoComplete="off"
-            error={errors.checkOut}
-          />
+          <div className="space-y-1.5">
+            <label htmlFor="check-out-date" className="block text-xs font-medium text-white/90 ml-1">Check-out Date</label>
+             <div className="relative group/input">
+              <input
+                id="check-out-date"
+                name="checkOut"
+                type="date"
+                value={checkOut}
+                onChange={(e) => {
+                  setCheckOut(e.target.value)
+                  if (errors.checkOut) setErrors({...errors, checkOut: ''})
+                }}
+                min={getMinCheckOutDate()}
+                className={`w-full px-3 py-2.5 rounded-lg bg-white/10 border ${errors.checkOut ? 'border-red-400' : 'border-white/20'} text-white placeholder-white/50 text-sm focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/50 focus:bg-white/20 transition-all outline-none backdrop-blur-md`}
+              />
+              {calendarIcon}
+            </div>
+             {errors.checkOut && <p className="text-[10px] text-red-300 mt-1 ml-1">{errors.checkOut}</p>}
+          </div>
 
-          <InputField
-            id="room-type"
-            name="roomType"
-            type="select"
-            value={roomType}
-            onChange={(e) => setRoomType(e.target.value)}
-            label="Room Type"
-            options={roomTypeOptions}
-            icon={dropdownIcon}
-            autoComplete="off"
-          />
+          <div className="space-y-1.5">
+            <label htmlFor="room-type" className="block text-xs font-medium text-white/90 ml-1">Room Type</label>
+             <div className="relative group/input">
+              <select
+                id="room-type"
+                name="roomType"
+                value={roomType}
+                onChange={(e) => setRoomType(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/50 focus:bg-white/20 transition-all outline-none backdrop-blur-md appearance-none cursor-pointer [&>option]:bg-gray-800"
+              >
+                {roomTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-white/70">
+                {dropdownIcon}
+              </div>
+            </div>
+          </div>
 
-          <InputField
-            id="guests"
-            name="guests"
-            type="select"
-            value={guests}
-            onChange={(e) => setGuests(e.target.value)}
-            label="Guests"
-            options={guestsOptions}
-            icon={dropdownIcon}
-            autoComplete="off"
-          />
+          <div className="space-y-1.5">
+            <label htmlFor="guests" className="block text-xs font-medium text-white/90 ml-1">Guests</label>
+             <div className="relative group/input">
+              <select
+                id="guests"
+                name="guests"
+                value={guests}
+                onChange={(e) => setGuests(e.target.value)}
+                 className="w-full px-3 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400/50 focus:bg-white/20 transition-all outline-none backdrop-blur-md appearance-none cursor-pointer [&>option]:bg-gray-800"
+              >
+                {guestsOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+               <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-white/70">
+                {dropdownIcon}
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="mt-6 lg:mt-8">
+        <div className="mt-5">
           <button
             onClick={handleSearch}
-            className="w-full bg-amber-800 text-white py-3 rounded-lg font-medium hover:bg-amber-900 transition-all flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-500 hover:to-amber-700 text-white py-3 rounded-lg font-bold text-base shadow-lg hover:shadow-amber-900/40 transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 relative overflow-hidden"
           >
+            <div className="absolute inset-0 bg-white/20 translate-y-full hover:translate-y-0 transition-transform duration-300" />
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="18"
@@ -293,14 +250,15 @@ const RoomBookingSearch = () => {
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
+              className="relative z-10"
             >
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            Search Available Rooms
+            <span className="relative z-10">Check Availability</span>
           </button>
         </div>
       </div>

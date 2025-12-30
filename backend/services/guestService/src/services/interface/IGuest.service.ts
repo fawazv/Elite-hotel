@@ -41,4 +41,6 @@ export interface IGuestService {
     phoneNumber: string
     idProof?: { type?: string; number?: string }
   }): Promise<GuestDocument>
+
+  updateLastVisit(id: string): Promise<void>
 }

@@ -9,6 +9,15 @@ export interface Guest {
   isBlacklisted: boolean
   status: 'Standard' | 'VIP' | 'Loyalty'
   isIdVerified: boolean
+  dateOfBirth?: string
+  address?: {
+    line1?: string
+    line2?: string
+    city?: string
+    state?: string
+    postalCode?: string
+    country?: string
+  }
   lastVisit?: string
   createdAt?: string
   idProof?: {

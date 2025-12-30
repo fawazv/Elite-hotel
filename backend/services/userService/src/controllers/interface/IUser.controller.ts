@@ -2,7 +2,8 @@
 import { Request, Response, NextFunction } from 'express'
 
 export interface IUserController {
-  getById(req: Request, res: Response, next: NextFunction): Promise<void>
+  create(req: Request, res: Response, next: NextFunction): Promise<void | Response>
+  getById(req: Request, res: Response, next: NextFunction): Promise<void | Response>
   list(req: Request, res: Response, next: NextFunction): Promise<void>
   patch(req: Request, res: Response, next: NextFunction): Promise<void>
   remove(req: Request, res: Response, next: NextFunction): Promise<void>

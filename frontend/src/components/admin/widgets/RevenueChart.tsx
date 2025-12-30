@@ -217,7 +217,7 @@ const RevenueChart: React.FC<RevenueChartProps> = () => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 w-full relative">
+    <div className="bg-white/40 backdrop-blur-xl p-6 rounded-2xl shadow-sm border border-white/50 w-full relative">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
         <div>
           <h2 className="text-xl font-bold text-gray-800">Total Revenue</h2>

@@ -5,6 +5,8 @@ import CustomError from '../../utils/CustomError'
 import { HttpStatus } from '../../enums/http.status'
 import { IMediaService } from '../interface/IMedia.service'
 import { UserRepository } from '../../repositories/implementation/user.repository'
+import { UserEventPublisher } from '../../publishers/user.publisher'
+import { UserEventType } from '../../events/user.events'
 
 // Max file size for avatars: 5MB
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024
@@ -17,10 +19,30 @@ function escapeRegex(text: string): string {
 export class UserService implements IUserService {
   private userRepo: UserRepository
   private mediaService: IMediaService
+  private eventPublisher: UserEventPublisher
 
-  constructor(userRepo: UserRepository, mediaService: IMediaService) {
+  constructor(
+    userRepo: UserRepository,
+    mediaService: IMediaService,
+    eventPublisher: UserEventPublisher
+  ) {
     this.userRepo = userRepo
     this.mediaService = mediaService
+    this.eventPublisher = eventPublisher
+  }
+
+  async create(data: Partial<IUser>): Promise<IUser> {
+    const created = await this.userRepo.create(data)
+    
+    // Publish USER_CREATED event
+    await this.eventPublisher.publishUserEvent({
+      eventType: UserEventType.USER_CREATED,
+      userId: created._id.toString(),
+      timestamp: new Date(),
+      data: created as any
+    })
+    
+    return created
   }
 
   async getById(id: string): Promise<IUser | null> {
@@ -33,6 +55,7 @@ export class UserService implements IUserService {
     limit?: number
     search?: string
     role?: string
+    isApproved?: string
     sort?: Array<{ column: string; direction: 'asc' | 'desc' }>
   }) {
     const page = query.page && query.page > 0 ? query.page : 1
@@ -52,6 +75,7 @@ export class UserService implements IUserService {
       ]
     }
     if (query.role) filter.role = query.role
+    if (query.isApproved) filter.isApproved = query.isApproved
 
     // Build sort object
     let sort: any = { createdAt: -1 } // Default sort
@@ -79,6 +103,18 @@ export class UserService implements IUserService {
     if ((payload as any).password) delete (payload as any).password
     const patched = await this.userRepo.update(id, payload)
     if (!patched) throw new CustomError('User not found', HttpStatus.NOT_FOUND)
+
+    // Publish USER_UPDATED event
+    await this.eventPublisher.publishUserEvent({
+      eventType: UserEventType.USER_UPDATED,
+      userId: patched._id.toString(),
+      timestamp: new Date(),
+      data: patched as any,
+      metadata: {
+        updatedFields: Object.keys(payload)
+      }
+    })
+
     return patched
   }
 
@@ -90,6 +126,14 @@ export class UserService implements IUserService {
       await this.mediaService.deleteImage((existing as any).avatar.publicId)
     }
     await this.userRepo.delete(id)
+
+    // Publish USER_DELETED event
+    await this.eventPublisher.publishUserEvent({
+      eventType: UserEventType.USER_DELETED,
+      userId: id,
+      timestamp: new Date(),
+      data: existing as any 
+    })
   }
 
   async updateAvatar(
@@ -136,6 +180,15 @@ export class UserService implements IUserService {
         'Failed to update avatar',
         HttpStatus.INTERNAL_SERVER_ERROR
       )
+
+    // Publish USER_AVATAR_UPDATED event
+    await this.eventPublisher.publishUserEvent({
+      eventType: UserEventType.USER_AVATAR_UPDATED,
+      userId: id,
+      timestamp: new Date(),
+      data: updated as any
+    })
+
     return uploaded
   }
 
@@ -172,7 +225,17 @@ export class UserService implements IUserService {
     if (!existing) throw new CustomError('User not found', HttpStatus.NOT_FOUND)
     if ((existing as any).avatar?.publicId) {
       await this.mediaService.deleteImage((existing as any).avatar.publicId)
-      await this.userRepo.update(id, { avatar: null })
+      const updated = await this.userRepo.update(id, { avatar: null })
+      
+      // Publish USER_AVATAR_UPDATED event
+      if(updated) {
+        await this.eventPublisher.publishUserEvent({
+          eventType: UserEventType.USER_AVATAR_UPDATED,
+          userId: id,
+          timestamp: new Date(),
+          data: updated as any
+        })
+      }
     }
   }
 
