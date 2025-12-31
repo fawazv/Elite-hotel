@@ -15,28 +15,46 @@ const SocketContext = createContext<SocketContextType | undefined>(undefined);
 // Get the communication service URL from env or default
 const SOCKET_URL = import.meta.env.VITE_COMMUNICATION_SERVICE_URL || 'http://localhost:4009';
 
+// Extend Window interface for the global flag
+declare global {
+  interface Window {
+    __ACTIVE_VIDEO_CALL__?: boolean;
+  }
+}
+
 export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
+  const socketRef = React.useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [iceServers, setIceServers] = useState<IICEServer[]>([]);
 
+  // Function to initialize logic without depending on 'socket' state
   const connect = useCallback(() => {
+    // Check for active video call to prevent interruption
+    if (window.__ACTIVE_VIDEO_CALL__) {
+      console.warn('Skipping socket reconnection during active video call');
+      return;
+    }
+
     // Get token from storage
     const authList = [localStorage.getItem('token'), localStorage.getItem('guest_token')];
     const validToken = authList.find(t => t);
 
-    // If socket exists
-    if (socket) {
-        console.log('Socket connect called. Current socket connected:', socket.connected, 'ID:', socket.id);
-        
-        if (socket.connected) {
-             const currentToken = (socket.auth as any)?.token;
+    // Check existing socket in ref
+    if (socketRef.current) {
+        // If connected, check if token matches
+        if (socketRef.current.connected) {
+             const currentToken = (socketRef.current.auth as any)?.token;
              if (currentToken === validToken) {
                  console.log('Socket already connected with same token. Skipping reconnect.');
                  return;
              }
              console.log('Token changed. Disconnecting old socket...');
-             socket.disconnect();
+             socketRef.current.disconnect();
+        } else {
+             // Not connected, maybe connecting? Or closed. safe to replace.
+             // But if it's strictly not connected, we can disconnect just in case.
+             socketRef.current.disconnect(); 
         }
     }
 
@@ -54,6 +72,8 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
     });
+
+    socketRef.current = socketInstance;
 
     socketInstance.on('connect', () => {
       console.log('✅ Socket connected:', socketInstance.id);
@@ -74,35 +94,28 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       console.error('Socket connection error:', err);
     });
 
+    // Update state to trigger re-renders for consumers
     setSocket(socketInstance);
-  }, [socket]);
+  }, []); // No socket dependency!
 
   const disconnect = useCallback(() => {
-    if (socket) {
-        socket.disconnect();
+    if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
         setSocket(null);
         setIsConnected(false);
     }
-  }, [socket]);
+  }, []);
 
   // Initial connect
   useEffect(() => {
     connect();
     return () => {
-      if (socket) socket.disconnect();
+      if (socketRef.current) {
+          socketRef.current.disconnect();
+      }
     };
-  }, []); // Run once on mount? 
-  // Wait, if connect depends on socket, and socket changes, this effect runs again?
-  // No, I want this to run once on mount. 
-  // Actually, keeping the initial effect empty dependency is fine IF I remove 'connect' from it.
-  // But 'connect' is now a dependency.
-  
-  // Let's split the initial connect logic or just ignore the lint warning? 
-  // Better: use a ref for 'hasConnected' or just let it re-run if socket changes?
-  // If I add [connect] to dependency, and connect depends on [socket], then:
-  // 1. Mount -> connect() -> setSocket(s1)
-  // 2. State update -> connect() changes -> Effect runs -> connect() called -> socket is s1 -> logic checks token... -> returns.
-  // This is safe.
+  }, [connect]); 
   
   // Listen for token refresh events
   useEffect(() => {
