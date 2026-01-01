@@ -13,7 +13,7 @@ const AdminProtectedRoute = ({ children, allowedRoles = ['admin', 'receptionist'
 
   // Check if user is authenticated
   if (!isAuthenticated) {
-    return <Navigate to="/signin" replace />
+    return <Navigate to="/auth/signin" replace />
   }
 
   // Check if user has admin or staff role

@@ -383,7 +383,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           ) : (
             <div className="space-y-3">
               <Link
-                to="/signin"
+                to="/auth/signin"
                 onClick={() => setOpen(false)}
                 className="flex items-center justify-center w-full py-2 px-4 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
               >
@@ -391,7 +391,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 Sign In
               </Link>
               <Link
-                to="/signup"
+                to="/auth/signup"
                 onClick={() => setOpen(false)}
                 className="flex items-center justify-center w-full py-2 px-4 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
               >
