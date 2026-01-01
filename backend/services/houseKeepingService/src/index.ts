@@ -6,11 +6,11 @@ import cors from 'cors'
 import helmet from 'helmet'
 import compression from 'compression'
 import housekeepingRoutes from './routes/housekeeping.routes'
-import { initRabbitTopology } from './config/rabbitmq.config'
 import { startHousekeepingConsumer } from './consumers/housekeeping.consumer'
 import { createContainer } from './config/container'
 import errorHandler from './errors/errorHandler'
 import connectMongoDB from './config/db.config'
+import requestLogger from './middleware/request-logger.middleware'
 
 
 async function start() {
@@ -21,7 +21,8 @@ async function start() {
   await connectMongoDB()
 
   // RabbitMQ topology & consumers
-  await initRabbitTopology()
+  const { initRabbitMQ } = await import('./config/rabbitmq.config')
+  await initRabbitMQ()
   await startHousekeepingConsumer(container.housekeepingService)
   
   const { initUserEventConsumer } = await import('./consumers/user.consumer')
@@ -43,6 +44,7 @@ async function start() {
 
   app.use(express.json({ limit: '100kb' }))
   app.use(express.urlencoded({ extended: true, limit: '100kb' }))
+  app.use(requestLogger)
 
   const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173']
   app.use(

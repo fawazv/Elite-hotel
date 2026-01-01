@@ -1,6 +1,8 @@
 import { NavLink } from 'react-router-dom'
-import { useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
+import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from '@/redux/store/store'
+import { logout } from '@/redux/slices/authSlice'
 import {
   LayoutDashboard,
   Users,
@@ -39,8 +41,16 @@ const navItems = [
 ]
 
 const AdminSidebar = ({ isOpen, onToggle }: AdminSidebarProps) => {
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
   const { user } = useSelector((state: RootState) => state.auth)
   const userRole = user?.role?.toLowerCase() || 'admin'
+  
+  const handleLogout = (e: React.MouseEvent) => {
+      e.preventDefault() // Prevent navigation if inside link (though button is absolute/z-index)
+      dispatch(logout())
+      navigate('/auth/signin')
+  }
   
   // Determine the base path prefix (e.g., /admin or /receptionist)
   const prefix = userRole === 'receptionist' ? '/receptionist' : '/admin'
@@ -162,10 +172,14 @@ const AdminSidebar = ({ isOpen, onToggle }: AdminSidebarProps) => {
 
       {/* Footer / User Profile */}
       <div className="p-4 border-t border-white/5 bg-[#0b1120]/50 backdrop-blur-md relative z-10">
-        <div className={cn(
-            "flex items-center gap-3 p-3 rounded-2xl bg-white/[0.02] border border-white/5 transition-all hover:bg-white/[0.05]",
-            !isOpen && "justify-center p-2 bg-transparent border-0"
-        )}>
+        <NavLink 
+            to={`${prefix}/profile`}
+            className={({ isActive }) => cn(
+                 "flex items-center gap-3 p-3 rounded-2xl border border-white/5 transition-all text-left",
+                 !isOpen && "justify-center p-2 bg-transparent border-0",
+                 isActive ? "bg-white/10 border-white/10" : "bg-white/[0.02] hover:bg-white/[0.05]"
+            )}
+        >
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0 shadow-inner ring-2 ring-white/10 overflow-hidden">
                 {user?.avatar?.url ? (
                     <img src={user.avatar.url} alt={user.fullName || 'User'} className="w-full h-full object-cover" />
@@ -182,13 +196,16 @@ const AdminSidebar = ({ isOpen, onToggle }: AdminSidebarProps) => {
                     <p className="text-xs text-indigo-400 font-medium truncate capitalize">{userRole}</p>
                 </div>
             )}
-            
-            {isOpen && (
-                 <div className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 cursor-pointer transition-colors">
-                    <LogOut size={16} />
-                 </div>
-            )}
-        </div>
+        </NavLink>
+        
+        {isOpen && (
+             <button
+                onClick={handleLogout}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 cursor-pointer transition-colors z-20"
+             >
+                <LogOut size={16} />
+             </button>
+        )}
       </div>
     </aside>
   )

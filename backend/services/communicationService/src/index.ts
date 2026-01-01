@@ -12,6 +12,7 @@ import { initializeSocketIO } from './config/socket.config'
 import chatbotRoute from './routes/chatbot.route'
 import videoChatRoute from './routes/videochat.route'
 import errorHandler from './middleware/errorHandler'
+import requestLogger from './middleware/request-logger.middleware'
 
 dotenv.config()
 
@@ -56,6 +57,7 @@ app.use(
 )
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.use(requestLogger)
 
 // Rate limiting
 const limiter = rateLimit({

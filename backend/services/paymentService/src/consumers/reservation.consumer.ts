@@ -1,11 +1,10 @@
 // src/consumers/reservation.consumer.ts
-import { getRabbitChannel, initTopology } from '../config/rabbitmq.config'
+import { getRabbitChannel } from '../config/rabbitmq.config'
 import { PaymentService } from '../services/implementation/payment.service'
 import { PaymentRepository } from '../repository/implementation/payment.repository'
 import logger from '../utils/logger.service'
 
 export async function startReservationConsumer() {
-  await initTopology()
   const ch = await getRabbitChannel()
   const repo = new PaymentRepository()
   const svc = new PaymentService(repo)

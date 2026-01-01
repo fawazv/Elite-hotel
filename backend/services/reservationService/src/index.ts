@@ -8,7 +8,6 @@ import connectMongodb from './config/db.config'
 import reservationRoute from './routes/reservation.route'
 import reservationBackupRoute from './routes/reservationBackup.route'
 import errorHandler from './middleware/errorHandler'
-import { initTopology } from './config/rabbitmq.config'
 import { startPaymentConsumer } from './consumers/payment.consumer'
 import requestLogger from './middleware/request-logger.middleware'
 import sanitizeInputs from './middleware/sanitization.middleware'
@@ -90,7 +89,8 @@ app.use(errorHandler)
 async function start() {
   try {
     //1. init RabbitMQ topology (exchanges, queues, bindings)
-    await initTopology()
+    const { initRabbitMQ } = await import('./config/rabbitmq.config')
+    await initRabbitMQ()
     logger.info('✅ RabbitMQ topology initialized')
 
     // 2. connect MongoDB

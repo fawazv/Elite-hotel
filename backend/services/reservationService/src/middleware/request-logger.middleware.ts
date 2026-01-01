@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 import logger from '../utils/logger.service'
+import { context } from '../utils/context'
 
 // Extend Express Request to include correlationId
 declare global {
@@ -32,31 +33,37 @@ export const requestLogger = (
   // Add correlation ID to response headers
   res.setHeader('X-Correlation-ID', correlationId)
 
-  // Log request
-  logger.info('HTTP Request', {
-    correlationId,
-    method: req.method,
-    path: req.path,
-    query: req.query,
-    ip: req.ip,
-    userAgent: req.get('user-agent'),
-  })
+  // Initialize context store
+  const store = new Map<string, any>()
+  store.set('correlationId', correlationId)
 
-  // Log response when finished
-  res.on('finish', () => {
-    const duration = Date.now() - (req.startTime || Date.now())
-    const logLevel = res.statusCode >= 400 ? 'warn' : 'info'
-
-    logger[logLevel]('HTTP Response', {
+  context.run(store, () => {
+    // Log request
+    logger.info('HTTP Request', {
       correlationId,
       method: req.method,
       path: req.path,
-      statusCode: res.statusCode,
-      duration: `${duration}ms`,
+      query: req.query,
+      ip: req.ip,
+      userAgent: req.get('user-agent'),
     })
-  })
 
-  next()
+    // Log response when finished
+    res.on('finish', () => {
+      const duration = Date.now() - (req.startTime || Date.now())
+      const logLevel = res.statusCode >= 400 ? 'warn' : 'info'
+
+      logger[logLevel]('HTTP Response', {
+        correlationId,
+        method: req.method,
+        path: req.path,
+        statusCode: res.statusCode,
+        duration: `${duration}ms`,
+      })
+    })
+
+    next()
+  })
 }
 
 export default requestLogger

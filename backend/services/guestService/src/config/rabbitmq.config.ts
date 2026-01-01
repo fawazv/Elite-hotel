@@ -58,27 +58,21 @@ export async function getRabbitChannel(): Promise<Channel> {
  * Initialize top-level topology used across services.
  * Call once at service startup.
  */
-export async function initTopology(): Promise<void> {
-  const ch = await getRabbitChannel()
+export async function initRabbitMQ(): Promise<void> {
+  try {
+    const ch = await getRabbitChannel()
+    
+    // Reservation/Guest events
+    await ch.assertExchange('reservations.events', 'topic', { durable: true })
+    await ch.assertExchange('reservations.events.dlx', 'topic', { durable: true })
 
-  // Event exchange for reservation lifecycle events
-  await ch.assertExchange('reservations.events', 'topic', { durable: true })
+    // User events (consumed)
+    await ch.assertExchange('user.events', 'topic', { durable: true })
+    await ch.assertExchange('user.events.dlx', 'topic', { durable: true })
 
-  // Notifications queue (consumers pick up messages here)
-  await ch.assertQueue('notifications.queue', { durable: true })
-  await ch.bindQueue(
-    'notifications.queue',
-    'reservations.events',
-    'reservation.*'
-  )
-
-  // Delayed / scheduled notification queue
-  await ch.assertExchange('notifications.dlx', 'direct', { durable: true })
-  await ch.assertQueue('notifications.delayed', {
-    durable: true,
-    arguments: {
-      'x-dead-letter-exchange': 'reservations.events',
-      'x-dead-letter-routing-key': 'reservation.notification',
-    },
-  })
+    
+    console.log('✅ RabbitMQ Topology Initialized (GuestService)')
+  } catch (error) {
+    console.error('Failed to init RabbitMQ topology (GuestService):', error)
+  }
 }

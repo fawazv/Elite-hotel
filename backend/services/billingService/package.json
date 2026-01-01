@@ -15,6 +15,7 @@
   "dependencies": {
     "@types/archiver": "^7.0.0",
     "@types/pdfkit": "^0.17.4",
+    "@types/uuid": "^10.0.0",
     "amqplib": "^0.10.9",
     "archiver": "^7.0.1",
     "axios": "^1.11.0",
@@ -23,6 +24,7 @@
     "express": "^5.1.0",
     "mongoose": "^8.18.0",
     "pdfkit": "^0.17.2",
+    "uuid": "^13.0.0",
     "winston": "^3.11.0"
   },
   "devDependencies": {

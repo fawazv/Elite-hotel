@@ -1,6 +1,5 @@
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { Response, NextFunction } from 'express'
-import { User } from '../models/user.model'
 import { CustomeRequest } from '../interfaces/CustomRequest'
 
 const authenticateToken = async (
@@ -30,7 +29,6 @@ const authenticateToken = async (
     const secret = process.env.ACCESS_TOKEN_SECRET
     
     if (!secret) {
-      // Log error for debugging but don't expose to client
       console.error('CRITICAL: ACCESS_TOKEN_SECRET not configured')
       return res.status(500).json({ 
         success: false,
@@ -38,7 +36,7 @@ const authenticateToken = async (
       })
     }
 
-    // Synchronously verify token to prevent race conditions
+    // Synchronously verify token
     let decoded: JwtPayload
     try {
       decoded = jwt.verify(token, secret) as JwtPayload
@@ -57,23 +55,12 @@ const authenticateToken = async (
       })
     }
 
-    // Verify user still exists in database
-    const userData = await User.findById(decoded.id).select('_id email role')
-    
-    if (!userData) {
-      return res.status(401).json({ 
-        success: false,
-        message: 'User not found' 
-      })
-    }
-
-    // Attach user data to request
+    // Stateless Auth: Trust the token signature.
+    // We do NOT check the local DB for the user, as the user DB is isolated.
     req.user = decoded
     
-    // Only call next() after all validations pass
     next()
   } catch (error) {
-    // Log error for debugging (only in development)
     if (process.env.NODE_ENV === 'development') {
       console.error('Authentication error:', error)
     }

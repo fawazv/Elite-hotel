@@ -4,10 +4,10 @@ dotenv.config()
 import express from 'express'
 import cors from 'cors'
 import { startNotificationConsumer } from './services/notification.consumer'
-import { initTopology } from './config/rabbitmq.config'
 import { connectDB } from './config/db.config'
 import notificationRoutes from './routes/notification.routes'
 import logger from './utils/logger.service'
+import requestLogger from './middleware/request-logger.middleware'
 
 const app = express()
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173']
@@ -24,6 +24,7 @@ app.use(
   })
 )
 app.use(express.json())
+app.use(requestLogger)
 
 // Routes
 app.use('/', notificationRoutes)
@@ -34,7 +35,8 @@ import { initUserEventConsumer } from './consumers/user.consumer'
 
 async function main() {
   await connectDB()
-  await initTopology()
+  const { initRabbitMQ } = await import('./config/rabbitmq.config')
+  await initRabbitMQ()
   await startNotificationConsumer()
   await initUserEventConsumer()
   

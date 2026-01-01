@@ -1,6 +1,5 @@
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { Response, NextFunction } from 'express'
-import { User } from '../models/user.model'
 import { CustomeRequest } from '../interfaces/CustomRequest'
 
 const authenticateToken = async (
@@ -31,22 +30,16 @@ const authenticateToken = async (
         .json({ success: false, message: 'Server configuration error' })
     }
 
-    // Verify token synchronously using promisify or await approach
+    // Verify token synchronously
     const decoded = jwt.verify(newToken, secret) as JwtPayload
+    
+    // Stateless Auth: Trust signed token
     req.user = decoded
 
-    const userId = req.user.id
-    if (!userId) {
+    if (!req.user.id) {
       return res
         .status(401)
         .json({ success: false, message: 'Invalid token payload' })
-    }
-
-    const userData = await User.findById(userId)
-    if (!userData) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'User not found' })
     }
 
     next()

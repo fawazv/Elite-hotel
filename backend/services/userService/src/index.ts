@@ -17,6 +17,7 @@ import { initRabbitMQ } from './config/rabbitmq.config'
 import { initUserRpcConsumer } from './consumers/user.rpc.consumer'
 import { sanitizeInput } from './middleware/sanitization.middleware'
 import { requestTimeout } from './middleware/timeout.middleware'
+import requestLogger from './middleware/request-logger.middleware'
 
 const app = express()
 
@@ -72,6 +73,7 @@ app.use(morgan('dev'))
 
 // Performance: Compress responses
 app.use(compression())
+app.use(requestLogger)
 
 // Security: Input sanitization to prevent NoSQL injection
 app.use(sanitizeInput)

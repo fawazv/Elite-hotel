@@ -37,6 +37,10 @@ export async function initRabbitMQ(): Promise<Channel> {
     
     // Assert user events exchange
     await channel.assertExchange('user.events', 'topic', { durable: true })
+    await channel.assertExchange('user.events.dlx', 'topic', { durable: true })
+    
+    // Optional: Dead letter queue for user events if we want to catch undeliverable messages? 
+    // Usually required if we have queues bound to it. UserService mostly publishes.
     
     return channel
   } catch (err) {

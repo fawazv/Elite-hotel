@@ -1,12 +1,7 @@
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { Response, NextFunction } from 'express'
-import { User } from '../models/user.model'
 import { CustomeRequest } from '../interfaces/CustomRequest'
-import NodeCache from 'node-cache'
 import logger from '../utils/logger.service'
-
-// Cache user data for 10 minutes to avoid DB lookups on every request
-const userCache = new NodeCache({ stdTTL: 600, checkperiod: 120 })
 
 const authenticateToken = async (
   req: CustomeRequest,
@@ -34,39 +29,19 @@ const authenticateToken = async (
       })
     }
 
-    // ✅ Use synchronous verify (no callback hell)
+    // Synchronously verify
     const decoded = jwt.verify(token, secret) as JwtPayload
     
-    const userId = decoded.id
-    if (!userId) {
+    if (!decoded.id) {
       return res.status(401).json({ 
         success: false,
         message: 'Invalid token payload' 
       })
     }
 
-    // ✅ Check cache first to avoid DB lookup
-    let userData = userCache.get<any>(userId)
-    
-    if (!userData) {
-      userData = await User.findById(userId)
-        .lean()
-        .select('_id email role')
-        .exec()
-      
-      if (!userData) {
-        return res.status(404).json({ 
-          success: false,
-          message: 'User not found' 
-        })
-      }
-      
-      // Cache the user data
-      userCache.set(userId, userData)
-      logger.debug('User data cached', { userId })
-    }
-
-    req.user = { id: userId, ...decoded }
+    // Stateless Auth: Trust the token. 
+    // Removed local DB lookup and caching to support database isolation.
+    req.user = { id: decoded.id, ...decoded }
     next()
     
   } catch (error) {
@@ -85,7 +60,11 @@ const authenticateToken = async (
     }
     
     logger.error('Authentication error', { error })
-    next(error) // Pass to global error handler
+    // If we call next(error), it goes to error handler.
+    // Ensure error handler sends JSON response.
+    // For safety, let's return 500 here if no error handler is trusted.
+    // But reservationService has global handler.
+    next(error)
   }
 }
 

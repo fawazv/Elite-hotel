@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@types/mongoose": "^5.11.96",
+    "@types/uuid": "^10.0.0",
     "amqplib": "^0.10.9",
     "cors": "^2.8.5",
     "dayjs": "^1.11.10",
@@ -22,6 +23,7 @@
     "nodemailer": "^7.0.5",
     "pdfkit": "^0.17.2",
     "twilio": "^5.8.0",
+    "uuid": "^13.0.0",
     "winston": "^3.11.0"
   },
   "devDependencies": {

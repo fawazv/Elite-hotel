@@ -10,6 +10,14 @@ export const rabbitmqConnect = async () => {
     try {
       connection = await amqplib.connect(RABBITMQ_URL);
       channel = await connection.createChannel();
+      
+      // Ensure exchanges
+      await channel.assertExchange('user.events', 'topic', { durable: true });
+      await channel.assertExchange('user.events.dlx', 'topic', { durable: true });
+
+      // Auth service specific queues? 
+      // It likely consumes user events for cache sync.
+      
       console.log("Connected to RabbitMQ in authService");
       break;
     } catch (error) {

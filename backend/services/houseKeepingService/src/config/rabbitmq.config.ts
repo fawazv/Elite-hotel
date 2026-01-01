@@ -44,7 +44,7 @@ export async function getRabbitChannel(): Promise<Channel> {
   return channel
 }
 
-export async function initRabbitTopology() {
+export async function initRabbitMQ() {
   let initialized = false
 
   while (!initialized) {
@@ -53,25 +53,49 @@ export async function initRabbitTopology() {
 
       // exchanges
       await ch.assertExchange('housekeeping.events', 'topic', { durable: true })
+      await ch.assertExchange('housekeeping.events.dlx', 'topic', { durable: true })
+      
       await ch.assertExchange('reservations.events', 'topic', { durable: true })
+      await ch.assertExchange('reservations.events.dlx', 'topic', { durable: true })
+
+      await ch.assertExchange('user.events', 'topic', { durable: true })
+      await ch.assertExchange('user.events.dlx', 'topic', { durable: true })
 
       // queues
-      await ch.assertQueue('housekeeping.events.queue', { durable: true })
-      await ch.bindQueue(
-        'housekeeping.events.queue',
-        'housekeeping.events',
-        'housekeeping.*'
-      )
+      try {
+        await ch.deleteQueue('housekeeping.events.queue')
+      } catch(e) {}
+
+      await ch.assertQueue('housekeeping.events.queue', { 
+          durable: true,
+          deadLetterExchange: 'housekeeping.events.dlx',
+          deadLetterRoutingKey: 'failed',
+      })
+      await ch.bindQueue( 'housekeeping.events.queue', 'housekeeping.events', 'housekeeping.*')
+      
+      await ch.assertQueue('housekeeping.events.queue.dlq', { durable: true })
+      await ch.bindQueue('housekeeping.events.queue.dlq', 'housekeeping.events.dlx', 'failed')
 
       // consumer queue for reservation events (listen reservation.checkedOut)
-      await ch.assertQueue('housekeeping.from.reservations', { durable: true })
-      await ch.bindQueue(
-        'housekeeping.from.reservations',
-        'reservations.events',
-        'reservation.checkedOut'
-      )
+      // IMPORTANT: If consume fails, we DLQ it.
+      // We can use reservations DLX or a dedicated housekeeping DLX.
+      try {
+        await ch.deleteQueue('housekeeping.from.reservations')
+      } catch(e) {}
 
-      console.log('✅ RabbitMQ topology initialized')
+      await ch.assertQueue('housekeeping.from.reservations', {
+          durable: true,
+          deadLetterExchange: 'reservations.events.dlx', // Send to reservations DLX or housekeeping specific?
+          // Let's create specific DLQ for this queue
+          deadLetterRoutingKey: 'failed',
+      })
+      await ch.bindQueue( 'housekeeping.from.reservations', 'reservations.events', 'reservation.checkedOut')
+      
+      await ch.assertQueue('housekeeping.from.reservations.dlq', { durable: true })
+      // Assuming reservations.events.dlx exists (it should, we asserted it)
+      await ch.bindQueue('housekeeping.from.reservations.dlq', 'reservations.events.dlx', 'failed')
+
+      console.log('✅ RabbitMQ topology initialized (HousekeepingService)')
       initialized = true
     } catch (err) {
       console.error('❌ Failed to initialize RabbitMQ topology:', err)

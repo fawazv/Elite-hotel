@@ -1,5 +1,5 @@
 import { ConsumeMessage } from 'amqplib'
-import { getRabbitChannel, initTopology } from '../config/rabbitmq.config'
+import { getRabbitChannel, initRabbitMQ } from '../config/rabbitmq.config'
 import { EmailService } from './email.service'
 import { SmsService } from './sms.service'
 import { Notification as NotificationModel } from '../models/notification.model'
@@ -9,12 +9,13 @@ import {
   handleInvoiceRefunded,
 } from './notification.billing'
 import logger from '../utils/logger.service'
+import { context } from '../utils/context'
 
 const EMAIL = new EmailService()
 const SMS = new SmsService()
 
 export async function startNotificationConsumer() {
-  await initTopology()
+  await initRabbitMQ()
   const ch = await getRabbitChannel()
 
   logger.info('Notification consumer started', { queue: 'notifications.queue' })
@@ -24,43 +25,51 @@ export async function startNotificationConsumer() {
     'notifications.queue',
     async (msg: ConsumeMessage | null) => {
       if (!msg) return
-      try {
-        const evt = JSON.parse(msg.content.toString())
-        const routingKey = msg.fields.routingKey
 
-        logger.info('Notification event received', {
-          event: evt.event,
-          routingKey,
-        })
+      const correlationId = msg.properties.headers?.correlationId
+      const store = new Map<string, any>()
+      store.set('correlationId', correlationId)
 
-        // route handling
-        if (evt.event === 'reservation.created') {
-          await handleReservationCreated(evt.data)
-        } else if (evt.event === 'reservation.cancelled') {
-          await handleReservationCancelled(evt.data)
-        } else if (evt.event === 'reservation.notification') {
-          // TTL-based delayed notification — handle reminder
-          await handleReminder(evt.data)
-        } else if (evt.event === 'billing.invoice.created' || evt.event === 'billing.invoice.send' || evt.event === 'billing.invoice.paid') {
-          await handleInvoiceCreated(evt.data)
-        } else if (evt.event === 'billing.invoice.refunded') {
-          await handleInvoiceRefunded(evt.data)
-        } else if (evt.event === 'payment.succeeded') {
-          await handlePaymentSucceeded(evt.data)
-        } else if (evt.event === 'payment.failed') {
-          await handlePaymentFailed(evt.data)
-        } else {
-          logger.debug('Unhandled notification event', { event: evt.event })
+      context.run(store, async () => {
+        try {
+          const evt = JSON.parse(msg.content.toString())
+          const routingKey = msg.fields.routingKey
+
+          logger.info('Notification event received', {
+            event: evt.event,
+            routingKey,
+            correlationId
+          })
+
+          // route handling
+          if (evt.event === 'reservation.created') {
+            await handleReservationCreated(evt.data)
+          } else if (evt.event === 'reservation.cancelled') {
+            await handleReservationCancelled(evt.data)
+          } else if (evt.event === 'reservation.notification') {
+            // TTL-based delayed notification — handle reminder
+            await handleReminder(evt.data)
+          } else if (evt.event === 'billing.invoice.created' || evt.event === 'billing.invoice.send' || evt.event === 'billing.invoice.paid') {
+            await handleInvoiceCreated(evt.data)
+          } else if (evt.event === 'billing.invoice.refunded') {
+            await handleInvoiceRefunded(evt.data)
+          } else if (evt.event === 'payment.succeeded') {
+            await handlePaymentSucceeded(evt.data)
+          } else if (evt.event === 'payment.failed') {
+            await handlePaymentFailed(evt.data)
+          } else {
+            logger.debug('Unhandled notification event', { event: evt.event })
+          }
+
+          ch.ack(msg)
+        } catch (err) {
+          logger.error('Notification handler error', {
+            error: (err as Error).message,
+            stack: (err as Error).stack,
+          })
+          ch.nack(msg, false, false) // discard or move to DLQ in production
         }
-
-        ch.ack(msg)
-      } catch (err) {
-        logger.error('Notification handler error', {
-          error: (err as Error).message,
-          stack: (err as Error).stack,
-        })
-        ch.nack(msg, false, false) // discard or move to DLQ in production
-      }
+      })
     },
     { noAck: false }
   )
@@ -168,16 +177,23 @@ async function handleReservationCreated(data: any) {
     createdAt: new Date().toISOString(),
   }
 
+
+
   // publish to delayed queue with TTL equal to delayMs.
   // If delayMs = 0 (reminder time passed), publish immediately to events exchange for immediate processing.
   const ch = await getRabbitChannel()
+  const correlationId = context.getStore()?.get('correlationId')
+  
   if (delayMs <= 0) {
     // immediate publish to events exchange so the consumer will pick it from notifications.queue.
     ch.publish(
       'reservations.events',
       'reservation.notification',
       Buffer.from(JSON.stringify(reminderPayload)),
-      { persistent: true }
+      { 
+        persistent: true,
+        headers: { correlationId }
+      }
     )
     logger.debug('Published immediate reminder (check-in already passed)')
   } else {
@@ -188,6 +204,7 @@ async function handleReservationCreated(data: any) {
       {
         expiration: String(delayMs),
         persistent: true,
+        headers: { correlationId }
       }
     )
     logger.debug('Scheduled delayed reminder', { delayMs })

@@ -3,11 +3,11 @@ dotenv.config()
 import express from 'express'
 import cors from 'cors'
 import connectMongodb from './config/db.config'
-import { initTopology } from './config/rabbitmq.config'
 import { startBillingConsumer } from './consumers/billing.consumer'
 import { billingService } from './config/container'
 import billingRoutes from './routes/billing.route'
 import logger from './utils/logger.service'
+import requestLogger from './middleware/request-logger.middleware'
 
 // Startup function
 async function start() {
@@ -17,7 +17,8 @@ async function start() {
     logger.info('✅ MongoDB connected (BillingService)')
 
     // RabbitMQ
-    await initTopology()
+    const { initRabbitMQ } = await import('./config/rabbitmq.config')
+    await initRabbitMQ()
     logger.info('✅ RabbitMQ connected (BillingService)')
 
     // Start consumer
@@ -43,6 +44,7 @@ async function start() {
     )
     
     app.use(express.json())
+    app.use(requestLogger)
 
     // Mount routes at root since API Gateway rewrites /api/billing to /
     app.use('/', billingRoutes)

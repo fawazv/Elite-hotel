@@ -2,6 +2,8 @@
 import { getChannel } from '../config/rabbitmq.config'
 import { UserEventPayload } from '../events/user.events'
 
+import { context } from '../utils/context'
+
 const USER_EXCHANGE = 'user.events'
 
 export class UserEventPublisher {
@@ -14,11 +16,16 @@ export class UserEventPublisher {
 
       // Publish to exchange with routing key based on event type
       const routingKey = payload.eventType
+      const correlationId = context.getStore()?.get('correlationId')
+      
       channel.publish(
         USER_EXCHANGE,
         routingKey,
         Buffer.from(JSON.stringify(payload)),
-        { persistent: true }
+        { 
+          persistent: true,
+          headers: { correlationId }
+        }
       )
 
       console.log(

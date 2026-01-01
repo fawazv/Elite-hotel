@@ -8,8 +8,8 @@ import errorHandler from './middleware/errorHandler'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import hpp from 'hpp'
-import { initRoomTopology } from './config/rabbitmq.config'
 import { startReservationSubscriber } from './subscribers/reservation.subscriber'
+import requestLogger from './middleware/request-logger.middleware'
 
 const app = express()
 
@@ -17,6 +17,7 @@ dotenv.config()
 
 app.use(express.json({ limit: '1mb' }))
 app.use(express.urlencoded({ extended: true }))
+app.use(requestLogger)
 
 // Security: Helmet for security headers
 app.use(helmet())
@@ -48,7 +49,8 @@ app.use(errorHandler)
 async function start() {
   try {
     // 1. init RabbitMQ topology (exchanges, queues, bindings)
-    await initRoomTopology()
+    const { initRabbitMQ } = await import('./config/rabbitmq.config')
+    await initRabbitMQ()
 
     // 3. connect MongoDB
     await connectMongodb()

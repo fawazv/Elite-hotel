@@ -33,6 +33,7 @@ export const rabbitmqConnect = async (): Promise<Channel> => {
     
     // Declare exchanges
     await channel.assertExchange('videochat.events', 'topic', { durable: true })
+    await channel.assertExchange('videochat.events.dlx', 'topic', { durable: true })
     
     console.log('✅ RabbitMQ channel created')
     return channel
@@ -41,6 +42,8 @@ export const rabbitmqConnect = async (): Promise<Channel> => {
     throw error
   }
 }
+
+import { context } from '../utils/context'
 
 export const getChannel = (): Channel => {
   if (!channel) {
@@ -53,10 +56,12 @@ export const publishEvent = async (routingKey: string, message: object): Promise
   try {
     const ch = getChannel()
     const messageBuffer = Buffer.from(JSON.stringify(message))
+    const correlationId = context.getStore()?.get('correlationId')
     
     ch.publish('videochat.events', routingKey, messageBuffer, {
       persistent: true,
       contentType: 'application/json',
+      headers: { correlationId }
     })
     
     console.log(`📤 Published event: ${routingKey}`)

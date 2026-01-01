@@ -55,11 +55,38 @@ export async function getRabbitChannel(): Promise<Channel> {
   return channel
 }
 
-export async function initTopology(): Promise<void> {
-  const ch = await getRabbitChannel()
+export const initRabbitMQ = async () => {
+  try {
+    const channel = await getRabbitChannel()
+    
+    // Exchanges
+    await channel.assertExchange('billing.events', 'topic', { durable: true })
+    await channel.assertExchange('billing.events.dlx', 'topic', { durable: true })
+    
+    // Main Queue
+    try {
+      await channel.deleteQueue('billing.queue')
+    } catch(e) {}
 
-  // Billing exchange
-  await ch.assertExchange('billing.events', 'topic', { durable: true })
+    await channel.assertQueue('billing.queue', {
+      durable: true,
+      deadLetterExchange: 'billing.events.dlx',
+      deadLetterRoutingKey: 'failed',
+      messageTtl: 300000 
+    })
+    
+    // Dead Letter Queue
+    await channel.assertQueue('billing.queue.dlq', { durable: true })
+    
+    // Bindings
+    // Bind main queue to main exchange
+    await channel.bindQueue('billing.queue', 'billing.events', 'billing.*')
+    
+    // Bind DLQ to DLX
+    await channel.bindQueue('billing.queue.dlq', 'billing.events.dlx', 'failed')
 
-  logger.info('✅ RabbitMQ topology initialized (BillingService)')
+    logger.info('✅ RabbitMQ Topology Initialized (Billing)')
+  } catch (error) {
+    logger.error('Failed to init RabbitMQ topology:', error)
+  }
 }

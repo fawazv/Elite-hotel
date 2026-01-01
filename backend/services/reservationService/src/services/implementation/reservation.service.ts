@@ -15,6 +15,7 @@ import utc from 'dayjs/plugin/utc'
 import { GuestRpcClient } from '../adapters/guestRpcClient.adapter'
 import { getRabbitChannel } from '../../config/rabbitmq.config'
 import { IPricingEngine } from '../interface/IPricingEngine'
+import { context } from '../../utils/context'
 dayjs.extend(utc)
 
 function generateCode(): string {
@@ -240,7 +241,10 @@ export class ReservationService implements IReservationService {
       'reservations.events',
       'reservation.created',
       Buffer.from(JSON.stringify(eventPayload)),
-      { persistent: true }
+      { 
+        persistent: true,
+        headers: { correlationId: context.getStore()?.get('correlationId') }
+      }
     )
 
     // return document plus any client secret/order details for frontend
@@ -468,7 +472,10 @@ export class ReservationService implements IReservationService {
       'reservations.events',
       'reservation.created',
       Buffer.from(JSON.stringify(eventPayload)),
-      { persistent: true }
+      { 
+        persistent: true,
+        headers: { correlationId: context.getStore()?.get('correlationId') }
+      }
     )
 
     return Object.assign(doc.toObject(), { paymentClientSecret, paymentOrder })
@@ -675,7 +682,10 @@ export class ReservationService implements IReservationService {
         'reservations.events',
         'reservation.cancelled',
         Buffer.from(JSON.stringify(eventPayload)),
-        { persistent: true }
+        { 
+          persistent: true,
+          headers: { correlationId: context.getStore()?.get('correlationId') }
+        }
       )
     }
     return updated!
@@ -714,7 +724,10 @@ export class ReservationService implements IReservationService {
         'reservations.events',
         'reservation.checkedIn',
         Buffer.from(JSON.stringify(eventPayload)),
-        { persistent: true }
+        { 
+          persistent: true,
+          headers: { correlationId: context.getStore()?.get('correlationId') }
+        }
       )
     }
     return updated!
@@ -758,7 +771,10 @@ export class ReservationService implements IReservationService {
         'reservations.events',
         'reservation.checkedOut',
         Buffer.from(JSON.stringify(eventPayload)),
-        { persistent: true }
+        { 
+          persistent: true,
+          headers: { correlationId: context.getStore()?.get('correlationId') }
+        }
       )
     }
     return updated!

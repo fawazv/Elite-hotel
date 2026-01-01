@@ -8,6 +8,7 @@ import { PDFService } from '../../utils/pdf.service'
 import { ExportService } from '../../utils/export.service'
 import logger from '../../utils/logger.service'
 import { PaginatedResult } from '../../repository/interface/IBilling.repository'
+import { context } from '../../utils/context'
 
 export class BillingService implements IBillingService {
   private repo: BillingRepository
@@ -21,13 +22,18 @@ export class BillingService implements IBillingService {
   private async publishEvent(event: string, data: any) {
     try {
       const ch = await this.channelP
+      const correlationId = context.getStore()?.get('correlationId')
+      
       ch.publish(
         'billing.events',
         event,
         Buffer.from(JSON.stringify({ event, data, createdAt: new Date() })),
-        { persistent: true }
+        { 
+          persistent: true,
+          headers: { correlationId }
+        }
       )
-      logger.debug('Billing event published', { event, invoiceId: data._id })
+      logger.debug('Billing event published', { event, invoiceId: data._id, correlationId })
     } catch (err) {
       logger.error('Failed to publish billing event', {
         event,

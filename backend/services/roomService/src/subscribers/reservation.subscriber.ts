@@ -6,7 +6,7 @@ export async function startReservationSubscriber() {
   const ch = await getRabbitChannel()
 
   // Ensure the queue exists (topology init should already have done this)
-  await ch.assertQueue('rooms.reservations.queue', { durable: true })
+  // Queue asserted in rabbitmq.config.ts with DLQ settings
 
   console.log(
     '📥 RoomService reservation subscriber is waiting for messages...'

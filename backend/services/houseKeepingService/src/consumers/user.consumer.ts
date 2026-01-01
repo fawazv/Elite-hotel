@@ -17,7 +17,22 @@ export async function initUserEventConsumer() {
   const queue = 'housekeepingService.user.events'
 
   await channel.assertExchange(exchange, 'topic', { durable: true })
-  await channel.assertQueue(queue, { durable: true })
+  await channel.assertExchange('user.events.dlx', 'topic', { durable: true })
+  
+  try {
+    await channel.deleteQueue(queue)
+  } catch (error) {
+    // ignore
+  }
+
+  await channel.assertQueue(queue, {
+      durable: true,
+      deadLetterExchange: 'user.events.dlx',
+      deadLetterRoutingKey: 'failed',
+  })
+  
+  await channel.assertQueue(`${queue}.dlq`, { durable: true })
+  await channel.bindQueue(`${queue}.dlq`, 'user.events.dlx', 'failed')
 
   // Bind to all user events
   await channel.bindQueue(queue, exchange, 'user.*')
@@ -52,7 +67,7 @@ export async function initUserEventConsumer() {
       channel.ack(msg)
     } catch (error) {
       console.error('[HousekeepingService] User event processing error:', error)
-      channel.ack(msg)
+      channel.nack(msg, false, false)
     }
   })
 

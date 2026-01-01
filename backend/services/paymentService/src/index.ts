@@ -8,7 +8,6 @@ import connectMongodb from './config/db.config'
 import cors from 'cors'
 import paymentRoutes from './routes/payment.route'
 import { startReservationConsumer } from './consumers/reservation.consumer'
-import { initTopology } from './config/rabbitmq.config'
 import webhookRoutes from './routes/webhook.routes'
 import { startPaymentConsumer } from './consumers/payment.consumer'
 import { paymentService } from './config/container'
@@ -97,7 +96,8 @@ async function start() {
     logger.info('✅ Webhook secrets validated')
 
     // RabbitMQ
-    await initTopology()
+    const { initRabbitMQ } = await import('./config/rabbitmq.config')
+    await initRabbitMQ()
     logger.info('✅ RabbitMQ connected (PaymentService)')
 
     await connectMongodb()

@@ -31,7 +31,7 @@
     "nodemailer": "^7.0.5",
     "twilio": "^5.8.0",
     "uuid": "^10.0.0",
-    "winston": "^3.11.0",
+    "winston": "^3.19.0",
     "xss": "^1.0.14"
   },
   "devDependencies": {

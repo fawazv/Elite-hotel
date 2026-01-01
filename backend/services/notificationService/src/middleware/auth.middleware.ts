@@ -1,6 +1,5 @@
 import jwt, { JwtPayload, TokenExpiredError, JsonWebTokenError } from 'jsonwebtoken'
 import { Request, Response, NextFunction } from 'express'
-import { User } from '../models/user.model'
 
 
 // Custom UserPayload interface
@@ -15,15 +14,9 @@ export interface AuthenticatedRequest extends Request {
   user?: UserPayload
 }
 
-// Simple in-memory cache removed as per request
-
 /**
  * Authentication middleware - validates JWT tokens
- * Fixes: 
- * - Async error handling bug
- * - Timing-safe token validation
- * - Proper Bearer token parsing
- * - Comprehensive error responses
+ * Stateless version: Trusts signed JWTs without local DB lookup.
  */
 const authenticateToken = async (
   req: AuthenticatedRequest,
@@ -73,7 +66,7 @@ const authenticateToken = async (
       return
     }
 
-    // 5. Verify JWT token (async/await instead of callback)
+    // 5. Verify JWT token
     let decoded: UserPayload
     try {
       decoded = jwt.verify(token, secret) as UserPayload
@@ -109,29 +102,10 @@ const authenticateToken = async (
       return
     }
 
-    // 7. Fetch user from database
-    const userData = await User.findById(decoded.id).select('-password').lean()
-    
-    if (!userData) {
-      res.status(404).json({ 
-        success: false,
-        message: 'User not found',
-        code: 'USER_NOT_FOUND'
-      })
-      return
-    }
+    // Stateless: We do not check User.findById() nor isVerified here.
+    // The token is proof of authentication.
 
-    // 8. Check if user is verified
-    if (!userData.isVerified) {
-      res.status(403).json({ 
-        success: false,
-        message: 'Email not verified. Please verify your email',
-        code: 'EMAIL_NOT_VERIFIED'
-      })
-      return
-    }
-
-    // 9. Attach user to request
+    // 7. Attach user to request
     req.user = decoded
     next()
 

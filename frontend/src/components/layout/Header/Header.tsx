@@ -233,7 +233,11 @@ const Header: React.FC = () => {
                     <p className="text-sm font-bold text-gray-900 truncate">{user?.email}</p>
                   </div>
                   <Link
-                    to="/account/profile"
+                    to={
+                      user?.role === 'receptionist' ? '/receptionist/profile' :
+                      ['admin', 'housekeeper'].includes(user?.role || '') ? '/admin/profile' :
+                      '/account/profile'
+                    }
                     className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 transition-colors"
                     onClick={() => setDropdownOpen(false)}
                   >

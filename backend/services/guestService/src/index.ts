@@ -9,8 +9,8 @@ import errorHandler from './middleware/errorHandler'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import compression from 'compression'
-import { initTopology } from './config/rabbitmq.config'
 import { initGuestRpcServer } from './rpc/guest.rpc.server'
+import requestLogger from './middleware/request-logger.middleware'
 
 const app = express()
 
@@ -41,6 +41,7 @@ app.use(morgan('dev'))
 // Security: Request size limits to prevent DoS
 app.use(express.json({ limit: '100kb' }))
 app.use(express.urlencoded({ extended: true, limit: '100kb' }))
+app.use(requestLogger)
 
 app.use('/', guestRoute)
 app.use('/guest-backup', guestBackupRoute)
@@ -49,7 +50,8 @@ app.use('/guest-backup', guestBackupRoute)
 app.use(errorHandler)
 
 // setup RabbitMQ topology (exchanges/queues)
-initTopology()
+import { initRabbitMQ } from './config/rabbitmq.config'
+initRabbitMQ()
 console.log('✅ RabbitMQ topology initialized')
 
 // start Guest RPC server

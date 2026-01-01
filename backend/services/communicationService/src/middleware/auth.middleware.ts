@@ -2,24 +2,48 @@ import { Response, NextFunction } from 'express'
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import { AuthenticatedRequest } from '../types'
 
-export const authenticateToken = (
+export const authenticateToken = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-): void => {
+) => {
   try {
-    const authHeader = req.headers.authorization
+    const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1]
 
     if (!token) {
-      res.status(401).json({ message: 'Access token required' })
-      return
+      return res.status(401).json({ 
+        success: false,
+        message: 'Access denied. No token provided' 
+      })
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload
+    const secret = process.env.ACCESS_TOKEN_SECRET
+    if (!secret) {
+      console.error('ACCESS_TOKEN_SECRET is not defined')
+      return res.status(500).json({ 
+        success: false,
+        message: 'Server configuration error' 
+      })
+    }
+
+    const decoded = jwt.verify(token, secret) as JwtPayload
     req.user = decoded
+
+    if (!req.user.id) {
+       return res.status(401).json({ 
+        success: false,
+        message: 'Invalid token payload' 
+      })
+    }
+    
+    // Stateless Auth: Trust token
+    
     next()
   } catch (error) {
-    res.status(403).json({ message: 'Invalid or expired token' })
+    return res.status(403).json({ 
+      success: false,
+      message: 'Invalid or expired token' 
+    })
   }
 }

@@ -1,6 +1,7 @@
 // src/config/rabbitmq.config.ts
 import amqplib, { Connection, Channel } from 'amqplib'
 import logger from '../utils/logger.service'
+import { context } from '../utils/context'
 
 const RABBIT_URL = process.env.RABBITMQ_URL || 'amqp://localhost:5672'
 let connection: Connection | null = null
@@ -55,40 +56,82 @@ export async function getRabbitChannel(): Promise<Channel> {
   return channel
 }
 
+export const publishEvent = async (routingKey: string, message: object): Promise<void> => {
+  try {
+    const ch = await getRabbitChannel() // Changed from getChannel() to getRabbitChannel()
+    const messageBuffer = Buffer.from(JSON.stringify(message))
+    const correlationId = context.getStore()?.get('correlationId')
+
+    ch.publish('videochat.events', routingKey, messageBuffer, {
+      persistent: true,
+      contentType: 'application/json',
+      headers: { correlationId }
+    })
+
+    console.log(`📤 Published event: ${routingKey}`)
+  } catch (error) {
+    logger.error('Failed to publish event:', { error })
+  }
+}
+
 /**
  * Initialize top-level topology used across services.
  * Call once at service startup.
  */
-export async function initTopology(): Promise<void> {
-  const ch = await getRabbitChannel()
+export const initRabbitMQ = async () => {
+  try {
+    const ch = await getRabbitChannel()
+    
+    // Exchanges
+    await ch.assertExchange('payments.events', 'topic', { durable: true })
+    await ch.assertExchange('payments.events.dlx', 'topic', { durable: true })
+    
+    // Main Queue for internal processing
+    try {
+      await ch.deleteQueue('payments.queue')
+    } catch(e) {}
 
-  // Payments events exchange
-  await ch.assertExchange('payments.events', 'topic', { durable: true })
+    await ch.assertQueue('payments.queue', {
+      durable: true,
+      deadLetterExchange: 'payments.events.dlx',
+      deadLetterRoutingKey: 'failed',
+      messageTtl: 300000 
+    })
+    
+    // DLQ
+    await ch.assertQueue('payments.queue.dlq', { durable: true })
+    
+    // Bindings
+    await ch.bindQueue('payments.queue', 'payments.events', 'payment.*')
+    await ch.bindQueue('payments.queue.dlq', 'payments.events.dlx', 'failed')
 
-  // Queue for billing service to receive payment events
-  await ch.assertQueue('billing.events', { durable: true })
-  await ch.bindQueue('billing.events', 'payments.events', 'payment.*')
+    // Bindings
+    await ch.bindQueue('payments.queue', 'payments.events', 'payment.*')
+    await ch.bindQueue('payments.queue.dlq', 'payments.events.dlx', 'failed')
 
-  // Queue for reservations (payments listen for reservation.created)
-  await ch.assertQueue('reservations.queue.forPayments', { durable: true })
-  await ch.bindQueue(
-    'reservations.queue.forPayments',
-    'reservations.events',
-    'reservation.created'
-  )
+    
+    // Queue for reservations (payments listen for reservation.created)
+    // We should probably add DLQ to this too if Payment Service consumes from it
+    await ch.assertExchange('reservations.events.dlx', 'topic', { durable: true })
+    try {
+      await ch.deleteQueue('reservations.queue.forPayments')
+    } catch(e) {}
 
-  // ✅ Bind reservation.cancelled so payment service receives it for refunds
-  await ch.bindQueue(
-    'reservations.queue.forPayments',
-    'reservations.events',
-    'reservation.cancelled'
-  )
+    await ch.assertQueue('reservations.queue.forPayments', {
+         durable: true,
+         deadLetterExchange: 'reservations.events.dlx',
+         deadLetterRoutingKey: 'failed',
+         messageTtl: 300000 
+    })
+    await ch.assertQueue('reservations.queue.forPayments.dlq', { durable: true })
+    
+    await ch.bindQueue('reservations.queue.forPayments', 'reservations.events', 'reservation.created')
+    await ch.bindQueue('reservations.queue.forPayments', 'reservations.events', 'reservation.cancelled')
+    
+    await ch.bindQueue('reservations.queue.forPayments.dlq', 'reservations.events.dlx', 'failed')
 
-  // Notifications queue also listens for payment events
-  await ch.assertQueue('notifications.queue', { durable: true })
-  await ch.bindQueue('notifications.queue', 'payments.events', 'payment.*')
-
-  // Payment events queue (for internal processing)
-  await ch.assertQueue('payments.queue', { durable: true })
-  await ch.bindQueue('payments.queue', 'payments.events', 'payment.*')
+    logger.info('✅ RabbitMQ Topology Initialized (PaymentService)')
+  } catch (error) {
+    logger.error('Failed to init RabbitMQ topology:', { error })
+  }
 }

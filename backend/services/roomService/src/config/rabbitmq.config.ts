@@ -58,22 +58,29 @@ export async function getRabbitChannel(): Promise<Channel> {
  * Create topology used by Room Service.
  * Call on startup.
  */
-export async function initRoomTopology(): Promise<void> {
+export async function initRabbitMQ(): Promise<void> {
   const ch = await getRabbitChannel()
 
   // ensure the same exchange exists (topic) — service creating it is ok too
   await ch.assertExchange('reservations.events', 'topic', { durable: true })
+  await ch.assertExchange('reservations.events.dlx', 'topic', { durable: true })
+
+  await ch.assertExchange('user.events', 'topic', { durable: true })
+  await ch.assertExchange('user.events.dlx', 'topic', { durable: true })
 
   // Queue for Room Service to listen to check-in/check-out
-  await ch.assertQueue('rooms.reservations.queue', { durable: true })
-  await ch.bindQueue(
-    'rooms.reservations.queue',
-    'reservations.events',
-    'reservation.checkedIn'
-  )
-  await ch.bindQueue(
-    'rooms.reservations.queue',
-    'reservations.events',
-    'reservation.checkedOut'
-  )
+  try {
+     await ch.deleteQueue('rooms.reservations.queue')
+  } catch(e) {}
+
+  await ch.assertQueue('rooms.reservations.queue', { 
+      durable: true,
+      deadLetterExchange: 'reservations.events.dlx',
+      deadLetterRoutingKey: 'failed',
+  })
+  await ch.bindQueue('rooms.reservations.queue', 'reservations.events', 'reservation.checkedIn')
+  await ch.bindQueue('rooms.reservations.queue', 'reservations.events', 'reservation.checkedOut')
+  
+  await ch.assertQueue('rooms.reservations.queue.dlq', { durable: true })
+  await ch.bindQueue('rooms.reservations.queue.dlq', 'reservations.events.dlx', 'failed')
 }
