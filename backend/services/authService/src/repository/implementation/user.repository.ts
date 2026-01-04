@@ -15,6 +15,14 @@ export class UserRepository
     }
   }
 
+  async findByEmailWithPassword(email: string): Promise<IUser | null> {
+    try {
+      return await User.findOne({ email }).select('+password')
+    } catch (error) {
+      return null
+    }
+  }
+
   async updateUserField(
     email: string,
     field: string,

@@ -146,6 +146,25 @@ export const ChatbotWidget: React.FC = () => {
     }
   }, [isOpen, isMinimized]);
 
+  /**
+   * Handle Token Refresh / Login Switch
+   */
+  useEffect(() => {
+    const handleTokenRefresh = () => {
+         // Reset state to force re-initialization
+         setCurrentConversation(null);
+         setMessages([]);
+         setShowGuestForm(false);
+         // If open, this will trigger the main loadOrCreateConversation effect
+         if (isOpen) {
+             loadOrCreateConversation();
+         }
+    };
+
+    window.addEventListener('token-refreshed', handleTokenRefresh);
+    return () => window.removeEventListener('token-refreshed', handleTokenRefresh);
+  }, [isOpen]); // Depend on isOpen so we know whether to reload immediately
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -438,6 +457,8 @@ export const ChatbotWidget: React.FC = () => {
             >
                 <span className="text-xs font-bold">RESET</span>
             </button>
+            {/* Only show Video Call button for Guests, not Staff */}
+            {!localStorage.getItem('token') && (
             <button 
                 onClick={() => setIsVideoCallOpen(true)} 
                 className="p-2 text-gray-400 hover:text-black hover:bg-black/5 rounded-full transition-colors mr-1"
@@ -445,6 +466,7 @@ export const ChatbotWidget: React.FC = () => {
             >
                 <Video className="w-5 h-5" />
             </button>
+            )}
         </div>
 
         {/* Content Area */}

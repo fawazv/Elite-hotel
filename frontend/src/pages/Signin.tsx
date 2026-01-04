@@ -64,6 +64,10 @@ export default function Signin() {
         toast.info('Please enter the OTP sent to your email')
       } else if (response.success) {
         const { user, accessToken } = response.data
+        // CLEAR GUEST TOKENS ON STAFF LOGIN
+        localStorage.removeItem('guest_token')
+        localStorage.removeItem('guest_id')
+        
         localStorage.setItem('token', accessToken)
         // Notify SocketContext to reconnect
         window.dispatchEvent(new Event('token-refreshed'))
@@ -123,6 +127,10 @@ export default function Signin() {
             const token = response.data?.accessToken || response.data?.data?.accessToken
 
             if (token && userData) {
+                // CLEAR GUEST TOKENS ON STAFF LOGIN (OTP)
+                localStorage.removeItem('guest_token')
+                localStorage.removeItem('guest_id')
+
                 localStorage.setItem('token', token)
                 // Notify SocketContext to reconnect
                 window.dispatchEvent(new Event('token-refreshed'))

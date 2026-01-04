@@ -193,7 +193,7 @@ export class AuthService implements IAuthService {
 
   async signIn(email: string, password: string, role: string) {
     try {
-      const checkUser = await this.userRepository.findByEmail(email)
+      const checkUser = await this.userRepository.findByEmailWithPassword(email)
       if (!checkUser || role !== checkUser.role) {
         throw new CustomError('user not found!', HttpStatus.NOTFOUND)
       }

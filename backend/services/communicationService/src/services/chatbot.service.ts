@@ -215,7 +215,7 @@ export class ChatbotService {
           role: 'guest',
           name: guestName
         },
-        process.env.JWT_SECRET!,
+        process.env.ACCESS_TOKEN_SECRET!,
         { expiresIn: '24h' }
       )
       

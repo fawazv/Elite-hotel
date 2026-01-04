@@ -49,10 +49,10 @@ privateApi.interceptors.response.use(
       error.response.status === 401 &&
       !originalRequest._retry
     ) {
-      // Skip refresh for guest tokens or if no user token exists
-      if (!localStorage.getItem('token') && localStorage.getItem('guest_token')) {
-        return Promise.reject(error)
-      }
+      // ALLOW guest token refresh (removed blocking check)
+      // if (!localStorage.getItem('token') && localStorage.getItem('guest_token')) {
+      //   return Promise.reject(error)
+      // }
 
       originalRequest._retry = true
       try {
@@ -68,6 +68,8 @@ privateApi.interceptors.response.use(
       } catch (refreshError: any) {
         if (refreshError.response?.status === 403) {
           localStorage.removeItem('token')
+          localStorage.removeItem('guest_token')
+          localStorage.removeItem('guest_id')
 
           // Dispatch the logout action from the auth slice
           store.dispatch(logout())
