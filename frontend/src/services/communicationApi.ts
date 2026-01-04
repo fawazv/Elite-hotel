@@ -116,15 +116,18 @@ export const updateContext = async (
 /**
  * Hand off conversation to a human agent
  */
-export const handoffToAgent = async (
-  data: IHandoffToAgentRequest
-): Promise<IHandoffToAgentResponse> => {
-  const response = await privateApi.post<IHandoffToAgentResponse>(
-    `${CHATBOT_BASE}/handoff`,
-    data
-  );
-  return response.data;
-};
+export const handoffToAgent = async (data: { conversationId: string }) => {
+  const response = await privateApi.post(`${CHATBOT_BASE}/handoff`, data)
+  return response.data
+}
+
+/**
+ * Return conversation to bot
+ */
+export const returnToBot = async (data: { conversationId: string }) => {
+  const response = await privateApi.post(`${CHATBOT_BASE}/return-to-bot`, data)
+  return response.data
+}
 
 /**
  * Close a conversation

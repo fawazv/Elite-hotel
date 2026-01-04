@@ -45,7 +45,7 @@ export class ChatbotService {
         throw new Error('Conversation not found')
       }
 
-      if (conversation.status !== 'active') {
+      if (conversation.status !== 'active' && conversation.status !== 'handoff') {
         throw new Error('Conversation is not active')
       }
 
@@ -57,6 +57,14 @@ export class ChatbotService {
         timestamp: new Date(),
       }
 
+      // IF HANDOFF: Just save user message and return (Bot is muted)
+      if (conversation.status === 'handoff') {
+           const updatedConversation = await conversationRepository.addMessage(conversationId, userMsg);
+           return updatedConversation!;
+      }
+
+      // IF ACTIVE: Proceed with AI Generation
+      
       // Detect intent
       const { intent, confidence } = await geminiService.detectIntent(userMessage)
 
@@ -141,6 +149,15 @@ export class ChatbotService {
     }
   }
 
+  async getAllConversations(limit: number = 20, page: number = 1): Promise<{ conversations: IConversation[], total: number }> {
+     try {
+       return await conversationRepository.findAll(limit, page)
+     } catch (error) {
+       console.error('Error fetching all conversations:', error)
+       throw new Error('Failed to fetch all conversations')
+     }
+  }
+
   async getConversationById(conversationId: string): Promise<IConversation | null> {
     try {
       return await conversationRepository.findByConversationId(conversationId)
@@ -203,6 +220,25 @@ export class ChatbotService {
     }
   }
 
+
+  async returnToBot(conversationId: string): Promise<IConversation | null> {
+    try {
+      const conversation = await conversationRepository.updateStatus(conversationId, 'active')
+
+      if (conversation) {
+        await publishEvent('chatbot.return_to_bot', {
+          conversationId,
+          userId: conversation.userId,
+          timestamp: new Date(),
+        })
+      }
+
+      return conversation
+    } catch (error) {
+      console.error('Error returning conversation to bot:', error)
+      throw new Error('Failed to return conversation to bot')
+    }
+  }
 
   async generateGuestToken(name?: string, existingGuestId?: string): Promise<{ token: string, guestId: string, name: string }> {
     try {

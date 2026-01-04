@@ -89,6 +89,7 @@ export class ChatbotController {
     try {
       const decodedUser = req.user as any;
       const userId = decodedUser.userId || decodedUser.id;
+      const role = decodedUser.role;
       
       if (!userId) {
         res.status(400).json({ message: 'User identifier missing' });
@@ -96,14 +97,31 @@ export class ChatbotController {
       }
       
       const limit = parseInt(req.query.limit as string) || 20
+      const page = parseInt(req.query.page as string) || 1
 
-      const conversations = await chatbotService.getConversations(userId, limit)
-
-      res.json({
-        message: 'Conversations retrieved successfully',
-        count: conversations.length,
-        conversations,
-      })
+      // If Admin or Staff, return ALL conversations (Global View)
+      if (role === 'admin' || role === 'staff' || role === 'receptionist') {
+          const { conversations, total } = await chatbotService.getAllConversations(limit, page);
+          res.json({
+            message: 'All conversations retrieved successfully',
+            count: conversations.length,
+            conversations,
+            pagination: {
+                total,
+                pages: Math.ceil(total / limit),
+                current: page
+            }
+          });
+      } else {
+          // Guests only see their own
+          const conversations = await chatbotService.getConversations(userId, limit)
+          res.json({
+            message: 'Conversations retrieved successfully',
+            count: conversations.length,
+            conversations,
+             // Simple pagination mock for guests if needed, or update service to return total
+          })
+      }
     } catch (error) {
       console.error('Error in getConversations:', error)
       res.status(500).json({ message: 'Failed to retrieve conversations' })
@@ -202,6 +220,32 @@ export class ChatbotController {
     } catch (error) {
       console.error('Error in closeConversation:', error)
       res.status(500).json({ message: 'Failed to close conversation' })
+    }
+  }
+
+  async returnToBot(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { conversationId } = req.body
+
+      if (!conversationId) {
+        res.status(400).json({ message: 'Conversation ID is required' })
+        return
+      }
+
+      const conversation = await chatbotService.returnToBot(conversationId)
+
+      if (!conversation) {
+        res.status(404).json({ message: 'Conversation not found' })
+        return
+      }
+
+      res.json({
+        message: 'Conversation returned to bot successfully',
+        conversation,
+      })
+    } catch (error) {
+      console.error('Error in returnToBot:', error)
+      res.status(500).json({ message: 'Failed to return conversation to bot' })
     }
   }
 

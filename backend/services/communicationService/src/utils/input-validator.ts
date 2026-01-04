@@ -5,6 +5,7 @@ export class InputValidator {
   private static messageSchema = Joi.object({
     conversationId: Joi.string().required(),
     message: Joi.string().min(1).max(1000).required(),
+    image: Joi.string().optional().allow(null, ''),
   });
 
   static sanitizeMessage(message: string): string {

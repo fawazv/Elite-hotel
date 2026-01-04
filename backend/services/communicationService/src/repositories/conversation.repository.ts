@@ -37,6 +37,15 @@ export class ConversationRepository {
       .limit(limit)
   }
 
+  async findAll(limit: number = 20, page: number = 1): Promise<{ conversations: IConversation[], total: number }> {
+    const skip = (page - 1) * limit;
+    const [conversations, total] = await Promise.all([
+      Conversation.find().sort({ updatedAt: -1 }).skip(skip).limit(limit),
+      Conversation.countDocuments()
+    ]);
+    return { conversations, total };
+  }
+
   async addMessage(
     conversationId: string,
     message: IMessage

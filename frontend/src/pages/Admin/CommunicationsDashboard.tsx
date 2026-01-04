@@ -30,46 +30,8 @@ export const CommunicationsDashboard: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 20;
 
-  useEffect(() => {
-    // Reset page to 1 on tab change
-    setCurrentPage(1); 
-  }, [activeTab]);
-
-  useEffect(() => {
-    loadData();
-  }, [activeTab, currentPage]);
-
-  // Listen for socket events to auto-update
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleUpdate = () => {
-        // Simple strategy: Reload data when any call event happens
-        loadData();
-    };
-
-    socket.on('videochat.call.initiated', handleUpdate);
-    socket.on('videochat.call.active', handleUpdate);
-    socket.on('videochat.call.ended', handleUpdate);
-    socket.on('videochat.call.rejected', handleUpdate);
-    
-    // Polling fallback
-    const interval = setInterval(() => {
-        if (activeTab === 'calls') { // Only poll if viewing calls
-            getAllActiveCalls().then(res => setActiveCalls(res.calls)).catch(console.error);
-        }
-    }, 5000); 
-
-    return () => {
-        socket.off('videochat.call.initiated', handleUpdate);
-        socket.off('videochat.call.active', handleUpdate);
-        socket.off('videochat.call.ended', handleUpdate);
-        socket.off('videochat.call.rejected', handleUpdate);
-        clearInterval(interval);
-    };
-  }, [socket, activeTab]);
-
-  const loadData = async () => {
+  // Stabilize loadData with useCallback
+  const loadData = React.useCallback(async () => {
     setLoading(true);
     try {
       if (activeTab === 'conversations') {
@@ -111,7 +73,51 @@ export const CommunicationsDashboard: React.FC = () => {
     } finally {
       if (activeTab !== 'stats') setLoading(false);
     }
-  };
+  }, [activeTab, currentPage]);
+
+  useEffect(() => {
+    // Reset page to 1 on tab change
+    setCurrentPage(1); 
+  }, [activeTab]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]); // activeTab/currentPage changes triggering loadData changes
+
+  // Listen for socket events to auto-update
+  useEffect(() => {
+    if (!socket) return;
+
+    let timeoutId: NodeJS.Timeout;
+    const handleUpdate = () => {
+        // Debounce: Wait 2s before reloading to prevent spam
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+             loadData();
+        }, 2000);
+    };
+
+    socket.on('videochat.call.initiated', handleUpdate);
+    socket.on('videochat.call.active', handleUpdate);
+    socket.on('videochat.call.ended', handleUpdate);
+    socket.on('videochat.call.rejected', handleUpdate);
+    
+    // Polling fallback (Increased to 30s)
+    const interval = setInterval(() => {
+        if (activeTab === 'calls') { // Only poll if viewing calls
+            getAllActiveCalls().then(res => setActiveCalls(res.calls)).catch(console.error);
+        }
+    }, 30000); 
+
+    return () => {
+        socket.off('videochat.call.initiated', handleUpdate);
+        socket.off('videochat.call.active', handleUpdate);
+        socket.off('videochat.call.ended', handleUpdate);
+        socket.off('videochat.call.rejected', handleUpdate);
+        clearInterval(interval);
+        clearTimeout(timeoutId);
+    };
+  }, [socket, activeTab, loadData]);
 
   const handleTakeOver = async (conversationId: string) => {
     try {
@@ -123,6 +129,21 @@ export const CommunicationsDashboard: React.FC = () => {
     } catch (error) {
       console.error('Failed to take over conversation:', error);
       alert('Failed to take over conversation');
+    }
+  };
+
+  const handleReturnToBot = async (conversationId: string) => {
+    try {
+      // Dynamically import to ensure it's available
+      const { returnToBot } = await import('../../services/communicationApi'); 
+      await returnToBot({ conversationId });
+      alert('Conversation returned to bot successfully');
+      loadData();
+      
+      logCommunicationEvent('conversation_return_to_bot', { conversationId });
+    } catch (error) {
+      console.error('Failed to return conversation to bot:', error);
+      alert('Failed to return conversation to bot');
     }
   };
 
@@ -578,7 +599,16 @@ export const CommunicationsDashboard: React.FC = () => {
             </div>
             
             <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/30">
-              {selectedConversation.messages.map((msg, idx) => (
+              {selectedConversation.messages.length === 0 ? (
+                <div className="flex h-full items-center justify-center">
+                    <EmptyState
+                        title="No messages"
+                        description="This conversation has no messages yet."
+                        icon={MessageSquare}
+                    />
+                </div>
+              ) : (
+                selectedConversation.messages.map((msg, idx) => (
                 <div key={idx} className={`flex gap-3 ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${msg.sender === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
                       {msg.sender === 'user' ? 'U' : 'B'}
@@ -598,7 +628,8 @@ export const CommunicationsDashboard: React.FC = () => {
                     </span>
                   </div>
                 </div>
-              ))}
+              ))
+              )}
             </div>
 
             <div className="p-4 border-t border-gray-100 bg-white flex justify-end gap-3">
@@ -608,7 +639,7 @@ export const CommunicationsDashboard: React.FC = () => {
                 >
                    Close
                 </button>
-                {selectedConversation.status !== 'handoff' && (
+                {selectedConversation.status !== 'handoff' ? (
                   <button
                     onClick={() => {
                         handleTakeOver(selectedConversation.conversationId);
@@ -618,6 +649,17 @@ export const CommunicationsDashboard: React.FC = () => {
                   >
                     <Users size={16} />
                     Take Over Conversation
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                        handleReturnToBot(selectedConversation.conversationId);
+                        setSelectedConversation(null);
+                    }}
+                    className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all hover:scale-105 flex items-center gap-2"
+                  >
+                    <MessageSquare size={16} />
+                    Return to Bot
                   </button>
                 )}
             </div>

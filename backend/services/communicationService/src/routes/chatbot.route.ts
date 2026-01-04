@@ -29,6 +29,7 @@ router.post('/message', (req, res) => chatbotController.sendMessage(req, res))
 // Context and handoff
 router.put('/context/:conversationId', (req, res) => chatbotController.updateContext(req, res))
 router.post('/handoff', (req, res) => chatbotController.handoffToAgent(req, res))
+router.post('/return-to-bot', (req, res) => chatbotController.returnToBot(req, res))
 
 // Analytics endpoints (public - no auth needed for API Gateway aggregation)
 import { CommunicationAnalyticsController } from '../controllers/communication.analytics.controller';

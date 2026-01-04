@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io'
 import { v4 as uuidv4 } from 'uuid'
 import { getOnlineStaff, getConnectedUser, setActiveCallPair, clearActiveCallPair } from '../config/socket.config'
+import videochatRepository from '../repositories/videochat.repository'
 
 export const registerCallHandlers = (io: Server, socket: Socket) => {
   const socketUser = socket.data.user
@@ -45,7 +46,7 @@ export const registerCallHandlers = (io: Server, socket: Socket) => {
   })
 
   // 2. Accept Call (Staff -> Guest)
-  socket.on('call:accept', (payload: { sessionId: string, guestId: string }) => {
+  socket.on('call:accept', async (payload: { sessionId: string, guestId: string }) => {
     try {
         console.log(`[Call] Accepted by ${socketUser?.userId} for session ${payload.sessionId}`)
         
@@ -73,6 +74,17 @@ export const registerCallHandlers = (io: Server, socket: Socket) => {
         if (socketUser?.userId && payload.guestId) {
              setActiveCallPair(socketUser.userId, payload.guestId);
         }
+
+        // DB: Create Session
+        await videochatRepository.create({
+            sessionId: payload.sessionId,
+            callerId: payload.guestId,
+            receiverId: socketUser?.userId,
+            callerType: 'guest',
+            receiverType: 'staff',
+            status: 'active',
+            startTime: new Date()
+        }).catch(err => console.error('[Call] DB Create Error:', err));
         
     } catch (error) {
         console.error('[Call] Accept Error:', error)
@@ -80,7 +92,7 @@ export const registerCallHandlers = (io: Server, socket: Socket) => {
   })
 
   // 3. Reject Call (Staff -> Guest)
-  socket.on('call:reject', (payload: { sessionId: string, guestId: string }) => {
+  socket.on('call:reject', async (payload: { sessionId: string, guestId: string }) => {
      try {
          const guestSocketUser = getConnectedUser(payload.guestId)
          if (guestSocketUser) {
@@ -89,6 +101,18 @@ export const registerCallHandlers = (io: Server, socket: Socket) => {
                  reason: 'Staff busy'
              })
          }
+         
+         // DB: Log Rejected Call
+         await videochatRepository.create({
+            sessionId: payload.sessionId,
+            callerId: payload.guestId,
+            receiverId: socketUser?.userId,
+            callerType: 'guest',
+            receiverType: 'staff',
+            status: 'rejected',
+            startTime: new Date()
+        }).catch(err => console.error('[Call] DB Reject Error:', err));
+
      } catch (error) {
          console.error('[Call] Reject Error:', error)
      }
@@ -111,7 +135,7 @@ export const registerCallHandlers = (io: Server, socket: Socket) => {
   })
 
   // 5. End Call
-  socket.on('call:end', (payload: { targetId: string, sessionId?: string }) => {
+  socket.on('call:end', async (payload: { targetId: string, sessionId?: string }) => {
       try {
           const targetUser = getConnectedUser(payload.targetId)
           if (targetUser) {
@@ -124,6 +148,29 @@ export const registerCallHandlers = (io: Server, socket: Socket) => {
           // Clear active pair
           if (socketUser?.userId) {
               clearActiveCallPair(socketUser.userId);
+          }
+
+          // DB: Update Session
+          let sessionId = payload.sessionId;
+          let session = null;
+
+          if (sessionId) {
+              session = await videochatRepository.findBySessionId(sessionId);
+          } else {
+               // Try to find by active status if sessionId is missing (fallback)
+               session = await videochatRepository.findActiveCall(socketUser?.userId);
+               sessionId = session?.sessionId;
+          }
+
+          if (sessionId && session?.status !== 'ended') {
+               const endTime = new Date();
+               const startTime = session?.startTime ? new Date(session.startTime) : new Date();
+               const duration = Math.round((endTime.getTime() - startTime.getTime()) / 1000);
+               
+               await videochatRepository.updateStatus(sessionId, 'ended', {
+                   endTime,
+                   duration
+               }).catch(err => console.error('[Call] DB End Error:', err));
           }
           
       } catch (error) {

@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MessageSquare, X, Minus, Send, User, Bot, UserCircle, Loader2, Mic, Image as ImageIcon, Video } from 'lucide-react';
+import { MessageSquare, X, Minus, Send, User, Bot, UserCircle, Loader2, Mic, Video } from 'lucide-react';
 import { useChatbot } from '../../contexts/ChatbotContext';
 import { useSocket } from '../../contexts/SocketContext';
 import { useLocation } from 'react-router-dom';
@@ -28,15 +28,7 @@ import { toast } from 'sonner';
 
 // ... (imports)
 
-// Helper: Convert File to Base64
-const convertFileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
-  });
-};
+// ... (imports)
 
 export const ChatbotWidget: React.FC = () => {
   const {
@@ -64,7 +56,6 @@ export const ChatbotWidget: React.FC = () => {
   const [isVideoCallOpen, setIsVideoCallOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   // App Context Awareness
   const location = useLocation();
 
@@ -84,8 +75,9 @@ export const ChatbotWidget: React.FC = () => {
 
   const handleGuestSubmit = async (name: string, roomNumber?: string) => {
     try {
-      // 1. Generate guest token
-      const { token, guestId } = await generateGuestToken(name, roomNumber);
+      // 1. Generate guest token (Guest ID will be random UUID, NOT room number)
+      // We pass 'undefined' for the second argument (guestId) to force random generation
+      const { token, guestId } = await generateGuestToken(name, undefined);
       
       // 2. Save to local storage
       localStorage.setItem('guest_token', token);
@@ -97,11 +89,11 @@ export const ChatbotWidget: React.FC = () => {
       // 4. Connect socket with new token
       connectSocket();
       
-      // 5. Update request context if needed (optional context update)
-      // We will rely on createConversation passing context if it's a new conversation
-      // But loadOrCreateConversation calls createConversation without args currently...
-      // Let's just proceed to load/create
-      await loadOrCreateConversation();
+      // 5. Create conversation with Context (Room Number)
+      await loadOrCreateConversation({ 
+          roomNumber, 
+          userName: name 
+      });
       
       toast.success(`Welcome, ${name}!`);
     } catch (error) {
@@ -169,7 +161,7 @@ export const ChatbotWidget: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const loadOrCreateConversation = async () => {
+  const loadOrCreateConversation = async (initialContext?: { roomNumber?: string, userName?: string }) => {
     try {
       setIsLoading(true);
 
@@ -179,7 +171,10 @@ export const ChatbotWidget: React.FC = () => {
       if (conversations.length > 0 && conversations[0].status === 'active') {
         setCurrentConversation(conversations[0]);
       } else {
-        const { conversation } = await createConversation();
+        // Pass initial context if provided
+        const { conversation } = await createConversation({
+            context: initialContext
+        });
         setCurrentConversation(conversation);
       }
     } catch (error) {
@@ -190,9 +185,9 @@ export const ChatbotWidget: React.FC = () => {
     }
   };
 
-  const handleSendMessage = async (text?: string, imageBase64?: string) => {
+  const handleSendMessage = async (text?: string) => {
     const content = text || inputValue.trim();
-    if ((!content && !imageBase64) || !currentConversation || isSending) return;
+    if (!content || !currentConversation || isSending) return;
 
     setInputValue('');
     setIsSending(true);
@@ -210,7 +205,6 @@ export const ChatbotWidget: React.FC = () => {
       const { conversation } = await sendMessage({
         conversationId: currentConversation.conversationId,
         message: content,
-        image: imageBase64
       });
 
       setCurrentConversation(conversation);
@@ -223,34 +217,6 @@ export const ChatbotWidget: React.FC = () => {
       setInputValue(content); // Restore input
     } finally {
       setIsSending(false);
-    }
-  };
-
-  // Image Upload Handler
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-        // Validate file type and size
-        if (!file.type.startsWith('image/')) {
-            toast.error('Invalid file type. Please upload an image.');
-            return;
-        }
-        if (file.size > 5 * 1024 * 1024) { // 5MB limit
-            toast.error('Image is too large. Max size is 5MB.');
-            return;
-        }
-
-        try {
-            const base64 = await convertFileToBase64(file);
-            const caption = inputValue.trim() || "Analyze this image";
-            await handleSendMessage(caption, base64);
-            toast.success('Image uploaded successfully');
-        } catch (err) {
-            console.error("Image upload failed", err);
-            toast.error('Failed to upload image.');
-        } finally {
-            if (fileInputRef.current) fileInputRef.current.value = '';
-        }
     }
   };
 
@@ -445,11 +411,12 @@ export const ChatbotWidget: React.FC = () => {
             <button onClick={minimizeWidget} className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100/50">
               <Minus className="w-5 h-5" />
             </button>
+            {/* Reset/End Session Button (Guest Only) */}
+            {!localStorage.getItem('token') && (
             <button 
                 onClick={() => {
                     localStorage.removeItem('guest_token');
                     localStorage.removeItem('guest_id');
-                    localStorage.removeItem('token'); // Just in case
                     window.location.reload();
                 }} 
                 className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100/50 hover:text-red-500 transition-colors"
@@ -457,6 +424,33 @@ export const ChatbotWidget: React.FC = () => {
             >
                 <span className="text-xs font-bold">RESET</span>
             </button>
+            )}
+
+            {/* Clear Chat Button (Staff Only) */}
+            {localStorage.getItem('token') && (
+            <button 
+                onClick={async () => {
+                    if (currentConversation) {
+                        try {
+                            // Close current conversation to archive it
+                            await import('../../services/communicationApi').then(api => api.closeConversation(currentConversation.conversationId));
+                            // Reset local state to trigger new creation
+                            setCurrentConversation(null);
+                            setMessages([]);
+                            loadOrCreateConversation();
+                            toast.success('Conversation cleared');
+                        } catch (error) {
+                            console.error("Failed to clear chat", error);
+                            toast.error("Failed to clear chat");
+                        }
+                    }
+                }} 
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100/50 hover:text-red-500 transition-colors"
+                title="Start New Chat"
+            >
+                <span className="text-xs font-bold">NEW</span>
+            </button>
+            )}
             {/* Only show Video Call button for Guests, not Staff */}
             {!localStorage.getItem('token') && (
             <button 
@@ -557,21 +551,6 @@ export const ChatbotWidget: React.FC = () => {
         {/* Input Area */}
         <div className="p-4 bg-white/80 backdrop-blur-md border-t border-white/20">
           <div className="flex items-end gap-2 bg-gray-50/80 rounded-2xl p-2 border border-gray-200 focus-within:bg-white focus-within:border-blue-500/50 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all">
-            <button 
-                className="p-2 text-gray-400 hover:text-black hover:bg-gray-200/50 rounded-xl transition-colors"
-                onClick={() => fileInputRef.current?.click()}
-                title="Upload Image"
-            >
-                <ImageIcon className="w-5 h-5" />
-            </button>
-            <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                accept="image/*" 
-                onChange={handleImageUpload}
-            />
-            
             <textarea
               ref={inputRef as any}
               value={inputValue}
