@@ -47,7 +47,7 @@ export const initializeSocketIO = async (httpServer: HTTPServer): Promise<Server
         return next(new Error('Authentication token required'))
       }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload
+      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as JwtPayload
       // Normalize userId
       socket.data.user = { ...decoded, userId: decoded.userId || decoded.id }
       next()
