@@ -211,7 +211,7 @@ export class ChatbotService {
       
       const token = jwt.sign(
         {
-          userId: guestId,
+          id: guestId,
           role: 'guest',
           name: guestName
         },

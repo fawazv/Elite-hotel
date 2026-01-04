@@ -47,10 +47,10 @@ export const initializeSocketIO = async (httpServer: HTTPServer): Promise<Server
         return next(new Error('Authentication token required'))
       }
 
-      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as JwtPayload
-      // Normalize userId
-      socket.data.user = { ...decoded, userId: decoded.userId || decoded.id }
-      next()
+          const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as JwtPayload
+          // Standardize: Ensure userId is set from id
+          socket.data.user = { ...decoded, userId: decoded.id }
+          return next()
     } catch (error) {
       next(new Error('Invalid authentication token'))
     }

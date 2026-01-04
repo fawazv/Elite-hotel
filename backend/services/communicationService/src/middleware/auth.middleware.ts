@@ -33,7 +33,7 @@ export const authenticateToken = async (
     if (!req.user.id) {
        return res.status(401).json({ 
         success: false,
-        message: 'Invalid token payload' 
+        message: 'Invalid token payload: Missing user ID' 
       })
     }
     
