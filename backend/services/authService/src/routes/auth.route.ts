@@ -23,15 +23,15 @@ authRoute.post(
 )
 
 authRoute.post(
-  '/otp-signup',
-  validateRequest(otpVerificationSchema),
-  authController.verifyOtp.bind(authController)
-)
-
-authRoute.post(
   '/otp-resend',
   validateRequest(otpResendSchema),
   authController.resendOtp.bind(authController)
+)
+
+authRoute.post(
+  '/otp-signup',
+  validateRequest(otpVerificationSchema),
+  authController.verifyOtp.bind(authController)
 )
 
 authRoute.post(

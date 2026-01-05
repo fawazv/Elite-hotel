@@ -46,6 +46,14 @@ export class AuthController implements IAuthController {
       const response = await this.authService.verifySignUpOtp(email, otp, type)
       console.log(response, 'response in otp verification controller ')
 
+      if ((response as any)?.resetToken) {
+           return successResponse(res, HttpStatus.OK, response?.message!, {
+             success: true,
+             resetToken: (response as any).resetToken,
+             role: (response as any).role
+           })
+      }
+
       setRefreshTokenCookie(res, response?.refreshToken!, response?.data?.role!)
 
       return successResponse(res, HttpStatus.OK, response?.message!, {
@@ -145,11 +153,12 @@ export class AuthController implements IAuthController {
 
   async resetPassword(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email, password, confirmPassword } = req.body
+      const { email, password, confirmPassword, token } = req.body
       const response = await this.authService.resetPassword(
         email,
         password,
-        confirmPassword
+        confirmPassword,
+        token
       )
       return successResponse(res, HttpStatus.OK, response?.message!, {
         success: response?.success,

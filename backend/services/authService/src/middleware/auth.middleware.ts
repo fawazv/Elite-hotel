@@ -24,9 +24,14 @@ const authenticateToken = async (
 ): Promise<void> => {
   try {
     // 1. Extract Authorization header
+    if (req.path === '/otp-signup' || req.originalUrl.includes('/otp-signup')) {
+      return next()
+    }
+
     const authHeader = req.headers['authorization']
     
     if (!authHeader) {
+      console.log('Access denied for URL:', req.originalUrl, 'Method:', req.method)
       res.status(401).json({ 
         success: false,
         message: 'Access denied. No token provided' 

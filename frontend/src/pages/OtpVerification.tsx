@@ -19,7 +19,7 @@ export default function OTPVerification() {
   const navigate = useNavigate()
 
   const dispatch = useDispatch()
-  const { fullName, email, phoneNumber, role, type } = useSelector(
+  const { email, type } = useSelector(
     (state: RootState) => state.signup
   )
 
@@ -225,7 +225,12 @@ export default function OTPVerification() {
           navigate('/')
         } else if (type === 'forgetPassword') {
           toast.success('Verification successful! Redirecting...')
-          navigate('/new-password')
+          navigate('/auth/reset-password', { 
+            state: { 
+              email, 
+              token: response.resetToken // Pass the token received from backend
+            } 
+          })
         } else {
           setError('Unexpected verification type')
         }

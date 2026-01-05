@@ -15,7 +15,7 @@ const LoadingSpinner = () => (
 
 const HousekeeperRoute: React.FC = () => {
   return (
-    <AdminProtectedRoute>
+    <AdminProtectedRoute allowedRoles={['housekeeper', 'admin']}>
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
           <Route path="/" element={<HousekeeperLayout />}>

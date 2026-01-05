@@ -92,9 +92,15 @@ export class VideoChatController {
   async getCallHistory(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const userId = (req.user as any).userId || (req.user as any).id
+      const userRole = (req.user as any).role
       const limit = parseInt(req.query.limit as string) || 20
 
-      const calls = await videoChatRepository.findCallHistory(userId, limit)
+      let calls;
+      if (['admin', 'receptionist'].includes(userRole)) {
+          calls = await videoChatRepository.findAllCallHistory(limit)
+      } else {
+          calls = await videoChatRepository.findCallHistory(userId, limit)
+      }
 
       res.json({
         message: 'Call history retrieved',

@@ -4,6 +4,7 @@ import jwt, { JwtPayload } from 'jsonwebtoken'
 import { SocketUser } from '../types'
 import { setupRedisAdapter } from './redis-adapter'
 import { registerCallHandlers } from '../socket/callHandler'
+import videochatRepository from '../repositories/videochat.repository'
 
 const connectedUsers = new Map<string, SocketUser>()
 const activeCallPartners = new Map<string, string>() // Key: UserId, Value: PartnerId
@@ -76,7 +77,7 @@ export const initializeSocketIO = async (httpServer: HTTPServer): Promise<Server
     registerCallHandlers(io, socket)
 
     // Handle disconnection
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
       const userPayload = socket.data.user as JwtPayload
       const userId = userPayload.userId || userPayload.id
       
@@ -98,6 +99,25 @@ export const initializeSocketIO = async (httpServer: HTTPServer): Promise<Server
             }
             // Clear pair
             clearActiveCallPair(userId);
+        }
+
+        // DB Update: End any active sessions for this user
+        try {
+             const activeSession = await videochatRepository.findActiveCall(userId);
+             if (activeSession) {
+                 const endTime = new Date();
+                 const startTime = activeSession.startTime ? new Date(activeSession.startTime) : new Date();
+                 const duration = Math.round((endTime.getTime() - startTime.getTime()) / 1000);
+
+                 await videochatRepository.updateStatus(activeSession.sessionId, 'ended', {
+                     endTime,
+                     duration,
+                     metadata: { reason: 'User disconnected' }
+                 });
+                 console.log(`[Call] Auto-ended session ${activeSession.sessionId} due to disconnect`);
+             }
+        } catch (err) {
+            console.error('[Call] Failed to auto-end session on disconnect:', err);
         }
 
       } else {

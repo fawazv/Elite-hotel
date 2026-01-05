@@ -27,6 +27,7 @@ initializeSocketIO(httpServer).then((socketIo) => {
 })
 
 import { scheduleDataRetention } from './jobs/data-retention.job'
+import { scheduleCallCleanup } from './jobs/call-cleanup.job'
 
 // Connect to databases and message queue
 rabbitmqConnect().then(() => {
@@ -37,6 +38,7 @@ connectMongodb().then(() => {
   console.log('✅ MongoDB connected')
   // Start background jobs
   scheduleDataRetention()
+  scheduleCallCleanup()
 })
 
 // Middleware

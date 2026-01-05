@@ -4,10 +4,15 @@ import { ArrowLeft, Edit, Trash2, Bed, DollarSign, Hash, ZoomIn } from 'lucide-r
 import { fetchRoomById, deleteRoom, type Room } from '@/services/adminApi'
 import DeleteConfirmModal from '@/components/admin/DeleteConfirmModal'
 import ImageLightbox from '@/components/common/ImageLightbox'
+import { useSelector } from 'react-redux'
+import type { RootState } from '@/redux/store/store'
 
 const RoomDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useSelector((state: RootState) => state.auth)
+  const basePath = user?.role === 'receptionist' ? '/receptionist' : '/admin'
+
   const [room, setRoom] = useState<Room | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -44,7 +49,7 @@ const RoomDetail = () => {
     
     try {
       await deleteRoom(room._id)
-      navigate('/admin/rooms')
+      navigate(`${basePath}/rooms`)
     } catch (err: any) {
       console.error('Error deleting room:', err)
       alert(err.response?.data?.message || 'Failed to delete room')
@@ -68,7 +73,7 @@ const RoomDetail = () => {
     return (
       <div className="space-y-6">
         <button
-          onClick={() => navigate('/admin/rooms')}
+          onClick={() => navigate(`${basePath}/rooms`)}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft size={20} />
@@ -93,7 +98,7 @@ const RoomDetail = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <button
-          onClick={() => navigate('/admin/rooms')}
+          onClick={() => navigate(`${basePath}/rooms`)}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft size={20} />
@@ -102,7 +107,7 @@ const RoomDetail = () => {
 
         <div className="flex gap-3">
           <button
-            onClick={() => navigate(`/admin/rooms/edit/${room._id}`)}
+            onClick={() => navigate(`${basePath}/rooms/edit/${room._id}`)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Edit size={18} />

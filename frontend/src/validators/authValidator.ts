@@ -58,6 +58,31 @@ export const signInSchema = z.object({
     ),
 })
 
+// Reset Password Schema
+export const resetPasswordSchema = z
+  .object({
+    password: z
+      .string({ message: 'Password must be a string' })
+      .min(1, { message: 'Password is required' })
+      .min(8, { message: 'Password should have at least 8 characters' })
+      .max(50, { message: 'Password should have at most 50 characters' })
+      .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+      .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+      .regex(/[0-9]/, 'Password must contain at least one number')
+      .regex(
+        /[^a-zA-Z0-9]/,
+        'Password must contain at least one special character'
+      ),
+    confirmPassword: z
+      .string({ message: 'Confirm Password must be a string' })
+      .min(1, { message: 'Confirm Password is required' }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'Passwords do not match',
+  })
+
 // Type inference for TypeScript
 export type SignUpSchemaType = z.infer<typeof signUpSchema>
 export type signInSchemaType = z.infer<typeof signInSchema>
+export type ResetPasswordSchemaType = z.infer<typeof resetPasswordSchema>

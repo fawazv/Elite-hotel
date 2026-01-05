@@ -10,9 +10,14 @@ import { useSorting } from '@/Hooks/useSorting'
 import { TableSkeleton } from '@/components/common/LoadingSkeleton'
 import EmptyState from '@/components/common/EmptyState'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useSelector } from 'react-redux'
+import type { RootState } from '@/redux/store/store'
 
 const Rooms = () => {
   const navigate = useNavigate()
+  const { user } = useSelector((state: RootState) => state.auth)
+  const basePath = user?.role === 'receptionist' ? '/receptionist' : '/admin'
+
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -200,7 +205,7 @@ const Rooms = () => {
           </div>
           <div className="flex items-center gap-3">
              <button 
-                onClick={() => navigate('/admin/rooms/new')}
+                onClick={() => navigate(`${basePath}/rooms/new`)}
                 className="bg-gray-900 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-gray-900/20 hover:bg-black transition-colors flex items-center gap-2"
              >
                 <Plus size={18} /> Add Room
@@ -270,7 +275,7 @@ const Rooms = () => {
             icon={FolderOpen}
             action={!searchQuery ? {
                 label: "Add Your First Room",
-                onClick: () => navigate('/admin/rooms/new'),
+                onClick: () => navigate(`${basePath}/rooms/new`),
                 startIcon: Plus
             } : undefined}
             />
@@ -359,14 +364,14 @@ const Rooms = () => {
                         <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
-                            onClick={() => navigate(`/admin/rooms/${room._id}`)}
+                            onClick={() => navigate(`${basePath}/rooms/${room._id}`)}
                             className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 transition-colors"
                             title="View"
                             >
                             <Eye size={16} />
                             </button>
                             <button
-                            onClick={() => navigate(`/admin/rooms/edit/${room._id}`)}
+                            onClick={() => navigate(`${basePath}/rooms/edit/${room._id}`)}
                             className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-amber-50 hover:text-amber-600 transition-colors"
                             title="Edit"
                             >

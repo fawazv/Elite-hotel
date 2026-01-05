@@ -370,12 +370,12 @@ export default function Signin() {
                 </label>
               </div>
               <div className="text-sm">
-                <a
-                  href="/forgot-password"
+                <Link
+                  to="/auth/forgot-password"
                   className="text-[#8b4513] hover:underline font-medium"
                 >
                   Forgot password?
-                </a>
+                </Link>
               </div>
             </div>
 

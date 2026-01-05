@@ -50,6 +50,12 @@ export class VideoChatRepository {
       .limit(limit)
   }
 
+  async findAllCallHistory(limit: number = 50): Promise<IVideoChatSession[]> {
+    return await VideoChatSession.find({})
+      .sort({ createdAt: -1 })
+      .limit(limit)
+  }
+
   async findActiveCall(userId: string): Promise<IVideoChatSession | null> {
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
     

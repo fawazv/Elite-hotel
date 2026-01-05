@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useSelector } from 'react-redux'
+import type { RootState } from '@/redux/store/store'
 import { ArrowLeft, Upload, X } from 'lucide-react'
-import { fetchRoomById, type Room } from '@/services/adminApi'
+import { fetchRoomById } from '@/services/adminApi'
 import { privateApi } from '@/services/instances/axiosConfig'
 
 const AMENITIES_LIST = [
@@ -23,6 +25,8 @@ const RoomForm = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const isEdit = !!id
+  const { user } = useSelector((state: RootState) => state.auth)
+  const basePath = user?.role === 'receptionist' ? '/receptionist/rooms' : '/admin/rooms'
 
   const [formData, setFormData] = useState({
     number: '',
@@ -135,7 +139,7 @@ const RoomForm = () => {
         })
       }
 
-      navigate('/admin/rooms')
+      navigate(basePath)
     } catch (err: any) {
       console.error('Error saving room:', err)
       setError(err.response?.data?.message || 'Failed to save room')
@@ -155,7 +159,7 @@ const RoomForm = () => {
   return (
     <div className="space-y-6">
       <button
-        onClick={() => navigate('/admin/rooms')}
+        onClick={() => navigate(basePath)}
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
       >
         <ArrowLeft size={20} />
@@ -348,7 +352,7 @@ const RoomForm = () => {
           <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
             <button
               type="button"
-              onClick={() => navigate('/admin/rooms')}
+              onClick={() => navigate(basePath)}
               className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Cancel

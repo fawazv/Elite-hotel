@@ -23,6 +23,8 @@ const SignIn = React.lazy(() => import('../pages/Signin'))
 const SignUp = React.lazy(() => import('../pages/Signup'))
 const Profile = React.lazy(() => import('../pages/Profile'))
 const NotFound = React.lazy(() => import('../pages/NotFound'))
+const ForgotPassword = React.lazy(() => import('../pages/ForgotPassword'))
+const ResetPassword = React.lazy(() => import('../pages/ResetPassword'))
 
 const UserRoute: React.FC = () => {
   return (
@@ -73,6 +75,8 @@ const UserRoute: React.FC = () => {
           <Route path="signin" element={<SignIn />} />
           <Route path="signup" element={<SignUp />} />
           <Route path="otp-verify" element={<OTPVerification />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
         </Route>
       </Routes>
     </Suspense>

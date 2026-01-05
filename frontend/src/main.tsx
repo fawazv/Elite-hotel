@@ -6,7 +6,7 @@ import { PersistGate } from 'redux-persist/integration/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App.tsx'
 import './index.css'
-import { Toaster } from 'sonner'
+
 import ErrorBoundary from './components/common/ErrorBoundary.tsx'
 
 const queryClient = new QueryClient({
@@ -26,7 +26,7 @@ createRoot(document.getElementById('root')!).render(
           <ErrorBoundary>
             <App />
           </ErrorBoundary>
-          <Toaster />
+
         </QueryClientProvider>
       </PersistGate>
     </Provider>

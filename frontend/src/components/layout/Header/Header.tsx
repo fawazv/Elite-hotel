@@ -1,4 +1,3 @@
-// components/Header.tsx
 import React, { useState, useEffect, useCallback } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
@@ -8,9 +7,14 @@ import MobileMenuButton from './MobileMenuButton'
 import Sidebar from './Sidebar'
 import NavButton from './NavButton'
 import { NotificationBell } from '@/components/shared/NotificationBell'
+import { Mic } from 'lucide-react'
+import { useVoiceAssistant } from '../../../contexts/VoiceAssistantContext'
 
 const Header: React.FC = () => {
   const dispatch = useDispatch()
+  const { isListening, toggleListening } = useVoiceAssistant()
+
+
   const location = useLocation()
   const { user, isAuthenticated } = useSelector(
     (state: RootState) => state.auth
@@ -179,6 +183,19 @@ const Header: React.FC = () => {
 
           {isAuthenticated ? (
             <div className="flex items-center gap-6 pl-6 border-l border-gray-200/20">
+               {/* Voice Assistant Toggle */}
+               <button
+                  onClick={toggleListening}
+                  className={`p-2 rounded-full transition-all duration-300 ${
+                    isListening 
+                      ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 animate-pulse' 
+                      : isScrolledState ? 'text-gray-600 hover:bg-gray-100' : 'text-white/90 hover:bg-white/10'
+                  }`}
+                  title={isListening ? "Voice Assistant Active (Listening...)" : "Enable Voice Assistant"}
+               >
+                  <Mic size={20} />
+               </button>
+
               {/* Notification Bell */}
               <div className={`transition-colors duration-300 ${isScrolledState ? "text-gray-600 hover:text-amber-800" : "text-white/90 hover:text-white"}`}>
                 <NotificationBell />

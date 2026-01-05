@@ -9,6 +9,8 @@ import { useTranslation } from 'react-i18next';
 import { MessageSquare, X, Minus, Send, User, Bot, UserCircle, Loader2, Mic, Video } from 'lucide-react';
 import { useChatbot } from '../../contexts/ChatbotContext';
 import { useSocket } from '../../contexts/SocketContext';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../redux/store/store';
 import { useLocation } from 'react-router-dom';
 import {
   createConversation,
@@ -44,6 +46,7 @@ export const ChatbotWidget: React.FC = () => {
 
   } = useChatbot();
   const { connect: connectSocket } = useSocket();
+  const { user } = useSelector((state: RootState) => state.auth);
 
 
 
@@ -480,7 +483,7 @@ export const ChatbotWidget: React.FC = () => {
                  <Bot className="w-10 h-10 text-gray-300" />
               </div>
               <div>
-                  <p className="font-bold text-gray-900 text-lg">Welcome, Guest</p>
+                  <p className="font-bold text-gray-900 text-lg">Welcome, {user?.fullName || 'Guest'}</p>
                   <p className="text-sm text-gray-500 max-w-[200px] mx-auto mt-1">How can I make your stay perfect today?</p>
               </div>
               <div className="flex flex-wrap justify-center gap-2 mt-4">

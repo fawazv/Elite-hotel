@@ -93,6 +93,10 @@ export const resetPasswordSchema = Joi.object({
       'any.only': 'Passwords do not match',
       'any.required': 'Confirm password is required',
     }),
+  token: Joi.string().required().messages({
+    'string.empty': 'Token is required',
+    'any.required': 'Token is required',
+  }),
 })
 
 /**

@@ -9,6 +9,7 @@ const AdminRooms = React.lazy(() => import('@pages/Admin/Rooms'))
 const AdminReservations = React.lazy(() => import('@pages/Admin/Reservations'))
 const AdminGuests = React.lazy(() => import('@pages/Admin/Guests'))
 const RoomDetail = React.lazy(() => import('@/pages/Admin/RoomDetail'))
+const RoomForm = React.lazy(() => import('@/pages/Admin/RoomForm'))
 const Billing = React.lazy(() => import('@/pages/Admin/Billing'))
 const Payments = React.lazy(() => import('@/pages/Admin/Payments'))
 const Housekeeping = React.lazy(() => import('@/pages/Admin/Housekeeping'))
@@ -34,6 +35,8 @@ const ReceptionistRoute: React.FC = () => {
             <Route path="desk-booking" element={<DeskBooking />} />
             
             <Route path="rooms" element={<AdminRooms />} />
+            <Route path="rooms/new" element={<RoomForm />} />
+            <Route path="rooms/edit/:id" element={<RoomForm />} />
             <Route path="rooms/:id" element={<RoomDetail />} />
             <Route path="reservations" element={<AdminReservations />} />
             <Route path="billing" element={<Billing />} />

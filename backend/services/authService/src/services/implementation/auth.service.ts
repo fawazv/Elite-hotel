@@ -14,6 +14,7 @@ import { IAuthService } from '../interface/IAuth.service'
 import bcrypt from 'bcryptjs'
 import { Setting } from '../../models/setting.model'
 import { UserServiceClient } from '../integration/user.service.client'
+import jwt from 'jsonwebtoken'
 
 interface PasswordUpdate {
   currentPassword: string
@@ -144,10 +145,18 @@ export class AuthService implements IAuthService {
 
       const findOtp = getOtp.find((x) => x.otp == otp)
       if (findOtp && type === 'forgetPassword') {
+        // Generate a temporary reset token
+        const resetToken = jwt.sign(
+          { email, type: 'reset-password' },
+          process.env.ACCESS_TOKEN_SECRET || 'fallback_secret', // Should ideally use a separate secret
+          { expiresIn: '5m' }
+        )
+
         return {
           success: true,
           message: 'otp verified Successfully!',
           role: checkUser?.role,
+          resetToken: resetToken,
         }
       }
 
@@ -341,13 +350,27 @@ export class AuthService implements IAuthService {
       throw error
     }
   }
-
   async resetPassword(
     email: string,
     password: string,
-    confirmPassword: string
+    confirmPassword: string,
+    token: string
   ) {
     try {
+      if (!token) {
+         throw new CustomError('Reset token required', HttpStatus.UNAUTHORIZED)
+      }
+      
+      // Verify token
+      try {
+          const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET || 'fallback_secret') as any
+          if (decoded.email !== email || decoded.type !== 'reset-password') {
+               throw new CustomError('Invalid reset token', HttpStatus.FORBIDDEN)
+          }
+      } catch (err) {
+          throw new CustomError('Invalid or expired reset token', HttpStatus.FORBIDDEN)
+      }
+
       if (password !== confirmPassword) {
         throw new CustomError('Passwords do not match', HttpStatus.BAD_REQUEST)
       }

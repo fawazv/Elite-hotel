@@ -17,6 +17,8 @@ type ApiResponse = {
 
   user?: object
   require2fa?: boolean
+  resetToken?: string
+  role?: string
 }
 
 export interface IAuthService {
@@ -53,7 +55,8 @@ export interface IAuthService {
   resetPassword(
     email: string,
     password: string,
-    confirmPassword: string
+    confirmPassword: string,
+    token: string
   ): Promise<ApiResponse | undefined>
   passwordUpdate(id: string, data: any): Promise<{ success: boolean; message: string }>
   getUsersByRole(role: string, page?: number, limit?: number): Promise<{ success: boolean; data: any[] }>

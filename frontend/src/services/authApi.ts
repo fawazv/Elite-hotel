@@ -74,13 +74,15 @@ export const sendMail = async (email: string) => {
 export const resetPassword = async (
   email: string,
   password: string,
-  confirmPassword: string
+  confirmPassword: string,
+  token: string
 ) => {
   try {
     const response = await api.post('/reset-password', {
       email,
       password,
       confirmPassword,
+      token,
     })
     return response
   } catch (error) {
