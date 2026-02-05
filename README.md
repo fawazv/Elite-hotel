@@ -20,7 +20,7 @@ The application follows a distributed microservices pattern. A central **API Gat
 
 ```mermaid
 graph TD
-    Client[Client Application (React/Vite)] -->|HTTP/REST| Gateway[API Gateway (Express)]
+    Client["Client Application (React/Vite)"] -->|HTTP/REST| Gateway["API Gateway (Express)"]
     
     subgraph "Backend Infrastructure"
         Gateway -->|/api/auth| Auth[Auth Service]
@@ -38,16 +38,16 @@ graph TD
     end
 
     subgraph "Data Layer"
-        Auth <--> DB1[(Auth DB)]
-        User <--> DB2[(User DB)]
-        Room <--> DB3[(Room DB)]
-        Guest <--> DB4[(Guest DB)]
-        Reserve <--> DB5[(Reservation DB)]
-        Pay <--> DB6[(Payment DB)]
-        Bill <--> DB7[(Billing DB)]
-        House <--> DB8[(Housekeeping DB)]
-        Comm <--> DB9[(Communication DB)]
-        Notif <--> DB10[(Notification DB)]
+        Auth <--> DB1[("Auth DB")]
+        User <--> DB2[("User DB")]
+        Room <--> DB3[("Room DB")]
+        Guest <--> DB4[("Guest DB")]
+        Reserve <--> DB5[("Reservation DB")]
+        Pay <--> DB6[("Payment DB")]
+        Bill <--> DB7[("Billing DB")]
+        House <--> DB8[("Housekeeping DB")]
+        Comm <--> DB9[("Communication DB")]
+        Notif <--> DB10[("Notification DB")]
     end
 
     classDef service fill:#f9f,stroke:#333,stroke-width:2px;
@@ -55,6 +55,7 @@ graph TD
     class Auth,User,Room,Guest,Reserve,Pay,Bill,House,Comm,Notif service;
     class MQ,Gateway infra;
 ```
+
 
 ## 🛠️ Technology Stack
 
