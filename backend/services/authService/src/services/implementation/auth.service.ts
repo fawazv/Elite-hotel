@@ -1,5 +1,4 @@
 import { HttpStatus } from '../../enums/http.status'
-import { sendUserData } from '../../events/rabbitmq/producers/producer'
 import { OtpRepository } from '../../repository/implementation/otp.repository'
 import IUserRepository from '../../repository/interface/IUser.repository'
 import CustomError from '../../utils/CustomError'
@@ -13,8 +12,9 @@ import {
 import { IAuthService } from '../interface/IAuth.service'
 import bcrypt from 'bcryptjs'
 import { Setting } from '../../models/setting.model'
-import { UserServiceClient } from '../integration/user.service.client'
 import jwt from 'jsonwebtoken'
+import { getChannel } from '../../config/rabbitmq'
+import { AuthEventType, AuthRegisteredEvent } from '../../events/auth.events'
 
 interface PasswordUpdate {
   currentPassword: string
@@ -25,16 +25,13 @@ interface PasswordUpdate {
 export class AuthService implements IAuthService {
   private userRepository: IUserRepository
   private otpRepository: OtpRepository
-  private userServiceClient: UserServiceClient
 
   constructor(
     userRepository: IUserRepository,
-    otpRepository: OtpRepository,
-    userServiceClient: UserServiceClient
+    otpRepository: OtpRepository
   ) {
     this.userRepository = userRepository
     this.otpRepository = otpRepository
-    this.userServiceClient = userServiceClient
   }
 
   async signUp(
@@ -46,16 +43,6 @@ export class AuthService implements IAuthService {
     avatar?: { publicId: string; url: string }
   ) {
     try {
-      const existingEmail = await this.userRepository.findByEmail(email)
-      if (existingEmail && existingEmail.isVerified) {
-        throw new CustomError('Email already exists', HttpStatus.ALREADYEXISTS)
-      }
-
-      const existingPhone = await this.userRepository.findByPhoneNumber(phoneNumber)
-      if (existingPhone && existingPhone.isVerified) {
-        throw new CustomError('Phone number already exists', HttpStatus.ALREADYEXISTS)
-      }
-
       const hashedPassword = await hashPassword(password)
       const userData: any = {
         fullName,
@@ -67,58 +54,64 @@ export class AuthService implements IAuthService {
         avatar,
       }
 
-      if (!existingEmail && !existingPhone) {
-        // Option A: Call UserService to create the user
-        // Note: UserService creates the user with normalized email/phone
-        // We pass the HASHED password because UserService stores it.
-        const createdUser = await this.userServiceClient.createUser(userData)
-        
-        // Update local cache immediately to prevent race conditions
-        // We ensure we store it locally so findByEmail works for OTP verification
-        await this.userRepository.create({
-            ...userData,
-            _id: createdUser._id // Ensure IDs match!
-        })
+      let user: any
 
-      } else if (existingEmail && !existingEmail.isVerified) {
-        // Existing unverified user: Update in UserService?
-        // UserService might already have it. If we just update local cache, it might desync?
-        // Ideally we should call userServiceClient.updateUser(existingEmail._id, ...)
-        // But for now, let's keep local logic or try to sync.
-        // If we update locally, the event from UserService (if we called update) would come back.
-        // Let's call UserService to update if possible.
-        // But we don't have updateByEmail in client yet, only update(id).
-        
-        if (existingEmail._id) {
-             await this.userServiceClient.updateUser(existingEmail._id.toString(), {
-                ...userData,
-                isVerified: false
-             })
-        }
-        
-        await this.userRepository.updateByEmail(email, {
-          ...userData,
-          isVerified: false,
-        })
-        await this.otpRepository.deleteOtp(email)
-      } else if (existingPhone && !existingPhone.isVerified) {
-         if (existingPhone._id) {
-             await this.userServiceClient.updateUser(existingPhone._id.toString(), {
-                ...userData,
-                isVerified: false
-             })
-        }
+      try {
+        // Atomic Create
+        user = await this.userRepository.create(userData)
+      } catch (err: any) {
+        if (err.code === 11000) {
+          // Duplicate key error - check if verified
+          const existing = await this.userRepository.findByEmail(email) || await this.userRepository.findByPhoneNumber(phoneNumber)
 
-         await this.userRepository.updateByEmail(existingPhone.email, {
-          ...userData,
-          isVerified: false,
-        })
-        await this.otpRepository.deleteOtp(existingPhone.email)
+          if (existing && existing.isVerified) {
+            throw new CustomError('User already exists', HttpStatus.ALREADYEXISTS)
+          } else if (existing) {
+            // Resend flow for unverified user
+            // Update latest details
+            user = await this.userRepository.updateByEmail(existing.email, {
+              ...userData,
+              isVerified: false
+            })
+            // Proceed to send OTP
+          }
+        } else {
+          throw err
+        }
+      }
+
+      // Publish Event for User Service
+      // This is now "Fire and Forget" from the perspective of the HTTP response time,
+      // but ensures eventual consistency.
+      try {
+        const channel = getChannel()
+        if (channel) {
+          const event: AuthRegisteredEvent = {
+            eventType: AuthEventType.AUTH_REGISTERED,
+            authId: user._id.toString(),
+            email: user.email,
+            phoneNumber: user.phoneNumber,
+            fullName: user.fullName,
+            role: user.role,
+            isVerified: user.isVerified,
+            timestamp: new Date()
+          }
+          channel.publish('user.events', 'auth.registered', Buffer.from(JSON.stringify(event)))
+        }
+      } catch (mqErr) {
+        console.error('Failed to publish AUTH_REGISTERED event', mqErr)
+        // We do not rollback user creation here, as they can "Resend OTP" to retry
+      }
+
+      // Rate limiting check
+      const latestOtp = await this.otpRepository.findLatestByEmail(email)
+      if (latestOtp && latestOtp.createdAt && (Date.now() - new Date(latestOtp.createdAt).getTime() < 60000)) {
+        throw new CustomError('Please wait 1 minute before requesting a new OTP', HttpStatus.TOO_MANY_REQUESTS)
       }
 
       const otp = generateOtp()
       await sentOTPEmail(email, otp)
-      
+
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes from now
       await this.otpRepository.create({ email, otp, expiresAt })
     } catch (error) {
@@ -160,9 +153,23 @@ export class AuthService implements IAuthService {
         }
       }
 
-      // Update in UserService as verified
-      // We need to fetch the ID first? checkUser has it.
-      await this.userServiceClient.updateUser(checkUser._id.toString(), { isVerified: true })
+      // Update in UserService as verified - via Event now
+      // await this.userServiceClient.updateUser(checkUser._id.toString(), { isVerified: true })
+
+      try {
+        const channel = getChannel()
+        if (channel) {
+          channel.publish('user.events', 'auth.verified', Buffer.from(JSON.stringify({
+            eventType: AuthEventType.AUTH_VERIFIED,
+            authId: checkUser._id.toString(),
+            email: checkUser.email,
+            isVerified: true,
+            timestamp: new Date()
+          })))
+        }
+      } catch (mqErr) {
+        console.error('Failed to publish AUTH_VERIFIED event', mqErr)
+      }
 
       await this.userRepository.updateUserField(email, 'isVerified', true)
       await this.otpRepository.deleteOtp(email)
@@ -190,6 +197,11 @@ export class AuthService implements IAuthService {
 
   async resendOtpWork(email: string) {
     try {
+      const latestOtp = await this.otpRepository.findLatestByEmail(email)
+      if (latestOtp && latestOtp.createdAt && (Date.now() - new Date(latestOtp.createdAt).getTime() < 60000)) {
+        throw new CustomError('Please wait 1 minute before requesting a new OTP', HttpStatus.TOO_MANY_REQUESTS)
+      }
+
       const otp = generateOtp()
       await sentOTPEmail(email, otp)
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000)
@@ -222,7 +234,7 @@ export class AuthService implements IAuthService {
         if (setting && setting.value === true) {
           const otp = generateOtp()
           await sentOTPEmail(email, otp)
-          
+
           const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
           await this.otpRepository.create({ email, otp, expiresAt })
 
@@ -266,7 +278,6 @@ export class AuthService implements IAuthService {
     try {
       let userData = await this.userRepository.findByEmail(email)
       if (userData) {
-        await sendUserData('userExchange', userData)
 
         const accessToken = generateAccessToken({
           id: userData._id.toString(),
@@ -290,7 +301,7 @@ export class AuthService implements IAuthService {
 
       const password = generateRandomPassword()
       const hashedPassword = await hashPassword(password)
-      
+
       const newUserData = {
         email,
         fullName: name,
@@ -300,16 +311,34 @@ export class AuthService implements IAuthService {
         isVerified: true,
       }
 
-      // Create in UserService
-      const createdUser = await this.userServiceClient.createUser(newUserData)
-      
-      // Create in local cache
+      // Create in local cache first (Atomic)
       userData = await this.userRepository.create({
         ...newUserData,
-        _id: createdUser._id
+        // _id will be auto-generated
       })
 
-      await sendUserData('userExchange', userData)
+      // Async: Publish event
+      try {
+        const channel = getChannel()
+        if (channel) {
+          const event: AuthRegisteredEvent = {
+            eventType: AuthEventType.AUTH_REGISTERED,
+            authId: userData._id.toString(),
+            email: userData.email,
+            phoneNumber: userData.phoneNumber,
+            fullName: userData.fullName,
+            role: userData.role,
+            isVerified: userData.isVerified,
+            timestamp: new Date()
+          }
+          channel.publish('user.events', 'auth.registered', Buffer.from(JSON.stringify(event)))
+        }
+      } catch (e) {
+        console.error('Failed to publish google auth event', e)
+      }
+
+      // Legacy support if needed, or remove? Keeping for now if other consumers listen to 'userExchange'
+      // await sendUserData('userExchange', userData) 
 
       const accessToken = generateAccessToken({
         id: userData._id.toString(),
@@ -358,17 +387,17 @@ export class AuthService implements IAuthService {
   ) {
     try {
       if (!token) {
-         throw new CustomError('Reset token required', HttpStatus.UNAUTHORIZED)
+        throw new CustomError('Reset token required', HttpStatus.UNAUTHORIZED)
       }
-      
+
       // Verify token
       try {
-          const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET || 'fallback_secret') as any
-          if (decoded.email !== email || decoded.type !== 'reset-password') {
-               throw new CustomError('Invalid reset token', HttpStatus.FORBIDDEN)
-          }
+        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET || 'fallback_secret') as any
+        if (decoded.email !== email || decoded.type !== 'reset-password') {
+          throw new CustomError('Invalid reset token', HttpStatus.FORBIDDEN)
+        }
       } catch (err) {
-          throw new CustomError('Invalid or expired reset token', HttpStatus.FORBIDDEN)
+        throw new CustomError('Invalid or expired reset token', HttpStatus.FORBIDDEN)
       }
 
       if (password !== confirmPassword) {
@@ -422,14 +451,14 @@ export class AuthService implements IAuthService {
   async verifyLoginOtp(email: string, otp: string) {
     try {
       const otpRecords = await this.otpRepository.findOtpByEmail(email)
-      
+
       const verified = otpRecords?.find(record => record.otp === otp)
 
       if (!verified) {
-         return {
-            success: false,
-            message: "Invalid OTP",
-         }
+        return {
+          success: false,
+          message: "Invalid OTP",
+        }
       }
 
       const user = await this.userRepository.findByEmail(email)
@@ -438,27 +467,27 @@ export class AuthService implements IAuthService {
       }
 
       // Generate tokens
-      const accessToken = generateAccessToken({ 
-          id: (user._id as unknown as string), 
-          email: user.email, 
-          role: user.role 
+      const accessToken = generateAccessToken({
+        id: (user._id as unknown as string),
+        email: user.email,
+        role: user.role
       })
 
-      const refreshToken = generateRefreshToken({ 
-          id: (user._id as unknown as string), 
-          email: user.email, 
-          role: user.role 
+      const refreshToken = generateRefreshToken({
+        id: (user._id as unknown as string),
+        email: user.email,
+        role: user.role
       })
 
       return {
         success: true,
         message: 'Login successful',
         data: {
-            user,
-            accessToken,
-            refreshToken
+          user,
+          accessToken,
+          refreshToken
         },
-        refreshToken 
+        refreshToken
       }
 
     } catch (error) {

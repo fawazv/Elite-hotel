@@ -5,14 +5,21 @@ import BaseRepository from "./base.repository";
 
 export class OtpRepository
   extends BaseRepository<IOtp>
-  implements IOtpRepository
-{
+  implements IOtpRepository {
   async findOtpByEmail(email: string): Promise<IOtp[] | null> {
     try {
       const otpRecord = await Otp.find({ email });
       return otpRecord;
     } catch (error) {
       console.error("Error founded in findOtp by email", error);
+      return null;
+    }
+  }
+
+  async findLatestByEmail(email: string): Promise<IOtp | null> {
+    try {
+      return await Otp.findOne({ email }).sort({ createdAt: -1 });
+    } catch (error) {
       return null;
     }
   }

@@ -15,6 +15,7 @@ import morgan from 'morgan'
 import compression from 'compression'
 import { initRabbitMQ } from './config/rabbitmq.config'
 import { initUserRpcConsumer } from './consumers/user.rpc.consumer'
+import { initAuthEventConsumer } from './consumers/auth.event.consumer'
 import { sanitizeInput } from './middleware/sanitization.middleware'
 import { requestTimeout } from './middleware/timeout.middleware'
 import requestLogger from './middleware/request-logger.middleware'
@@ -94,6 +95,7 @@ async function start() {
     // Initialize RabbitMQ and RPC consumer
     await initRabbitMQ()
     await initUserRpcConsumer()
+    await initAuthEventConsumer()
 
     // Start the Express server
     app.listen(4002, () => {

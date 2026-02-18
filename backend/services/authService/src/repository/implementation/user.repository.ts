@@ -5,8 +5,7 @@ import BaseRepository from './base.repository'
 
 export class UserRepository
   extends BaseRepository<IUser>
-  implements IUserRepository
-{
+  implements IUserRepository {
   async findByEmail(email: string): Promise<IUser | null> {
     try {
       return await User.findOne({ email })
