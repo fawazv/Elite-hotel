@@ -1,6 +1,6 @@
 # Elite-Hotel Management System
 
-![Elite Hotel Banner](https://via.placeholder.com/1200x300?text=Elite+Hotel+Management+System)
+![Elite Hotel Banner](<img width="1917" height="946" alt="Screenshot 2026-03-01 134757" src="https://github.com/user-attachments/assets/9b509563-688f-479e-8125-316a370fe011" />)
 
 ## 🏨 Project Title & High-Level Summary
 **Elite-Hotel** is a production-grade, full-stack hotel management platform built using a **Microservices Architecture**. It provides a comprehensive solution for managing hotel operations, including guest reservations, room inventory, housekeeping assignments, billing, and real-time communication.
